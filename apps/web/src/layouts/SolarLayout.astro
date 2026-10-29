@@ -1,0 +1,37 @@
+---
+import '@/styles/solar.css';
+
+interface Props {
+  title: string;
+  description: string;
+  lang?: string;
+}
+const { title, description, lang = 'de' } = Astro.props;
+const canonical = new URL(Astro.url.pathname === '/de/' ? '/' : Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="stylesheet" href="/vendor/chartlet.css" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg?v=sun" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og/home.png', Astro.site)} />
+    <meta name="theme-color" content="#f7f7f0" />
+  </head>
+  <body class="solar-site">
+    <a class="skip-link" href="#main">Zum Inhalt</a>
+    <header class="site-header"><a href="/" class="wordmark"><svg viewBox="0 0 32 32" aria-hidden="true" width="40" height="40"><rect width="32" height="32" rx="8" fill="currentColor" /><circle cx="16" cy="16" r="5.6" fill="#e6b734" /><path d="M16 4.5v3M16 24.5v3M4.5 16h3M24.5 16h3M7.9 7.9l2.1 2.1M22 22l2.1 2.1M7.9 24.1 10 22M22 10l2.1-2.1" stroke="#e6b734" stroke-width="2.4" stroke-linecap="round" /></svg><span class="wordmark-text">Solarrechner<span>von CASOON</span></span></a><nav aria-label="Hauptnavigation"><a href="/" aria-current={Astro.url.pathname === "/" ? "page" : undefined}>Rechner</a><a href="/de/rechenweg/" aria-current={Astro.url.pathname.includes("rechenweg") ? "page" : undefined}>Rechenweg</a><a href="/de/about/" aria-current={Astro.url.pathname.includes("about") ? "page" : undefined}>Über die Demo</a></nav></header>
+    <main id="main"><slot /></main>
+    <footer class="site-footer"><p>Eine Demonstration mit Chartlet, Open Grid, Astro & Svelte.</p><a href="/de/rechenweg/">So rechnet der Solarrechner</a><a href="/de/about/">Datenquellen & Methodik</a><a href="https://github.com/casoon/web-solarrechner">Quellcode auf GitHub</a><a href="https://www.casoon.de/impressum/">Impressum</a><a href="https://www.casoon.de/datenschutz/">Datenschutz</a></footer>
+  </body>
+</html>

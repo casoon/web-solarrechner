@@ -1,0 +1,237 @@
+---
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import ArchitectureOverview from './ArchitectureOverview.astro';
+import '@/styles/app.css';
+
+interface Props {
+  locale: 'de' | 'en';
+}
+const { locale } = Astro.props;
+const de = locale === 'de';
+const copy = de
+  ? {
+      title: 'Über dieses Projekt',
+      description:
+        'Solarrechnung im Browser: TypeScript für das Modell, WebAssembly für Diagramme, Tabellen und PDF. Eine Demo mit Chartlet, Open Grid, Astro und Svelte.',
+      intro:
+        'Ein kleines Werkzeug, das zeigt, wie viel heute direkt im Browser möglich ist: Solaranlage und Speicher vergleichen, Kosten verändern und das Ergebnis als PDF mitnehmen. Eine Demonstration mit Chartlet, Open Grid und Lightweight PDF, gebaut mit Astro und Svelte.',
+      specialTitle: 'Was diese Demo besonders macht',
+      special: [
+        [
+          'Die Rechnung läuft bei dir',
+          'Das eigene Energie- und Finanzmodell ist in TypeScript geschrieben und läuft als JavaScript im Browser. Es gleicht Erzeugung und Verbrauch stündlich ab und berechnet Speicherwirkung, Finanzierung und Amortisation. Geänderte Eingaben brauchen keinen Rechenaufruf an den Server.',
+        ],
+        [
+          'WebAssembly für Darstellung und Dokumente',
+          'WASM bringt kompilierte Rust-Bausteine in den Browser: für Diagramme, die Tabellenoberfläche und den PDF-Bericht. Die Solarrechnung selbst nutzt JavaScript; auch die Sortierung der Ergebnistabellen übernimmt hier ein JavaScript-Datenadapter.',
+        ],
+        [
+          'Ein schlanker Server mit klarer Aufgabe',
+          'Astro liefert vorbereitete Seiten und öffentliche Referenzdaten. Der Cloudflare-Endpunkt prüft bestätigte Standortanfragen, ruft PVGIS ab und hält Ertragsprofile im Cache. Haushalts- und Finanzwerte werden von der Anwendung nicht an einen Rechen- oder PDF-Dienst übertragen.',
+        ],
+      ],
+      techTitle: 'Die drei Projekte in der Praxis',
+      tech: [
+        [
+          'Chartlet',
+          'Erzeugt die veränderlichen SVG-Kurven per WASM im Browser. Das Architekturdiagramm dieser Seite wird mit derselben Bibliothek schon beim Build erzeugt.',
+          'https://github.com/casoon/chartlet',
+        ],
+        [
+          'Open Grid',
+          'Zeigt Monatsbilanzen und Zahlungsströme als sortierbare Tabellen. Die Web Components laufen per WASM und sind über Svelte an die berechneten Werte angebunden.',
+          'https://github.com/casoon/opengrid',
+        ],
+        [
+          'Lightweight PDF',
+          'Erzeugt den Ergebnisbericht lokal per WASM und wird erst beim PDF-Export geladen. Dafür ist kein externer PDF-Dienst nötig.',
+          'https://github.com/casoon/lightweight-pdf',
+        ],
+      ],
+      architecture: 'Architektur und Datenwege ansehen',
+      source: 'Der Quellcode des Rechners mit Modell, Tests und dieser Seite liegt auf GitHub:',
+      sourcesTitle: 'Datenquellen und eigene Annahmen',
+      sources: [
+        [
+          'PVGIS / JRC',
+          'Ertrags- und Wetterdaten: Stundenverlauf 2023, auf langjährige Monatsmittel 2005–2023 normiert. Berlin liegt als Startprofil bei.',
+          'https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en',
+        ],
+        [
+          'GeoNames · CC BY 4.0',
+          'Lokal ausgelieferte PLZ- und Ortsdaten, Snapshot vom 28.10.2026.',
+          'https://download.geonames.org/export/zip/readme.txt',
+        ],
+        [
+          'Bundesnetzagentur',
+          'Veröffentlichte Tarife für Inbetriebnahme 01.08.–31.12.2026. Stand 29.10.2026 ist das EEG 2027 noch in parlamentarischer Beratung; Fortführung ab 2027 bleibt ein Szenario.',
+          'https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/ErneuerbareEnergien/EEG_Foerderung/start.html',
+        ],
+        [
+          'EEG-2027-Regierungsentwurf · 21/7867',
+          'Separates Entwurfsszenario: Übergangszahlung mit monatlichen Fristen, danach Direktmarkt mit Bonus bzw. vereinfachter Marktprämie. Dauerhaftes 50-%-Exportlimit sowie zusätzliche Mess-/Steuer- und Vermarktungskosten. Marktpreise und Kosten sind eigene Annahmen, keine zugesagten Konditionen.',
+          'https://dserver.bundestag.de/btd/21/078/2107867.pdf',
+        ],
+        [
+          'BDEW-Strompreisanalyse',
+          'Durchschnittlicher Haushaltsstrompreis 2026 (37,0 ct/kWh inklusive anteiligem Grundpreis) als Orientierung für den vorbelegten Arbeitspreis.',
+          'https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/',
+        ],
+        [
+          'HTW Berlin',
+          'Unabhängigkeitsrechner zum Gegenprüfen von Autarkie und Eigenverbrauch; die Lastspitzen-Annahmen grenzen den gleichmäßigen Stundenverlauf als Obergrenze ab.',
+          'https://solar.htw-berlin.de/rechner/unabhaengigkeitsrechner/',
+        ],
+        [
+          'HTW Berlin, Stromspeicher-Inspektion 2025',
+          'Labormesswerte zu Wirkungsgrad und Standby von Heimspeichern (2 bis 64 W bei entladenem Speicher) als Grundlage der drei Speicherstufen.',
+          'https://solar.htw-berlin.de/studien/stromspeicher-inspektion-2025/',
+        ],
+        [
+          'Verbraucherzentrale NRW',
+          'Datierte Angebotsauswertung als Hintergrund der Kostenkurve, kein Live-Marktindex. Preisstufen und Zusatzbudgets sind eigene Schätzungen.',
+          'https://www.verbraucherzentrale.nrw/wissen/energie/erneuerbare-energien/was-kostet-eine-photovoltaikanlage-49155',
+        ],
+        [
+          'Volt Energie',
+          'Ergänzender Anbieter-Vergleich für Zählerschrankkosten.',
+          'https://volt-e.de/kosten-zaehlerschrank',
+        ],
+      ],
+      profiles:
+        'Verbrauchsprofile für Haushalt, Autos und Wärmepumpe sind synthetische Annahmen. Historische SMARD-Viertelstundenpreise sind nicht eingebunden; unbezahlter Export ist eine veränderbare Sensitivität, bei festen Sätzen ab Kalenderjahr nach dem angenommenen Technik-Einbau und im Direktmarkt ab dessen Start. Förderverlängerungen nach § 51a werden nicht automatisch berechnet. MiSpeL-Netzladen und bidirektionales Laden sind nicht modelliert.',
+      limitsTitle: 'Eine Größenordnung für die Entscheidung',
+      limits:
+        'Solarrechner arbeiten mit Annahmen: Sonneneinstrahlung, Wetter, Verschattung und tatsächlicher Verbrauch schwanken. Diese Demo liefert eine grobe Schätzung, keine auf den Cent oder die Kilowattstunde genaue Vorhersage. Zwölf anpassbare Vorlagen helfen, Varianten und ungefähre Amortisationszeiten zu vergleichen. Amortisation bedeutet hier, dass die Anlage ihre Kosten rechnerisch erwirtschaftet hat; ein Kredit kann dann noch laufen.',
+      closing:
+        'Nutze den Rechner als Einstieg, zum schnellen Gegenrechnen eigener Pläne oder um ein Angebot besser zu verstehen und Fragen an den Fachbetrieb zu entwickeln. Er ist kein Angebotsrechner und ersetzt keine Anlagenplanung. Bis zu zwei Dachflächen an einem Wechselrichter, ein Zähler und vereinfachte AC-Speicherung begrenzen das Modell; Vergütung und Kosten wechseln entsprechend den gewählten kalendarischen Erlösphasen. Messdaten, Standortprüfung und konkrete Angebote machen die Einschätzung genauer. Dynamische Stromtarife und Energy Sharing mit Nachbarn nach § 42c EnWG rechnet er bewusst nicht: Es geht um die Rentabilität der Anlage selbst. Für die Demo ist kein Datenkauf nötig; Ertrag und Amortisation werden nicht zugesagt.',
+      back: 'Zum Rechner',
+    }
+  : {
+      title: 'About this project',
+      description:
+        'Solar calculations in your browser: TypeScript for the model, WebAssembly for charts, tables and PDF. A demo with Chartlet, Open Grid, Astro and Svelte.',
+      intro:
+        'A small tool demonstrating what can run directly in your browser: compare solar and battery options, adjust costs and download a PDF report. A demonstration of Chartlet, Open Grid and Lightweight PDF, built with Astro and Svelte.',
+      specialTitle: 'What makes this demo different',
+      special: [
+        [
+          'Calculations run on your device',
+          'The energy and financial model is written in TypeScript and runs as JavaScript in the browser. It matches generation and demand hour by hour and calculates battery performance, financing and payback. Changing inputs needs no server calculation request.',
+        ],
+        [
+          'WebAssembly for presentation and documents',
+          'WASM brings compiled Rust components to the browser for charts, the table interface and PDF reports. The solar model itself uses JavaScript; a JavaScript data adapter also sorts the result tables in this demo.',
+        ],
+        [
+          'A small server with a defined role',
+          'Astro serves prepared pages and public reference data. The Cloudflare endpoint validates confirmed location requests, queries PVGIS and caches yield profiles. The application does not send household or financial values to a calculation or PDF service.',
+        ],
+      ],
+      techTitle: 'The three projects in practice',
+      tech: [
+        [
+          'Chartlet',
+          'Renders changing SVG charts through WASM in the browser. The architecture diagram on this page is generated with the same library at build time.',
+          'https://github.com/casoon/chartlet',
+        ],
+        [
+          'Open Grid',
+          'Presents monthly energy balances and cash flows as sortable tables. Its Web Components run through WASM, with Svelte connecting them to the calculated values.',
+          'https://github.com/casoon/opengrid',
+        ],
+        [
+          'Lightweight PDF',
+          'Generates the report locally through WASM and loads only when exporting a PDF. No external PDF service is needed.',
+          'https://github.com/casoon/lightweight-pdf',
+        ],
+      ],
+      architecture: 'View architecture and data flows',
+      source:
+        'The source code of the calculator, including the model, tests and this page, is on GitHub:',
+      sourcesTitle: 'Data sources and modelling assumptions',
+      sources: [
+        [
+          'PVGIS / JRC',
+          'Yield and weather data: the 2023 hourly profile normalized to long-term monthly averages for 2005–2023. Berlin is bundled as the initial profile.',
+          'https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en',
+        ],
+        [
+          'GeoNames · CC BY 4.0',
+          'Locally served postal and place data, snapshot from 28 October 2026.',
+          'https://download.geonames.org/export/zip/readme.txt',
+        ],
+        [
+          'Bundesnetzagentur',
+          'Published rates for commissioning from 1 August to 31 December 2026. As of 29 October 2026, EEG 2027 remains under parliamentary consideration; continuing the previous rules beyond 2026 is a scenario.',
+          'https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/ErneuerbareEnergien/EEG_Foerderung/start.html',
+        ],
+        [
+          'EEG 2027 government draft · 21/7867',
+          'Separate draft scenario: calendar transition payments followed by direct marketing with a bonus or simplified market premium. A permanent 50% export limit and additional metering, control and marketing costs are modelled. Market prices and budgets are assumptions, not guaranteed offers.',
+          'https://dserver.bundestag.de/btd/21/078/2107867.pdf',
+        ],
+        [
+          'BDEW electricity price analysis',
+          'Average household electricity price 2026 (37.0 ct/kWh including a share of the standing charge) as a guide for the preset unit price.',
+          'https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/',
+        ],
+        [
+          'HTW Berlin',
+          'Independence calculator to cross-check self-sufficiency and self-consumption; the load-peak options mark the smooth hourly profile as an upper bound.',
+          'https://solar.htw-berlin.de/rechner/unabhaengigkeitsrechner/',
+        ],
+        [
+          'HTW Berlin, Stromspeicher-Inspektion 2025',
+          'Lab measurements of home storage efficiency and stand-by draw (2 to 64 W with an empty battery) behind the three storage levels.',
+          'https://solar.htw-berlin.de/studien/stromspeicher-inspektion-2025/',
+        ],
+        [
+          'Verbraucherzentrale NRW',
+          'Dated offer analysis informing the cost curve, not a live market index. Price levels and additional budgets are our estimates.',
+          'https://www.verbraucherzentrale.nrw/wissen/energie/erneuerbare-energien/was-kostet-eine-photovoltaikanlage-49155',
+        ],
+        [
+          'Volt Energie',
+          'An additional supplier comparison for meter cabinet costs.',
+          'https://volt-e.de/kosten-zaehlerschrank',
+        ],
+      ],
+      profiles:
+        'Household, car and heat pump demand profiles are synthetic assumptions. Historical quarter-hourly SMARD prices are not integrated. Unpaid export is an editable sensitivity: from the calendar year after assumed metering installation for fixed payments, or from the start of direct marketing. Statutory payment extensions, MiSpeL grid charging and bidirectional charging are not modelled.',
+      limitsTitle: 'An estimate to support a decision',
+      limits:
+        'Solar calculators rely on assumptions: sunlight, weather, shading and actual demand vary. This demo provides a rough estimate, not a prediction accurate to the cent or kilowatt-hour. Twelve editable templates help compare options and approximate payback times. Payback here means that the installation has earned back its costs in the model; a loan may still be outstanding.',
+      closing:
+        'Use it as a starting point, to quickly check your own plans or to understand a quotation and develop questions for an installer. It is not a quotation calculator and does not replace installation planning. Up to two roof surfaces on one inverter, one meter and simplified AC storage limit the model; payments and costs follow the selected calendar revenue phases. Measured demand, site assessments and actual quotations improve accuracy. It deliberately leaves out dynamic electricity tariffs and energy sharing with neighbours under § 42c EnWG: the question is whether the installation itself pays off. This demo needs no data purchase and does not guarantee yield or payback.',
+      back: 'Back to calculator',
+    };
+---
+<SolarLayout title={`${copy.title} · Solarrechner`} description={copy.description} lang={locale}>
+  <article class="mx-auto max-w-3xl px-6 py-12">
+    <h1 class="mb-6 text-4xl font-extrabold tracking-tight">{copy.title}</h1>
+    <p class="mb-8 text-xl leading-relaxed">{copy.intro}</p>
+    <section class="mb-10 rounded-lg border border-border p-5" aria-labelledby="special-title">
+      <h2 id="special-title" class="mb-4 text-2xl font-bold">{copy.specialTitle}</h2>
+      <dl class="space-y-4">{copy.special.map(([name, description]) => <div><dt class="font-bold">{name}</dt><dd class="leading-relaxed text-text-secondary">{description}</dd></div>)}</dl>
+    </section>
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">{copy.techTitle}</h2>
+      <dl class="space-y-4">{copy.tech.map(([name, description, href]) => <div><dt class="font-bold"><a href={href}>{name} · GitHub</a></dt><dd class="leading-relaxed text-text-secondary">{description}</dd></div>)}</dl>
+    </section>
+    <p class="mb-6 leading-relaxed">{copy.source} <a href="https://github.com/casoon/web-solarrechner">casoon/web-solarrechner</a></p>
+    <details class="mb-10"><summary>{copy.architecture}</summary><div class="mt-6"><ArchitectureOverview locale={locale} /></div></details>
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">{copy.sourcesTitle}</h2>
+      <ul class="mb-4 list-disc space-y-3 pl-6">{copy.sources.map(([name, description, href]) => <li><a href={href}>{name}</a><p class="leading-relaxed text-text-secondary">{description}</p></li>)}</ul>
+      <p class="leading-relaxed">{copy.profiles}</p>
+    </section>
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">{copy.limitsTitle}</h2>
+      <p class="mb-4 leading-relaxed">{copy.limits}</p>
+      {de && <p class="mb-4 leading-relaxed">Wie aus diesen Annahmen eine Zahl wird, zeigt <a href="/de/rechenweg/">So rechnet der Solarrechner</a> an einem durchgerechneten Beispiel.</p>}
+      <p class="leading-relaxed">{copy.closing}</p>
+    </section>
+    <a href="/">{copy.back}</a>
+  </article>
+</SolarLayout>

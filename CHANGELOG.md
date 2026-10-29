@@ -1,0 +1,22 @@
+# Changelog
+
+Alle wesentlichen Änderungen an web-solarrechner werden hier dokumentiert.
+Das Projekt folgt [Keep a Changelog 1.1](https://keepachangelog.com/de/1.1.0/)
+und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Funktionsumfang ändern.
+
+## [Unreleased]
+
+## [0.1.0] - 2026-10-29
+
+### Added
+
+- **Rechner:** Wirtschaftlichkeitsrechnung für Dachanlage und Balkonkraftwerk mit stündlicher Energiebilanz über ein ganzes Jahr, mit und ohne Speicher; jede Eingabe rechnet sofort neu, alles läuft im Browser.
+- **Vorlagen:** Zwölf Ausgangssituationen von der Wohnung mit Steckersolar bis zum Haus mit zwei E-Autos und Wärmepumpe, jeweils mit Grafik und Eckdaten.
+- **Anlage:** Ort über die GeoNames-Ortssuche, Sonnendaten von PVGIS für Ort, Neigung und Ausrichtung, optional eine zweite Dachfläche; Berliner Profile liegen bei. Kappung am Wechselrichter getrennt von der Abregelung am Exportlimit ausgewiesen.
+- **Verbrauch:** Synthetische Lastprofile mit Lastspitzen, E-Auto mit Laden am Abend oder mit PV-Überschuss, Wärmepumpe mit Jahresarbeitszahl.
+- **Speicher:** Speichertechnik in drei Stufen nach Labormessungen, Standby, Alterung, Ersatz nach Jahr oder Vollzyklen und ein Vergleich typischer Speichergrößen.
+- **Vergütung:** Erlöse nach Inbetriebnahmedatum, für Anlagen ab 2027 wahlweise nach dem EEG-Entwurf mit Übergangsphase und Direktvermarktung, nach fortgeschriebenem EEG oder ohne Erlös; optional ein höherer Netz-Grundpreis.
+- **Kosten:** Preisorientierung in drei Stufen mit einzeln wählbaren Zusatzarbeiten für Montage, Zählerschrank und Elektroinstallation, Finanzierung über ein Annuitätendarlehen.
+- **Ergebnis:** Vorteil im ersten Betriebsjahr, Amortisation, Kapitalwert, interner Zinsfuß und Eigenversorgung; Diagramme für Energiefluss, Stromkosten, typische Tage, Stromherkunft, Deckung nach Uhrzeit, Amortisation und Strompreis-Szenarien; Monats- und Jahrestabellen.
+- **Export:** PDF-Bericht, im Browser erzeugt; Einstellungen als JSON speichern, laden und als Link teilen.
+- **Seiten:** Rechenweg Schritt für Schritt an einem Beispiel, Projektseite mit Datenquellen, Annahmen und Grenzen auf Deutsch und Englisch.

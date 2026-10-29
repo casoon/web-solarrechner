@@ -1,0 +1,1047 @@
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/inter/latin-700.css";
+.solar-site {
+  color-scheme: light;
+  --ink: #183b32;
+  --muted: #52675f;
+  --line: #d5dcd3;
+  --paper: #f7f7f0;
+  --accent: #e6b734;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.solar-site *,
+.solar-site *::before,
+.solar-site *::after {
+  box-sizing: border-box;
+}
+.solar-site ::selection {
+  background: #f1d57b;
+  color: #183b32;
+}
+.solar-site :focus-visible {
+  outline: 3px solid #a16a00;
+  outline-offset: 4px;
+}
+.solar-site a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.solar-site button,
+.solar-site input,
+.solar-site select {
+  font: inherit;
+}
+.solar-site button {
+  cursor: pointer;
+}
+.solar-site button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.solar-site h1,
+.solar-site h2,
+.solar-site p {
+  margin-top: 0;
+}
+.solar-site h2 {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.site-header,
+.site-footer,
+.page-intro,
+.calculator-layout {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 40px;
+}
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 94px;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.wordmark svg {
+  flex-shrink: 0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgb(24 59 50 / 0.18);
+}
+.wordmark-text {
+  display: grid;
+  gap: 5px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.wordmark-text span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.site-header nav {
+  display: flex;
+  gap: 26px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.site-header nav a {
+  text-decoration: none;
+  padding-block: 12px;
+  white-space: nowrap;
+}
+.site-header nav a:hover {
+  text-decoration: underline;
+}
+.page-intro {
+  padding-block: 52px 38px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+}
+.page-intro h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+.page-intro p {
+  color: var(--muted);
+  max-width: 65ch;
+  margin-bottom: 0;
+}
+.intro-facts {
+  display: grid;
+  gap: 12px;
+  min-width: 290px;
+  margin: 0;
+  padding: 0 0 0 24px;
+  border-left: 1px solid var(--line);
+  list-style: none;
+  font-size: 13px;
+}
+.intro-facts li {
+  display: grid;
+  gap: 2px;
+}
+.intro-facts span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.intro-facts a {
+  font-weight: 600;
+}
+.calculator-layout {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.controls {
+  border-top: 2px solid var(--ink);
+}
+.input-section {
+  padding: 24px 0;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.input-section legend {
+  float: left;
+  width: 100%;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: -0.025em;
+}
+.input-section legend + * {
+  clear: both;
+}
+.solar-site input:not([type="range"], [type="checkbox"]),
+.solar-site select {
+  width: 100%;
+  border: 1px solid #9caea3;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+  min-height: 44px;
+  caret-color: var(--ink);
+}
+.solar-site select {
+  margin-bottom: 16px;
+  appearance: none;
+  padding-right: 40px;
+  font-weight: 500;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23183b32' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  box-shadow: 0 1px 2px #183b3214;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.solar-site select:hover {
+  border-color: var(--ink);
+}
+.solar-site select:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px #e6b73466;
+}
+.solar-site label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+.solar-site .check {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-block: 16px;
+}
+.solar-site input[type="checkbox"] {
+  accent-color: var(--ink);
+  width: 18px;
+  height: 18px;
+}
+.number-field {
+  margin-block: 18px;
+}
+.field-line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.field-line label {
+  margin: 0;
+  max-width: 63%;
+}
+.number-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.solar-site .number-unit input {
+  width: 90px;
+  font-weight: 600;
+  text-align: right;
+  padding: 7px;
+  min-height: 38px;
+  font-variant-numeric: tabular-nums;
+}
+.number-unit span {
+  font-size: 11px;
+  min-width: 26px;
+  color: var(--muted);
+}
+.solar-site input[type="range"] {
+  width: 100%;
+  min-height: 30px;
+  accent-color: #496e47;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.field-hint {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 8px 0 12px;
+}
+.segmented {
+  display: flex;
+  padding: 3px;
+  background: #e8ece4;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+.segmented button {
+  flex: 1;
+  padding: 10px 8px;
+  min-height: 44px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.segmented button.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 4px #183b3210;
+}
+.segmented button:hover {
+  color: var(--ink);
+}
+.solar-site details {
+  margin-block: 14px;
+}
+.solar-site summary {
+  font-size: 13px;
+  cursor: pointer;
+  padding-block: 9px;
+  font-weight: 600;
+}
+.solar-site details[open] > summary {
+  margin-bottom: 12px;
+}
+.apply-button {
+  width: 100%;
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 5px;
+  padding: 13px 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.apply-button:hover:not(:disabled) {
+  background: #2c5544;
+}
+.place-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.place-list button {
+  text-align: left;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+}
+.place-list button:hover {
+  background: #eff2e9;
+}
+.results {
+  min-width: 0;
+}
+.result-summary {
+  background: #183b32;
+  color: #fffcef;
+  padding: 30px;
+  border-radius: 8px;
+}
+.summary-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.summary-heading h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.summary-heading > span {
+  font-size: 12px;
+  color: #d0dfd1;
+}
+.result-toggle {
+  background: #315044;
+  max-width: 390px;
+}
+.result-toggle button {
+  color: #e1e8db;
+}
+.result-toggle button.active {
+  background: #e8c45a;
+  color: #183b32;
+}
+.key-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px 24px;
+  margin: 26px 0;
+  font-variant-numeric: tabular-nums;
+}
+.key-results dt {
+  font-size: 12px;
+  color: #d0dfd1;
+}
+.key-results dd {
+  margin: 6px 0 0;
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+.result-summary > p {
+  font-size: 11px;
+  color: #d0dfd1;
+  margin-bottom: 0;
+  max-width: 75ch;
+}
+.comparison {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+.comparison-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+  align-items: baseline;
+}
+.comparison-line strong {
+  font-size: 24px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.comparison > p {
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 75ch;
+}
+.chart-section,
+.table-section {
+  padding-top: 34px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+.section-heading h2 {
+  margin: 0;
+}
+.section-heading > span {
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.solar-chart {
+  min-height: 200px;
+}
+.solar-chart svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.chart-status {
+  padding: 60px 20px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+.energy-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 30px;
+  font-size: 12px;
+  margin-block: 20px;
+}
+.energy-totals span {
+  color: var(--muted);
+}
+.energy-totals strong {
+  color: var(--ink);
+  display: block;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.solar-table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.solar-table table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.solar-table td,
+.solar-table th {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.solar-table th:first-child,
+.solar-table td:first-child {
+  text-align: left;
+}
+.solar-table caption {
+  text-align: left;
+  color: var(--muted);
+  padding-bottom: 10px;
+}
+.solar-table opengrid-table {
+  display: block;
+  min-width: 640px;
+  --og-accent: #183b32;
+  --og-font-family: Inter, sans-serif;
+}
+.annual-table {
+  padding-block: 18px;
+}
+.method-note {
+  padding-top: 30px;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 75ch;
+}
+.method-note h2 {
+  font-size: 18px;
+  color: var(--ink);
+}
+.text-button {
+  background: none;
+  color: var(--ink);
+  border: 0;
+  padding: 12px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 12px;
+}
+.method-note h3 {
+  margin: 28px 0 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+}
+label.text-button {
+  position: relative;
+  margin: 0;
+  font-weight: inherit;
+  cursor: pointer;
+}
+label.text-button:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.settings-actions input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.share-url {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.error {
+  padding: 14px;
+  background: #f9e7d9;
+  color: #743c22;
+  border: 1px solid #ddb393;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.site-footer {
+  margin-top: 70px;
+  padding-block: 28px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.site-footer p {
+  flex: 1;
+  min-width: 220px;
+  margin-bottom: 0;
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 20px;
+  padding: 12px;
+  background: #fff;
+  z-index: 20;
+}
+.skip-link:focus {
+  top: 10px;
+}
+@media (max-width: 1000px) {
+  .calculator-layout {
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 28px;
+  }
+  .site-header,
+  .site-footer,
+  .page-intro,
+  .calculator-layout {
+    padding-inline: 24px;
+  }
+  .intro-facts {
+    display: none;
+  }
+  .result-summary {
+    padding: 24px;
+  }
+  .section-heading {
+    display: block;
+  }
+}
+@media (max-width: 760px) {
+  .site-header {
+    min-height: 78px;
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-block: 12px 4px;
+  }
+  .wordmark svg {
+    width: 34px;
+    height: 34px;
+  }
+  .wordmark-text {
+    font-size: 19px;
+  }
+  .site-header nav {
+    gap: 14px;
+    font-size: 12px;
+  }
+  .site-header,
+  .site-footer,
+  .page-intro,
+  .calculator-layout {
+    padding-inline: 18px;
+  }
+  .page-intro {
+    padding-block: 32px;
+  }
+  .calculator-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .controls,
+  .results {
+    width: 100%;
+  }
+  .controls {
+    display: contents;
+  }
+  .controls .input-section {
+    width: 100%;
+  }
+  .controls .text-button {
+    width: 100%;
+  }
+  .results {
+    order: 1;
+  }
+  .key-results {
+    gap: 24px 12px;
+  }
+  .summary-heading {
+    display: block;
+  }
+  .summary-heading > span {
+    display: block;
+    margin-top: 8px;
+  }
+  .result-summary {
+    padding: 22px;
+  }
+  .result-toggle button {
+    font-size: 11px;
+  }
+}
+
+.mobile-jump {
+  max-width: 1440px;
+  margin: 0 auto 20px;
+  padding-inline: 40px;
+  font-size: 13px;
+}
+
+.solar-table opengrid-table::part(table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.solar-table opengrid-table::part(cell),
+.solar-table opengrid-table::part(header) {
+  padding: 10px 8px;
+  border-bottom: 1px solid #d5dcd3;
+  text-align: right;
+  white-space: nowrap;
+}
+.solar-table opengrid-table::part(sort-button) {
+  border: 0;
+  background: none;
+  color: #183b32;
+  font: inherit;
+  font-weight: 600;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.solar-table opengrid-table::part(caption) {
+  text-align: left;
+  padding-bottom: 12px;
+  color: #52675f;
+}
+.solar-table opengrid-table::part(sort-button):focus-visible {
+  outline: 2px solid #a16a00;
+  outline-offset: 3px;
+}
+
+.preset-picker {
+  max-width: 1440px;
+  margin: 0 auto 34px;
+  padding: 24px 40px;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.65fr) minmax(0, 1.35fr);
+  gap: 40px;
+  border-block: 1px solid var(--line);
+}
+.preset-picker h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+.preset-picker p {
+  max-width: 65ch;
+}
+.preset-picker > div:first-child p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.preset-choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.preset-choice legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.preset-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.solar-site .preset-option {
+  position: relative;
+  margin: 0;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+.solar-site .preset-option:hover {
+  border-color: #9fb0a6;
+}
+.solar-site .preset-option:has(input:checked) {
+  background: #fdf8e4;
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.solar-site .preset-option:has(input:focus-visible) {
+  outline: 3px solid #a16a00;
+  outline-offset: 2px;
+}
+.solar-site .preset-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.preset-icon {
+  flex: none;
+  width: 84px;
+  height: auto;
+  color: var(--ink);
+}
+.preset-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.preset-text strong {
+  font-size: 14px;
+}
+.preset-text span {
+  color: var(--muted);
+}
+.preset-text .preset-facts {
+  margin-top: 3px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.preset-description {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.cost-guide h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.cost-guide .segmented {
+  margin-bottom: 10px;
+}
+.work-option {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.work-option .check {
+  margin-block: 5px;
+}
+.work-option .field-hint {
+  margin-bottom: 5px;
+}
+.work-option .number-field {
+  margin-block: 8px;
+}
+.cost-subtotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.cost-subtotal strong {
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .preset-picker {
+    display: block;
+    padding: 22px 18px;
+    margin-bottom: 26px;
+  }
+  .preset-picker h2 {
+    font-size: 22px;
+  }
+  .preset-picker > div:first-child {
+    margin-bottom: 18px;
+  }
+  .solar-site .preset-option {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+  .preset-icon {
+    width: 68px;
+  }
+}
+
+.input-section legend .step {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fffcef;
+  font-size: 12px;
+  vertical-align: 2px;
+}
+.solar-site .field-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 6px;
+}
+.segmented:has(> :nth-child(3)) {
+  flex-wrap: wrap;
+}
+.tariff-line {
+  margin: 12px 0;
+  font-size: 14px;
+}
+.tariff-line .field-hint {
+  display: block;
+  margin: 4px 0 0;
+}
+/* Only becomes visible when a calculation takes noticeably long. */
+.calc-status {
+  margin-right: 10px;
+  opacity: 0;
+  animation: calc-status-in 0.2s ease 0.3s forwards;
+}
+@keyframes calc-status-in {
+  to {
+    opacity: 1;
+  }
+}
+.scenario-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  font-size: 13px;
+}
+.scenario-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.scenario-list li.current {
+  background: #e8ece4;
+  font-weight: 600;
+}
+.day-toggle {
+  max-width: 360px;
+}
+.bill-summary {
+  margin: 4px 0 8px;
+  font-size: 15px;
+}
+.second-surface {
+  margin: 4px 0 8px;
+  padding-left: 14px;
+  border-left: 3px solid var(--line);
+}
+.comparison h3 {
+  margin: 22px 0 8px;
+  font-size: 15px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.storage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.storage-table th,
+.storage-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.storage-table th:first-child {
+  text-align: left;
+}
+.storage-table thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.storage-table tr.current {
+  background: #e8ece4;
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .storage-table {
+    font-size: 12px;
+  }
+  .storage-table th,
+  .storage-table td {
+    padding: 7px 4px;
+  }
+  .storage-table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+  }
+}
+
+.solar-site .method-list {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.solar-site .method-list > div {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.solar-site .method-list dt {
+  font-weight: 700;
+}
+.solar-site .method-list dd {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+}
+.solar-site .method-list dd span {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.solar-site .method-table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+.solar-site .method-table caption {
+  padding-bottom: 0.5rem;
+  color: var(--muted);
+  text-align: left;
+}
+.solar-site .method-table th,
+.solar-site .method-table td {
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.solar-site .method-table td:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.solar-site .method-table td:nth-child(3) {
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .solar-site .method-list > div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

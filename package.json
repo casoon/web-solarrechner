@@ -1,0 +1,74 @@
+{
+  "name": "web-solarrechner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solarrechner: stündliche Wirtschaftlichkeitsrechnung für Photovoltaik, Balkonkraftwerk und Speicher in Deutschland",
+  "author": "casoon",
+  "license": "MIT",
+  "packageManager": "pnpm@11.0.9",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=11.0.0"
+  },
+  "volta": {
+    "node": "24.21.0",
+    "pnpm": "11.0.9"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @solarrechner/web dev",
+    "build": "pnpm --filter @solarrechner/web build",
+    "preview": "pnpm --filter @solarrechner/web preview",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "type-check": "pnpm -r run type-check",
+    "test:unit": "pnpm --filter @solarrechner/web test:unit",
+    "test:solar": "pnpm --filter @solarrechner/web test:solar",
+    "test:e2e": "playwright test",
+    "fallow:audit": "fallow audit",
+    "fallow:health": "fallow health --score --hotspots --targets",
+    "fallow:dead": "fallow dead-code",
+    "secrets:scan": "pnpm exec nosecrets scan .",
+    "secrets:scan:staged": "pnpm exec nosecrets scan --staged",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "prepare": "husky",
+    "verify": "pnpm check && pnpm type-check && pnpm test:unit && pnpm test:solar && pnpm build",
+    "deploy:solar": "pnpm build && pnpm --filter @solarrechner/web exec wrangler deploy --config dist/server/wrangler.json"
+  },
+  "scripts-info": {
+    "dev": "Start the calculator in dev mode",
+    "build": "Build the calculator (OG image, then Astro)",
+    "preview": "Preview the build locally",
+    "check": "Lint and format check with Biome",
+    "check:fix": "Fix Biome lint and format issues",
+    "format": "Format the repo with Biome",
+    "type-check": "TypeScript and Astro type check",
+    "test:unit": "Unit tests for the build config and environment",
+    "test:solar": "Model tests: energy balance, load profiles, financing, tariff rules, PDF report",
+    "test:e2e": "Playwright tests against the built Worker (wrangler dev)",
+    "fallow:audit": "Codebase analysis with fallow",
+    "fallow:health": "fallow health score with hotspots",
+    "fallow:dead": "Find dead code with fallow",
+    "secrets:scan": "Scan the repo for secrets",
+    "secrets:scan:staged": "Scan staged files for secrets",
+    "clean": "Delete build output and node_modules",
+    "prepare": "Set up the Husky git hooks",
+    "verify": "Local gate before push: check, types, unit and model tests, build",
+    "deploy:solar": "Build and deploy to solarrechner.casoon.de"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx,json,astro,svelte,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@biomejs/biome": "catalog:",
+    "@casoon/nosecrets": "^0.3.8",
+    "@playwright/test": "^1.64.1",
+    "fallow": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "sharp": "catalog:"
+  }
+}

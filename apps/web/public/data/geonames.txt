@@ -1,0 +1,6 @@
+GeoNames postal code data, Germany. CC BY 4.0.
+Source: https://download.geonames.org/export/zip/DE.zip
+License: https://creativecommons.org/licenses/by/4.0/
+Retrieved: 2026-10-28. Filtered/deduplicated and converted to JSON.
+Provided as is, without warranty of accuracy, timeliness or completeness.
+Archive SHA256: f6012056021e8e6bc5b47197675ceb1319af9b2ce4e1c68103238c57b75a10ff

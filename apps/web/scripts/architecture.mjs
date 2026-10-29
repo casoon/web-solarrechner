@@ -1,0 +1,81 @@
+/** Static, bilingual view of the deployed application's components and data paths. */
+export function architectureSpec(locale) {
+  const de = locale === 'de';
+  const words = de
+    ? {
+        title: 'Softwarearchitektur des Solarrechners',
+        browser: 'Dein Browser',
+        site: 'Astro-Seiten',
+        assets: 'Seiten und öffentliche Referenzdaten',
+        ui: 'Svelte-Oberfläche',
+        inputs: 'Vorlagen, Eingaben und Kosten',
+        model: 'Rechenmodell',
+        hourly: 'Stündliche Energie- und Finanzbilanz',
+        output: 'Ergebnis und Export',
+        libraries: 'Chartlet · Open Grid · Lightweight PDF',
+        api: 'PVGIS-Endpunkt',
+        validation: 'Parameterprüfung und Profilcache',
+        pvgis: 'PVGIS / JRC',
+        solar: 'Ertrags- und Wetterdaten',
+        delivers: 'liefert Oberfläche',
+        changes: 'aktualisiert Annahmen',
+        results: 'liefert Ergebnisse',
+        request: 'bestätigter Standortabruf',
+        upstream: 'fragt Ertragsdaten ab',
+        profile: 'liefert Ertragsprofil',
+      }
+    : {
+        title: 'Solar calculator software architecture',
+        browser: 'Your browser',
+        site: 'Astro pages',
+        assets: 'Pages and public reference data',
+        ui: 'Svelte interface',
+        inputs: 'Templates, inputs and costs',
+        model: 'Calculation model',
+        hourly: 'Hourly energy and financial balance',
+        output: 'Results and exports',
+        libraries: 'Chartlet · Open Grid · Lightweight PDF',
+        api: 'PVGIS endpoint',
+        validation: 'Parameter validation and profile cache',
+        pvgis: 'PVGIS / JRC',
+        solar: 'Yield and weather data',
+        delivers: 'serves interface',
+        changes: 'updates assumptions',
+        results: 'provides results',
+        request: 'confirmed location request',
+        upstream: 'requests yield data',
+        profile: 'returns yield profile',
+      };
+  return {
+    schemaVersion: 1,
+    type: 'architecture',
+    title: words.title,
+    showTitle: false,
+    width: 900,
+    height: 850,
+    architecture: {
+      orientation: 'portrait',
+      boundaries: [
+        { id: 'browser', label: words.browser },
+        { id: 'cloud', label: 'Cloudflare' },
+      ],
+      components: [
+        { id: 'site', label: words.site, sublabel: words.assets, kind: 'frontend', in: 'cloud' },
+        { id: 'ui', label: words.ui, sublabel: words.inputs, kind: 'frontend', in: 'browser' },
+        { id: 'model', label: words.model, sublabel: words.hourly, in: 'browser' },
+        { id: 'output', label: words.output, sublabel: words.libraries, in: 'browser' },
+        { id: 'api', label: words.api, sublabel: words.validation, in: 'cloud' },
+        { id: 'pvgis', label: words.pvgis, sublabel: words.solar, kind: 'external' },
+      ],
+      connections: [
+        { from: 'site', to: 'ui', label: words.delivers },
+        { from: 'ui', to: 'model', label: words.changes },
+        { from: 'model', to: 'output', label: words.results },
+        { from: 'ui', to: 'api', label: words.request },
+        { from: 'api', to: 'pvgis', label: words.upstream },
+        { from: 'api', to: 'model', label: words.profile },
+      ],
+      mainPath: ['site', 'ui', 'model', 'output'],
+    },
+  };
+}

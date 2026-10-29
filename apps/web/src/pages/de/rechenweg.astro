@@ -1,0 +1,165 @@
+---
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import { rate } from '@/lib/solar/format';
+import { calculate, peakProfiles, storageTechs, weatherYears } from '@/lib/solar/model';
+import { createPolicy, policyDefaults } from '@/lib/solar/policy';
+import { presetSetup, resolveCosts } from '@/lib/solar/presets';
+import reference from '@/lib/solar/reference.json';
+import '@/styles/app.css';
+
+/** Same default commission date as the calculator: first of the month in about three months. */
+const date = new Date();
+date.setMonth(date.getMonth() + 3, 1);
+const commission = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+
+// The worked example is calculated at build time with the same model as the calculator.
+const setup = presetSetup('family-house');
+const input = resolveCosts(setup.input, setup.work, 'orientation');
+const result = calculate(reference, input, createPolicy(input, commission, policyDefaults));
+const withBattery = result.with;
+const e = withBattery.energy;
+const first = withBattery.firstYear;
+
+const number = (value: number, digits = 0) =>
+  value.toLocaleString('de-DE', { maximumFractionDigits: digits, minimumFractionDigits: digits });
+const euro = (value: number) =>
+  `${value < 0 ? '−' : ''}${number(Math.abs(Math.round(value)))}\u00a0€`;
+const percent = (value: number) => `${number(value)}\u00a0%`;
+const typical = storageTechs.find((t) => t.key === 'typical');
+const selfUsed = e.load - e.grid;
+const saving = selfUsed * input.price;
+const exportNet = (row: typeof first) => row.exportRevenue + row.bonusRevenue - row.marketingCost;
+const exportIncome = exportNet(first);
+const running = input.running + input.batteryRunning + first.technologyCost;
+
+const startRows = [
+  [
+    'Ort und Ausrichtung',
+    `${reference.location}, ${reference.angle}° Neigung, Süd`,
+    'Stundenwerte aus PVGIS liegen für Berlin bereits bei; andere Orte werden auf Wunsch abgerufen.',
+  ],
+  [
+    'Anlage',
+    `${number(input.kwp)} kWp Module, ${number(input.ac)} kW Wechselrichter`,
+    'Eine typische Größe für ein Einfamilienhausdach.',
+  ],
+  [
+    'Speicher',
+    `${number(input.battery)} kWh nutzbar, ${number(input.batteryPower, 1)} kW Lade-/Entladeleistung`,
+    'Verglichen wird immer dieselbe Anlage mit und ohne Speicher.',
+  ],
+  [
+    'Verbrauch',
+    `${number(input.household)} kWh im Jahr, mehr morgens und abends`,
+    'Vier Personen ohne E-Auto und Wärmepumpe; die Verteilung über den Tag ist eine Annahme.',
+  ],
+  [
+    'Lastspitzen',
+    peakProfiles[input.peaks].label,
+    'Wasserkocher, Herd und Waschmaschine ziehen kurz mehr Leistung, als die Sonne gerade liefert.',
+  ],
+  [
+    'Strompreis',
+    `${number(input.price * 100)} ct/kWh, gleichbleibend`,
+    'Arbeitspreis ohne Grundpreis. Der BDEW nennt für 2026 im Schnitt 37 ct inklusive anteiligem Grundpreis.',
+  ],
+  [
+    'Investition',
+    `${euro(withBattery.investment)} inklusive Speicher`,
+    'Richtwerte nach Anlagengröße, keine Angebotspreise. Davon Speicher: ' +
+      euro(input.batteryCost) +
+      '.',
+  ],
+  [
+    'Inbetriebnahme',
+    date.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }),
+    `Bestimmt die Regeln für den eingespeisten Strom. Hier: ${result.policy?.name}.`,
+  ],
+  [
+    'Zeitraum',
+    `${input.years} Jahre`,
+    'Üblicher Betrachtungszeitraum; Wechselrichter und Speicher werden darin einmal ersetzt.',
+  ],
+];
+const energyRows = [
+  ['Solarertrag', e.pv, 'vor Begrenzung durch Wechselrichter und Exportlimit'],
+  ['Bedarf im Haus', e.load, 'ohne Speicher-Standby'],
+  ['Direkt genutzt', e.direct, 'in derselben Stunde verbraucht'],
+  ['Aus dem Speicher', e.battery, 'tagsüber geladen, später entnommen'],
+  ['Aus dem Netz', e.grid, 'inklusive Standby des Speichers'],
+  ['Eingespeist', e.export, 'nach Abzug von Eigenverbrauch und Ladung'],
+  [
+    'Abgeregelt',
+    e.curtailed,
+    `davon ${number(e.clipped)} kWh über der Wechselrichterleistung, der Rest über dem Exportlimit`,
+  ],
+];
+---
+<SolarLayout title="So rechnet der Solarrechner" description="Der Rechenweg Schritt für Schritt: Sonnenertrag, Verbrauch, Speicher und Zahlungsströme, durchgerechnet am Beispiel einer Familie." lang="de">
+  <article class="method-page mx-auto max-w-3xl px-6 py-12">
+    <h1 class="mb-6 text-4xl font-extrabold tracking-tight">So rechnet der Solarrechner</h1>
+    <p class="mb-4 text-xl leading-relaxed">Der Rechner spielt ein ganzes Jahr Stunde für Stunde durch: wie viel Sonne auf die Module fällt, wie viel Strom im Haus gebraucht wird und was dazwischen mit dem Speicher passiert. Aus dieser Energiebilanz entstehen die Zahlungsströme über den Betrachtungszeitraum.</p>
+    <p class="mb-10 leading-relaxed">Die Beispielzahlen auf dieser Seite gehören zur Vorlage „Einfamilienhaus · Familie mit vier Personen“. Sie werden mit demselben Modell gerechnet wie im Rechner. Wenn du dort nichts änderst, siehst du dieselben Werte.</p>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Die Ausgangslage</h2>
+      <p class="mb-4 leading-relaxed">Jede Vorlage setzt einen vollständigen Satz an Annahmen. Die wichtigsten für das Beispiel:</p>
+      <dl class="method-list">{startRows.map(([name, value, why]) => <div><dt>{name}</dt><dd><strong>{value}</strong><span>{why}</span></dd></div>)}</dl>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Schritt 1: Sonnenertrag für jede Stunde</h2>
+      <p class="mb-4 leading-relaxed">Grundlage ist ein Stundenprofil von PVGIS, dem Strahlungsdienst der EU-Kommission. Es nimmt den Verlauf eines echten Jahres (2023) und skaliert jeden Monat auf das langjährige Mittel von 2005 bis 2023. So bleiben wolkige und sonnige Tage erhalten, die Monatssumme entspricht aber dem Durchschnitt. PVGIS rechnet bereits 14 % Systemverluste ein, etwa für Kabel, Wechselrichter und Verschmutzung.</p>
+      <p class="mb-4 leading-relaxed">Der Rechner multipliziert das Profil mit der Modulleistung und zieht eine eventuelle Verschattung ab. Jedes Betriebsjahr verlieren die Module {number(input.degradation, 1)} % Leistung. Mit dem Sonnenjahr lässt sich ein schwaches oder starkes Jahr durchspielen ({weatherYears.map((w) => `${w.change > 0 ? '+' : w.change < 0 ? '−' : '±'}${Math.abs(w.change)} %`).join(' / ')}). Das entspricht der Schwankung zwischen einzelnen Jahren laut PVGIS. Mehr als der Wechselrichter leisten kann, kommt nicht im Haus an.</p>
+      <p class="leading-relaxed">Im Beispiel ergibt das <strong>{number(e.pv)} kWh</strong> Solarertrag im ersten Jahr, rund {number(e.pv / input.kwp)} kWh je kWp.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Schritt 2: Verbrauch für jede Stunde</h2>
+      <p class="mb-4 leading-relaxed">Der Jahresverbrauch wird nach einem Tagesprofil auf die Stunden verteilt. Im Beispiel ist das ein Verlauf mit einer Spitze am Morgen und einer größeren am Abend, am Wochenende etwas später. Im Winter wird rund 20 % mehr verbraucht als im Jahresmittel, im Sommer entsprechend weniger.</p>
+      <p class="mb-4 leading-relaxed">Ein Teil des Verbrauchs fällt als kurze Lastspitze an. Bei „{peakProfiles.typical.label}“ sind das {number(peakProfiles.typical.share * 100)} % des Haushaltsstroms mit {number(peakProfiles.typical.power)} kW. Die Sonne deckt eine solche Spitze nur zu dem Anteil, den sie in diesem Moment liefert. Die Einstellung „Gleichmäßig“ lässt Lastspitzen weg. Der Eigenverbrauch fällt damit höher aus, als er in einem echten Haushalt meist ist, deshalb ist sie im Rechner als Obergrenze gekennzeichnet.</p>
+      <p class="leading-relaxed">E-Auto und Wärmepumpe kommen als eigene Lasten dazu. Das Auto lädt abends oder mittags mit Solarüberschuss ab 1,4 kW. Die Wärmepumpe verteilt ihren Strombedarf zu 20 % gleichmäßig übers Jahr und zu 80 % auf Stunden unter 15 °C, entsprechend der Temperatur in den PVGIS-Daten.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Schritt 3: Jede Stunde abgleichen</h2>
+      <p class="mb-4 leading-relaxed">Für jede der 8.760 Stunden gilt dieselbe Reihenfolge. Solarstrom deckt zuerst den Verbrauch im Haus. Was übrig ist, lädt den Speicher bis zu seiner Leistungs- und Kapazitätsgrenze. Der Rest geht ins Netz, solange das Exportlimit es erlaubt, und wird sonst abgeregelt. Fehlt Strom, liefert ihn zuerst der Speicher und dann das Netz.</p>
+      <p class="mb-4 leading-relaxed">Der Speicher verliert beim Laden und Entladen Energie und braucht im Bereitschaftsbetrieb Strom. In der Stufe „{typical?.label}“ rechnet der Rechner mit {typical?.efficiency} % Gesamtwirkungsgrad und {typical?.standby} W Standby, ein Mittelwert aus Labormessungen der HTW Berlin. Seine Kapazität sinkt um {number(input.batteryDegradation)} % pro Jahr.</p>
+      <table class="method-table">
+        <caption>Energiebilanz im ersten Jahr, Beispiel mit {number(input.battery)} kWh Speicher</caption>
+        <thead><tr><th scope="col">Größe</th><th scope="col">kWh</th><th scope="col">Erläuterung</th></tr></thead>
+        <tbody>{energyRows.map(([name, value, note]) => <tr><th scope="row">{name}</th><td>{number(value as number)}</td><td>{note}</td></tr>)}</tbody>
+      </table>
+      <p class="leading-relaxed">Damit stammen {percent((selfUsed / e.load) * 100)} des Bedarfs aus der eigenen Anlage. Ohne Speicher wären es {percent(((result.without.energy.load - result.without.energy.grid) / result.without.energy.load) * 100)}.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Schritt 4: Vom Strom zum Geld</h2>
+      <p class="mb-4 leading-relaxed">Jede selbst genutzte Kilowattstunde spart den Arbeitspreis, den du sonst ans Netz zahlen würdest. Eingespeister Strom bringt je nach Inbetriebnahme und gewählter Regel eine Vergütung, einen Marktwert oder nichts. Davon gehen laufende Kosten ab: Versicherung, Wartung, Messung und gegebenenfalls Steuertechnik.</p>
+      <table class="method-table">
+        <caption>Erstes Betriebsjahr im Beispiel</caption>
+        <tbody>
+          <tr><th scope="row">Ersparnis ({number(selfUsed)} kWh × {number(input.price * 100)} ct)</th><td>{euro(saving)}</td></tr>
+          <tr><th scope="row">Einspeisung, netto nach Vermarktung</th><td>{euro(exportIncome)}</td></tr>
+          <tr><th scope="row">Laufende Kosten</th><td>−{euro(running)}</td></tr>
+          <tr><th scope="row">Vorteil im ersten Jahr</th><td><strong>{euro(withBattery.benefit)}</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="leading-relaxed">In den Folgejahren rechnet der Rechner mit der gewählten Strompreisänderung, der Alterung von Modulen und Speicher und den Erlösphasen nach Kalender. Im Jahr {input.inverterYear} wird der Wechselrichter ersetzt ({euro(input.inverterReplacement)}), im Jahr {withBattery.batteryYear} der Speicher ({euro(input.batteryReplacement)}). Der Speicher wird spätestens im Jahr {input.batteryYear} ersetzt, früher, wenn er vorher {number(input.batteryCycles)} Vollzyklen erreicht; im Beispiel kommt er auf etwa {number(e.battery / input.battery)} Vollzyklen pro Jahr. Inflation und ein Restwert am Ende sind nicht enthalten.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Schritt 5: Amortisation und Kapitalwert</h2>
+      <p class="mb-4 leading-relaxed">Der Rechner addiert Jahr für Jahr die Zahlungen zur Anfangsinvestition. Als amortisiert gilt die Anlage ab dem ersten Jahr, nach dem dieser Saldo dauerhaft positiv bleibt. Ein Ersatzgerät kann ihn kurz wieder ins Minus drücken; dann zählt erst der spätere Zeitpunkt.</p>
+      <p class="mb-4 leading-relaxed">Im Beispiel: {withBattery.payback ? <>positiver Saldo <strong>ab Jahr {withBattery.payback}</strong>, nach {input.years} Jahren {euro(withBattery.balance)}.</> : <>kein dauerhaft positiver Saldo innerhalb von {input.years} Jahren; am Ende stehen {euro(withBattery.balance)}.</>} Ohne Speicher: {result.without.payback ? `ab Jahr ${result.without.payback}` : `ebenfalls nicht innerhalb von ${input.years} Jahren`}. Ausschlaggebend ist hier die Einspeisung: Sie bringt im ersten Jahr netto {euro(exportIncome)}, im zehnten Jahr {euro(exportNet(withBattery.cashflows[10]))}. Mit einer anderen Regel oder steigenden Strompreisen sieht das Ergebnis anders aus; der Rechner zeigt beides.</p>
+      <p class="leading-relaxed">Der Kapitalwert zinst spätere Zahlungen mit {number(input.discount)} % pro Jahr ab. Er beantwortet, ob die Anlage besser abschneidet als eine Geldanlage mit diesem Zins. Im Beispiel liegt er bei {euro(withBattery.npv)} mit und {euro(result.without.npv)} ohne Speicher. Der interne Zinsfuß ist der Zins, bei dem der Kapitalwert genau null wäre, also die Rendite der Anlage: im Beispiel {rate(withBattery.irr)} mit und {rate(result.without.irr)} ohne Speicher. Bei Finanzierung über einen Kredit zeigt der Rechner zusätzlich Raten und den Saldo nach Tilgung.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Was das Modell bewusst weglässt</h2>
+      <p class="mb-4 leading-relaxed">Bis zu zwei Dachflächen an einem Wechselrichter, ein Zähler, ein wechselstromseitig angeschlossener Speicher. Das Laden des Speichers aus dem Netz und Schnee auf den Modulen sind nicht enthalten. Dynamische Stromtarife und Energy Sharing mit Nachbarn nach § 42c EnWG lässt der Rechner bewusst weg: Er beantwortet, ob sich die Anlage selbst rechnet. Die Verbrauchsprofile sind Annahmen, keine gemessenen Lastgänge.</p>
+      <p class="leading-relaxed">Mit eigenen Messwerten, einer Begehung vor Ort und echten Angeboten wird die Rechnung genauer. Alle Quellen und Grenzen stehen unter <a href="/de/about/">Datenquellen &amp; Methodik</a>.</p>
+    </section>
+    <a href="/">Zurück zum Rechner</a>
+  </article>
+</SolarLayout>

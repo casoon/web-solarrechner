@@ -1,0 +1,41 @@
+{
+  "name": "@solarrechner/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/sync-assets.mjs && rm -rf .astro node_modules/.vite",
+    "dev": "astro dev",
+    "generate:og": "tsx scripts/generate-og.ts",
+    "build": "node scripts/sync-assets.mjs && pnpm generate:og && astro build",
+    "preview": "astro preview",
+    "type-check": "astro check",
+    "clean": "rm -rf dist .astro node_modules/.vite",
+    "test:solar": "node --import tsx --test src/lib/solar/*.test.ts",
+    "test:unit": "node --import tsx --test config/*.test.ts src/env.test.ts"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "catalog:",
+    "@astrojs/svelte": "catalog:",
+    "@casoon/astro-site-files": "catalog:",
+    "@casoon/astro-speed-measure": "catalog:",
+    "@casoon/chartlet": "0.22.0",
+    "@casoon/lightweight-pdf": "0.3.1",
+    "@casoon/opengrid": "0.14.0",
+    "@fontsource/inter": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "astro": "catalog:",
+    "svelte": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/check": "catalog:",
+    "@casoon/astro-post-audit": "catalog:",
+    "@resvg/resvg-js": "catalog:",
+    "@types/node": "catalog:",
+    "satori": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+.wrangler/
+worker-configuration.d.ts
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache
+.cache/
+.turbo/
+
+# Generated assets
+apps/*/public/responsive/
+apps/*/public/og/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Build metrics
+astro-speed-measure-report.*
+
+# Local concept and private source notes
+/plan/
+
+# Bundled Open Grid assets, synced from the pinned package
+apps/web/public/vendor/
+
+# Local agent and design notes, not part of the published project
+CLAUDE.md
+DESIGN.md
+PRODUCT.md
+.claude/
