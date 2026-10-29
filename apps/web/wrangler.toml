@@ -1,4 +1,5 @@
 name = "web-solarrechner"
+main = "./src/worker.ts"
 workers_dev = false
 preview_urls = false
 # Newest date supported by the installed workerd; no tooling upgrade required.
@@ -11,6 +12,8 @@ custom_domain = true
 
 [assets]
 html_handling = "force-trailing-slash"
+# HTML pages go through src/worker.ts, which compresses them itself (see there).
+run_worker_first = ["/", "/about/*", "/de/*"]
 
 [observability]
 enabled = true
