@@ -9,7 +9,7 @@
     "generate:og": "tsx scripts/generate-og.ts",
     "build": "node scripts/sync-assets.mjs && pnpm generate:og && astro build",
     "preview": "astro preview",
-    "type-check": "astro check",
+    "type-check": "wrangler types && astro check",
     "clean": "rm -rf dist .astro node_modules/.vite",
     "test:solar": "node --import tsx --test src/lib/solar/*.test.ts",
     "test:unit": "node --import tsx --test config/*.test.ts src/env.test.ts"
