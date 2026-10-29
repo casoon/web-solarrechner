@@ -6,6 +6,12 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ## [Unreleased]
 
+### Added
+
+- **SEO:** Strukturierte Daten als ein verknüpfter `@graph` je Seite (Website und Seite) mit daraus erzeugten Open-Graph- und Twitter-Tags; die Projektseite verweist per hreflang auf ihre deutsche und englische Fassung, die 404-Seite ist `noindex`.
+- **Site-Dateien:** `/.well-known/security.txt` und `humans.txt`; `llms.txt` nennt jetzt auch Rechenweg, englische Projektseite und Quellcode.
+- **Build:** Die Prüfung nach dem Build (`astro-post-audit`) kontrolliert zusätzlich Go-live-Bedingungen (Herkunft von Canonical, Open Graph und Sitemap, kein `noindex`, keine lokalen Adressen), Sprachversionen, Crawl-Budget, Render-Blocking, Datenschutz und den JSON-LD-Graphen.
+
 ## [0.1.0] - 2026-10-29
 
 ### Added

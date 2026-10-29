@@ -19,6 +19,7 @@
     "@astrojs/svelte": "catalog:",
     "@casoon/astro-site-files": "catalog:",
     "@casoon/astro-speed-measure": "catalog:",
+    "@casoon/astro-structured-data": "catalog:",
     "@casoon/chartlet": "0.22.0",
     "@casoon/lightweight-pdf": "0.3.1",
     "@casoon/opengrid": "0.14.0",

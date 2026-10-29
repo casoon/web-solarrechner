@@ -25,9 +25,10 @@ catalog:
   "@astrojs/cloudflare": ^14.4.2
   "@astrojs/svelte": ^9.1.1
   "@axe-core/playwright": ^4.14.0
-  "@casoon/astro-post-audit": ^0.9.1
-  "@casoon/astro-site-files": ^0.7.0
+  "@casoon/astro-post-audit": ^0.9.3
+  "@casoon/astro-site-files": ^0.7.1
   "@casoon/astro-speed-measure": ^0.4.0
+  "@casoon/astro-structured-data": ^2.3.1
 
   # Tailwind v4
   tailwindcss: ^4.3.3

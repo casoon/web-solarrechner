@@ -207,7 +207,16 @@ const copy = de
       back: 'Back to calculator',
     };
 ---
-<SolarLayout title={`${copy.title} · Solarrechner`} description={copy.description} lang={locale}>
+<SolarLayout
+  title={`${copy.title} · Solarrechner`}
+  description={copy.description}
+  lang={locale}
+  alternates={[
+    { hreflang: 'en', href: '/about/' },
+    { hreflang: 'de', href: '/de/about/' },
+    { hreflang: 'x-default', href: '/about/' },
+  ]}
+>
   <article class="mx-auto max-w-3xl px-6 py-12">
     <h1 class="mb-6 text-4xl font-extrabold tracking-tight">{copy.title}</h1>
     <p class="mb-8 text-xl leading-relaxed">{copy.intro}</p>

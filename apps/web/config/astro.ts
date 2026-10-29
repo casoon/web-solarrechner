@@ -90,15 +90,32 @@ export function postAuditOptions(exclude: string[], knownRoutes: string[] = []) 
     progress: 'verbose',
     hints: { sourceFiles: true },
     contentStyle: true,
+    // Production gate: canonical, og:url, og:image and sitemap must use the `site` origin, no
+    // page may be noindex and no URL may point at a local host.
+    goLive: { enabled: true, forbiddenDomains: ['localhost', '127.0.0.1'] },
     rules: {
       filters: { exclude },
       canonical: { self_reference: true },
       opengraph: { require_og_image: true },
       a11y: { require_skip_link: true },
       structured_data: { check_json_ld: true },
+      // The dist-only production checks from the post-audit rollout guide.
+      structured_data_graph: { enabled: true },
+      i18n_audit: { enabled: true },
+      crawl_budget: { enabled: true },
+      render_blocking: { enabled: true },
+      privacy_security: { enabled: true },
       html_validation: { enabled: true },
       css_architecture: { enabled: true },
-      severity: { 'html/assertion.roles.unnecessary-list': 'off' },
+      severity: {
+        'html/assertion.roles.unnecessary-list': 'off',
+        // Outbound source links (PVGIS, Bundestag, GitHub …), not resources the page loads.
+        'privacy-security/third-party-domains': 'info',
+        // The validator ignores Astro's CSP hashes, style-src-attr and JSON-LD data blocks.
+        'html/csp.meta-enforcement': 'info',
+        // The site has no search, so there is no SearchAction to describe.
+        'structured-data/website-missing-search-action': 'off',
+      },
       content_quality: {
         detect_duplicate_titles: true,
         detect_duplicate_descriptions: true,
