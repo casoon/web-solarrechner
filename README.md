@@ -1,4 +1,4 @@
-# Solarrechner · CASOON
+# Solarrechner: Photovoltaik und Speicher, Stunde für Stunde durchgerechnet
 
 Wirtschaftlichkeitsrechner für Photovoltaik in Deutschland, gebaut als Demonstration von [Chartlet](https://github.com/casoon/chartlet), [Open Grid](https://github.com/casoon/opengrid) und [Lightweight PDF](https://github.com/casoon/lightweight-pdf) mit Astro und Svelte. Der Rechner vergleicht Balkonkraftwerk, reguläre Photovoltaik und dieselbe Anlage mit Speicher. Die Ergebnisse dienen einem überschlägigen Varianten- und Amortisationsvergleich.
 
