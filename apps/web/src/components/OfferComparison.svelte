@@ -52,14 +52,14 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
     <fieldset class="input-section">
       <legend><span class="step">1</span> Dein Haushalt</legend>
       <NumberField
-        label="Haushaltsstrom"
+        label="Strombedarf im Haushalt"
         bind:value={input.household}
         unit="kWh/Jahr"
         min={500}
         max={20000}
         step={100}
         slider
-        hint="Ohne E-Auto und Wärmepumpe. Verteilt über ein synthetisches Tagesprofil mit Spitzen morgens und abends."
+        hint="Was du im Jahr verbrauchst, ohne E-Auto und Wärmepumpe; nicht, was die Anlage erzeugen soll. Verteilt über ein synthetisches Tagesprofil mit Spitzen morgens und abends."
       />
       <label for="offer-cars">Elektroautos</label>
       <select id="offer-cars" bind:value={input.cars}>
@@ -94,7 +94,16 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
 
     <fieldset class="input-section">
       <legend><span class="step">2</span> Dach und Paket</legend>
-      <NumberField label="Anlagengröße" bind:value={input.kwp} unit="kWp" min={1} max={30} step={0.5} slider />
+      <NumberField
+        label="Anlagengröße"
+        bind:value={input.kwp}
+        unit="kWp"
+        min={1}
+        max={30}
+        step={0.5}
+        slider
+        hint="Den ganzen Bedarf deckt keine Anlage: Im Winter fehlt Sonne, im Sommer bleibt Überschuss. Eine große Anlage gleicht den Winter teilweise aus und speist im Sommer viel ein, eine kleine deckt weniger, wird aber besser genutzt."
+      />
       <NumberField label="Speicher" bind:value={input.battery} unit="kWh" max={30} step={0.5} slider />
       <NumberField
         label="Einspeisevergütung"
