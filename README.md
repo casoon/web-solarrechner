@@ -4,6 +4,14 @@ Wirtschaftlichkeitsrechner für Photovoltaik in Deutschland, gebaut als Demonstr
 
 Live: [solarrechner.casoon.de](https://solarrechner.casoon.de). [So rechnet der Solarrechner](https://solarrechner.casoon.de/de/rechenweg/) geht den Rechenweg an einem Beispiel durch, die [Projektseite](https://solarrechner.casoon.de/de/about/) nennt Quellen und Grenzen.
 
+<img src="docs/screens/energiefluss.webp" width="1479" height="1258" alt="Energiefluss als Sankey-Diagramm im Solarrechner: Solarpotenzial und Netzbezug links, Direktverbrauch, Speicher und Überschuss in der Mitte, Bedarf, Einspeisung und Verluste rechts, darunter Direkt-, Speicher- und Netzstrom in Kilowattstunden">
+
+<img src="docs/screens/ergebnis.webp" width="1419" height="932" alt="Ergebnisfeld des Solarrechners für das Beispiel Berlin mit 5-kWh-Speicher: Vorteil im ersten Betriebsjahr, Investition, Amortisation ab Jahr 15, Eigenversorgung 75 Prozent, Kapitalwert und interner Zinsfuß">
+
+<img src="docs/screens/deckung-heatmap.webp" width="1479" height="851" alt="Heatmap im Solarrechner: Anteil des Bedarfs, den Solarstrom und Speicher decken, nach Monat und Tageszeit in Prozent">
+
+*Aufnahmen der Live-App mit der Vorlage „PV-Überschussladen“ für Berlin (10115).*
+
 ## Funktionsumfang
 
 - Zwölf anpassbare Vorlagen: kleiner Steckersolar-Einstieg, angewinkelte Balkonmodule, Steckersolar im Homeoffice, Reihenhaus ohne Akku, tagsüber anwesendes Paar, Bungalow mit Flachdach, vierköpfige Familie, Pendlerauto am Abend, PV-Überschussladen, Familienhaus mit Auto/Wärmepumpe, großes Haus mit zwei Autos/Wärmepumpe und Altbau mit Elektro-Nachrüstung/Kredit. Die Auswahl setzt das Verbrauchs-/Anlagen-/Kostenprofil und die Neigung der Montageart; Standort, Himmelsrichtung, Inbetriebnahme, eigener Strompreis und Lastspitzen-Annahme bleiben erhalten.
