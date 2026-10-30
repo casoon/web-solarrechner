@@ -80,7 +80,7 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         unit="€/kWh"
         max={1}
         step={0.01}
-        hint="Fester Tarif ohne Grundpreis. Er ist die Messlatte für alle Modelle."
+        hint="Fester Tarif ohne Grundpreis, zum Beispiel ein Ökostromtarif. Er ist die Messlatte für alle Modelle."
       />
       <NumberField
         label="Preisänderung pro Jahr"
@@ -307,6 +307,12 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         günstige Stunden schieben. Ohne Anlage ändert das deine Rechnung im ersten Jahr um
         {dynamicYear <= 0 ? '−' : '+'}{currency(Math.abs(dynamicYear))}, Smart Meter und Grundgebühr
         eingerechnet. Mit Anlage zählt nur noch der Netzbezug von {number(result.energy.grid)} kWh.
+      </p>
+      <p>
+        <strong>Ökostrom ohne eigene Anlage:</strong>
+         Zum Festpreis kostet dich Strom über {applied.years} Jahre {currency(byKey.grid.total)}, ohne
+        Investition und ohne Risiko. Liegt kein Modell mit eigener Anlage deutlich darunter, erreichst
+        du mit einem guten Ökostromtarif ökologisch viel, ohne Geld zu binden.
       </p>
       <p>
         <strong>Dach überlassen:</strong>

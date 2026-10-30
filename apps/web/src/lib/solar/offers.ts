@@ -104,7 +104,7 @@ export type OfferKey =
   | 'contract';
 
 export const offerLabels: Record<OfferKey, string> = {
-  grid: 'Nur Netzstrom, Festpreis',
+  grid: 'Netzstrom, Festpreis (z. B. Ökostrom)',
   dynamic: 'Nur Netzstrom, dynamisch',
   buyLocal: 'Kauf beim Fachbetrieb',
   buyProvider: 'Kauf beim Komplettanbieter',
