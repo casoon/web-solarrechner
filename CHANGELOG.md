@@ -13,10 +13,19 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 - **Site-Dateien:** `/.well-known/security.txt` und `humans.txt`; `llms.txt` nennt jetzt auch Rechenweg, englische Projektseite und Quellcode.
 - **Build:** Die Prüfung nach dem Build (`astro-post-audit`) kontrolliert zusätzlich Go-live-Bedingungen (Herkunft von Canonical, Open Graph und Sitemap, kein `noindex`, keine lokalen Adressen), Sprachversionen, Crawl-Budget, Render-Blocking, Datenschutz und den JSON-LD-Graphen.
 - **SEO:** Startseite, Projektseite, `llms.txt` und strukturierte Daten beschreiben den Rechner als kostenloses, anbieterneutrales Werkzeug ohne Anmeldung und Paywall mit offengelegtem Rechenweg; der Website-Knoten im JSON-LD-Graphen trägt dafür Beschreibung, freien Zugang und Lizenz, `llms.txt` verlinkt die Anbieter-Modelle.
+- **Hintergrund:** Neues Menü in der Navigation mit drei Seiten zur Energieversorgung; die Erzeugungsdaten von SMARD und die Länderbilanzen werden mit `node apps/web/scripts/sync-energy-data.mjs` als Snapshot aktualisiert.
+- **Stromversorgung:** Neue Seite zeigt den Strommix seit 2015 nach Jahren und Monaten, eine Dunkelflaute-Woche, Netzengpässe, den Stand der Ausbauziele und als Gedankenexperiment den Strompreis je Bundesland aus eigener Erzeugung, wahlweise mit Umweltkosten und mit Endlagerkosten der Kernkraft beim Land oder bei der Allgemeinheit.
+- **Energie richtig zählen:** Neue Seite rechnet mit eigenen Annahmen vor, warum Wärmepumpe und Elektroauto fossile Energie nicht 1:1 ersetzen müssen, und nennt die Einwände, bei denen Strom nicht gewinnt.
+- **Stromsystem 2045:** Neues Szenario-Spiel rechnet Bedarf, Wind, Sonne, Speicher, Wasserstoff und Reserven für 2030, 2037 oder 2045 Stunde für Stunde mit dem Wetter von 2024 und prüft Versorgungsstandard und Klimaschutzgesetz; Szenarien lassen sich als Link teilen.
 - **Einordnung:** Rechenweg und Anbieter-Modelle erklären, wann sich eine eigene Anlage nicht rechnet und Ökostrom die bessere Wahl sein kann, und dass Geräteeigenheiten wie Speicherkühlung vernachlässigt werden; der Festpreis im Modellvergleich ist als möglicher Ökostromtarif gekennzeichnet.
+
+### Changed
+
+- **Anbieter-Modelle:** Die Einordnung ist kürzer und in Karten gegliedert; Vereinfachungen und Quellen stehen aufklappbar am Ende.
 
 ### Fixed
 
+- **Seiten:** Erklärseiten wie Rechenweg und Anbieter-Modelle laufen nicht mehr über die volle Fensterbreite, sondern in einer lesbaren Spalte; die Navigation bricht auf schmalen Bildschirmen um, statt seitlich überzustehen.
 - **Seiten:** Cloudflare fügt kein Skript zur Bot-Erkennung mehr in die Seiten ein, das die Content Security Policy blockierte und als Fehler in der Browser-Konsole stand. Der Worker liefert die HTML-Seiten dafür selbst komprimiert und als unveränderlich gekennzeichnet aus.
 
 ## [0.1.0] - 2026-10-29

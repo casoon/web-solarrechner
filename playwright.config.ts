@@ -11,7 +11,7 @@ export default defineConfig({
     {
       name: 'solar',
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:5159' },
-      testMatch: ['solar.spec.ts', 'anbieter.spec.ts'],
+      testMatch: ['solar.spec.ts', 'anbieter.spec.ts', 'energie.spec.ts'],
     },
   ],
   webServer: {

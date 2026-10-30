@@ -1,0 +1,121 @@
+---
+import EfficiencyComparison from '@/components/EfficiencyComparison.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+
+const levers = [
+  {
+    topic: 'Wärmepumpe und E-Auto',
+    figure: 'rund ⅓',
+    note: 'der Energie für denselben Nutzen; der größte Effizienzhebel',
+  },
+  {
+    topic: 'Netzausbau',
+    figure: '3,1 Mrd. €',
+    note: 'Engpasskosten 2025, über die Netzentgelte von allen bezahlt',
+  },
+  {
+    topic: 'Steuerbare Leistung',
+    figure: '22–36 GW',
+    note: 'zusätzlich bis 2035 laut Bundesnetzagentur',
+  },
+  {
+    topic: 'Abgeregelter Ökostrom',
+    figure: '0,43 Mrd. €',
+    note: 'Entschädigung 2025, kleiner als oft behauptet',
+  },
+  {
+    topic: 'Preisspitzen',
+    figure: '936 €/MWh',
+    note: 'in der Dunkelflaute im November 2024, kein Marktmissbrauch',
+  },
+  {
+    topic: 'Neue Kernkraftwerke',
+    figure: '13,6–49 ct/kWh',
+    note: 'Gestehungskosten ohne Endlagerung (Fraunhofer ISE)',
+  },
+];
+const sources = [
+  [
+    'AG Energiebilanzen: Energieverbrauch in Deutschland 2025 (Jahresbericht)',
+    'https://ag-energiebilanzen.de/wp-content/uploads/AGEB_Jahresbericht2025_20260828_dt.pdf',
+  ],
+  [
+    'Umweltbundesamt: Kraftwerke, konventionelle und erneuerbare Energieträger',
+    'https://www.umweltbundesamt.de/daten/energie/kraftwerke-konventionelle-erneuerbare',
+  ],
+  [
+    'Rödl & Partner: The primary energy fallacy (26.06.2025)',
+    'https://www.roedl.com/en/insights/the-primary-energy-fallacy/',
+  ],
+  [
+    'Deutscher Bundestag: Kosten des Netzengpassmanagements 2025 (hib 689/2026)',
+    'https://www.bundestag.de/presse/hib/kurzmeldungen-1210750',
+  ],
+  [
+    'Clean Thinking: Faktencheck Redispatch (04.03.2026)',
+    'https://www.cleanthinking.de/faktencheck-redispatch-drei-milliarden/',
+  ],
+  [
+    'Bundesnetzagentur: Bericht zur Versorgungssicherheit Strom (03.09.2025)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/EN/2025/20250903_Versorgungsmonitoring.html',
+  ],
+  [
+    'Bundesnetzagentur und Bundeskartellamt: Preisspitzen in den Dunkelflauten 2024 (21.10.2025)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2025/20251021_Preisspitzen.html',
+  ],
+  [
+    'Fraunhofer ISE: Stromgestehungskosten Erneuerbare Energien (07/2024)',
+    'https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html',
+  ],
+];
+---
+<SolarLayout title="Energie richtig zählen – warum Strom fossile Energie nicht 1:1 ersetzen muss" description="Kohle, Gas und Benzin verlieren den größten Teil ihrer Energie als Abwärme. Wie viel Strom Heizung und Auto wirklich brauchen, wie die Statistik zählt und wo Elektrifizierung nicht gewinnt.">
+  <div class="page-intro"><div><h1>Energie richtig zählen</h1><p>„Erneuerbare decken nur ein Fünftel unseres Energiebedarfs, also müssten wir sie verfünffachen.“ Der Satz klingt logisch und ist trotzdem falsch. Hier steht, warum, mit einer Rechnung zum Mitmachen und den Einwänden, die berechtigt sind.</p></div><ul class="intro-facts"><li><strong>Primär-, End- und Nutzenergie</strong><span>Was die Statistik zählt</span></li><li><strong>Alle Annahmen veränderbar</strong><span>Rechnung läuft im Browser</span></li><li><a href="#gegenseite">Wo Strom nicht gewinnt</a></li></ul></div>
+
+  <article class="method-page">
+    <section>
+      <h2>Der Denkfehler</h2>
+      <p class="lead">Die Statistik zählt Kohle, Gas und Benzin mit allem, was verbrannt wird, Wind und Sonne nur mit ihrem Strom.</p>
+      <ul class="cards">
+        <li><span class="figure">10.500 PJ</span><p>Primärenergie 2025, davon 20,8 % erneuerbar</p></li>
+        <li><span class="figure">2,6 kWh Kohle</span><p>für 1 kWh Strom; der Rest geht als Abwärme in den Kühlturm</p></li>
+        <li><span class="figure">1 kWh Wind</span><p>zählt als 1 kWh Primärenergie und ersetzt trotzdem die ganze Kohle</p></li>
+      </ul>
+      <p>Deshalb sinkt der Primärenergieverbrauch mit jedem Windrad, ohne dass jemand verzichtet, und der Anteil der Erneuerbaren daran wirkt kleiner, als er für die Versorgung ist. Englisch heißt das <em>primary energy fallacy</em>.</p>
+    </section>
+  </article>
+
+  <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. Die Erklärungen auf dieser Seite sind auch ohne JavaScript lesbar.</p></noscript>
+  <EfficiencyComparison client:load />
+
+  <article class="method-page">
+    <section id="gegenseite">
+      <h2>Wo Strom nicht eins zu eins gewinnt</h2>
+      <p>Übers Jahr stimmt die Rechnung. Für jede einzelne Stunde reicht sie nicht:</p>
+      <ul class="cards">
+        <li><span class="tag">Zeitpunkt</span><p>Wärmepumpen brauchen Strom im Winter, wenn wenig Sonne kommt und der Wind tagelang ausbleiben kann.</p></li>
+        <li><span class="tag">Speichern</span><p>Batterien geben rund 90 % zurück, der Umweg über Wasserstoff nur ein Drittel bis zwei Fünftel.</p></li>
+        <li><span class="tag">Leistung</span><p>Windstrom ersetzt die Energie eines Kohlekraftwerks, nicht seine Verfügbarkeit auf Abruf.</p></li>
+        <li><span class="tag">Netz</span><p>Abgeregelter Ökostrom ist erzeugbar, aber nicht genutzt; anderswo läuft dann ein fossiles Kraftwerk.</p></li>
+      </ul>
+      <p>Wie groß das wird, wenn Bedarf und Ausbau wachsen, zeigt das <a href="/de/stromsystem-2045/">Szenario-Spiel</a> Stunde für Stunde.</p>
+    </section>
+
+    <section>
+      <h2>Was bewegt etwas?</h2>
+      <p>Größenordnungen aus amtlichen Quellen und Studien: welche Debatte um Milliarden und Gigawatt geht und welche um Kleingeld.</p>
+      <ul class="cards">
+        {levers.map((l) => <li><span class="tag">{l.topic}</span><span class="figure">{l.figure}</span><p>{l.note}</p></li>)}
+      </ul>
+    </section>
+
+    <details class="more">
+      <summary>Was die Rechnung vereinfacht</summary>
+      <p>Gezählt wird der Brennstoff am Kraftwerk, Kessel oder Tank und der Strom an der Steckdose. Förderung, Raffinerie und Transport fehlen, ebenso die Herstellung von Anlagen und Fahrzeugen. Die Standardwerte sind typische Größenordnungen; für dein eigenes Haus mit Solaranlage rechnet der <a href="/">Solarrechner</a>.</p>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
+  </article>
+</SolarLayout>

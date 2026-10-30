@@ -82,56 +82,63 @@ const sources = [
   <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. Die Einordnung der Modelle weiter unten ist auch ohne JavaScript lesbar.</p></noscript>
   <OfferComparison client:load />
 
-  <article class="method-page mx-auto max-w-3xl px-6 py-12" id="konzepte">
-    <h2 class="mb-4 text-3xl font-extrabold tracking-tight">Die Modelle im Überblick</h2>
-    <p class="mb-8 leading-relaxed">Alle Modelle bringen Solarstrom aufs Dach. Sie unterscheiden sich darin, wem die Anlage gehört, wer das Risiko trägt und wie lange du gebunden bist.</p>
-    {models.map((m) => (
-      <section class="mb-8">
-        <h3 class="mb-2 text-xl font-bold">{m.name}</h3>
-        <p class="mb-3 leading-relaxed">{m.how}</p>
-        <dl class="method-list">
-          <div><dt>Vorteile</dt><dd>{m.pro}</dd></div>
-          <div><dt>Nachteile</dt><dd>{m.contra}</dd></div>
-          <div><dt>Interessant für</dt><dd>{m.fit}</dd></div>
-        </dl>
-      </section>
-    ))}
-
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">Dynamische Stromtarife: was sie bringen</h2>
-      <p class="mb-4 leading-relaxed">Seit 2025 muss jeder Stromlieferant einen dynamischen Tarif anbieten (§ 41a EnWG). Der Preis folgt dann stündlich, seit Oktober 2025 viertelstündlich, der Strombörse. Voraussetzung ist ein intelligentes Messsystem. Mit Photovoltaik über 7 kW ist es ohnehin Pflicht; freiwillig kostet es bis zu 30 € im Jahr, mit Photovoltaik bis 15 kW bis zu 50 €.</p>
-      <p class="mb-4 leading-relaxed">Nur der Börsenanteil schwankt. Netzentgelte, Steuern und Abgaben machen laut BDEW rund zwei Drittel des Haushaltspreises von 37 ct/kWh aus und bleiben fest. Der Börsenpreis lag 2025 im Mittel bei 8,9 ct/kWh, in 573 Stunden war er negativ. Wer Verbrauch in solche Stunden schiebt, spart; wer zu teuren Abendstunden Strom bezieht, zahlt drauf.</p>
-      <p class="mb-4 leading-relaxed">Eine Studie (Preisdaten 09/2024–08/2025) kommt für Haushalte ohne steuerbare Geräte auf 1 bis 4 % Ersparnis, für ein gesteuert geladenes E-Auto auf rund 31 %, für eine Wärmepumpe auf 7 %, mit zeitvariablen Netzentgelten nach § 14a auf 26 bis 28 %. Die Verbraucherzentrale hält dynamische Tarife für normale Haushalte meist nicht für lohnend.</p>
-      <p class="leading-relaxed">Im Rechner oben steckt das in drei Annahmen: wie viel jeder Verbraucher verschieben kann, wie viel eine verschobene Kilowattstunde spart und was Smart Meter und Grundgebühr zusätzlich kosten. Das ist eine Vereinfachung ohne echte Börsenpreise; die Werte für die Ersparnis je kWh sind eigene Annahmen, keine Messung.</p>
-    </section>
-
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">Kritik an den Paketen</h2>
-      <ul class="mb-4 list-disc space-y-2 pl-6 leading-relaxed">
-        <li><strong>Gesamtkosten der Miete.</strong> Die Verbraucherzentrale hält Miete meist für teurer als Kauf; Ersparnisse zeigten sich oft erst gegen Ende der Laufzeit. Manche Anbieterrechnungen setzen Strompreissteigerungen an, die zwei- bis dreimal über den üblichen 2 bis 3 % im Jahr liegen. Der Rechner zeigt, welchem Kreditzins die Miete entspricht.</li>
-        <li><strong>Lock-in.</strong> Paket-Tarife gibt es teils nur zusammen mit Anlage, Speicher, Messstellenbetrieb und Energiemanager desselben Anbieters; beworbene Arbeitspreise enthalten mitunter schon Rabatte auf Netzentgelte und liegen effektiv deutlich höher. Werbeversprechen wie „bis zu 80 % weniger Stromkosten“ beziehen sich auf günstige Einzelfälle.</li>
-        <li><strong>Anbieterrisiko.</strong> Seit 2025 sind mehrere Komplettanbieter in Insolvenz oder Eigenverwaltung gegangen, andere haben ihre Mietanlagen an Investoren verkauft. Bei 20 Jahren Laufzeit ist der Vertragspartner von heute nicht unbedingt der von morgen.</li>
-        <li><strong>Solarspitzengesetz.</strong> Für neue Anlagen gibt es in Stunden mit negativen Börsenpreisen keine Vergütung, ohne Smart Meter dürfen sie nur 60 % ihrer Leistung einspeisen. Das macht Speicher und Steuerung wertvoller – und ist zugleich das wichtigste Verkaufsargument der Pakete.</li>
+  <article class="method-page" id="konzepte">
+    <section>
+      <h2>Die Modelle im Überblick</h2>
+      <p class="lead">Alle bringen Solarstrom aufs Dach. Sie unterscheiden sich darin, wem die Anlage gehört, wer das Risiko trägt und wie lange du gebunden bist.</p>
+      <ul class="cards model-cards">
+        {models.map((m) => (
+          <li>
+            <h3>{m.name}</h3>
+            <p>{m.how}</p>
+            <dl>
+              <div><dt>Plus</dt><dd>{m.pro}</dd></div>
+              <div><dt>Minus</dt><dd>{m.contra}</dd></div>
+              <div><dt>Für</dt><dd>{m.fit}</dd></div>
+            </dl>
+          </li>
+        ))}
       </ul>
-      <p class="leading-relaxed">Für die Pakete spricht: kein Kapitaleinsatz, Service und Gerätetausch aus einer Hand, und eine Steuerung, die Auto, Wärmepumpe und Speicher tatsächlich nach Preisen fährt. Ob das den Aufpreis wert ist, hängt fast nur davon ab, wie viel Verbrauch sich verschieben lässt.</p>
     </section>
 
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">Ökostrom statt eigener Anlage</h2>
-      <p class="mb-4 leading-relaxed">Die erste Zeile im Vergleich, Netzstrom zum Festpreis, ist mehr als eine Messlatte. Rechnet sich keines der Modelle innerhalb der Lebensdauer einer Anlage, etwa bei geringem Verbrauch, einem ungünstigen Dach oder einem Bedarf vor allem im Winter, ist ein Ökostromtarif oft die nüchternere Wahl. Wind- und Solarparks erzeugen Strom in großen Mengen günstiger als ein einzelnes Hausdach; der Tarif lenkt den eigenen Verbrauch dorthin, ohne Investition und ohne Bindung über 20 Jahre.</p>
-      <p class="leading-relaxed">Ökostrom ist allerdings nicht gleich Ökostrom. Labels wie „Grüner Strom“ oder „ok-power“ verlangen, dass der Anbieter den Ausbau neuer Anlagen fördert. Viele günstige Tarife kaufen dagegen nur Herkunftsnachweise bestehender Wasserkraftwerke, was am Strommix wenig ändert. Den Preis eines solchen Tarifs trägst du oben als Arbeitspreis ein.</p>
+    <section>
+      <h2>Dynamische Stromtarife: was sie bringen</h2>
+      <p class="lead">Seit 2025 muss jeder Lieferant einen anbieten (§ 41a EnWG). Der Preis folgt viertelstündlich der Börse; nötig ist ein Smart Meter, freiwillig für bis zu 30 € im Jahr.</p>
+      <ul class="cards">
+        <li><span class="figure">⅔ fest</span><p>Netzentgelte, Steuern und Abgaben am Haushaltspreis von 37 ct/kWh (BDEW)</p></li>
+        <li><span class="figure">8,9 ct/kWh</span><p>mittlerer Börsenpreis 2025, in 573 Stunden negativ</p></li>
+        <li><span class="figure">1–4 %</span><p>Ersparnis ohne steuerbare Geräte (Studie, 10/2025)</p></li>
+        <li><span class="figure">rund 31 %</span><p>mit gesteuert geladenem E-Auto, Wärmepumpe 7 %</p></li>
+      </ul>
+      <p>Die Verbraucherzentrale hält dynamische Tarife für normale Haushalte meist nicht für lohnend. Im Rechner stecken sie in drei eigenen Annahmen: verschiebbarer Anteil, Ersparnis je verschobener kWh, Zusatzkosten.</p>
     </section>
 
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">Was das Modell vereinfacht</h2>
-      <p class="mb-4 leading-relaxed">Alle Modelle nutzen dieselbe stündliche Energiebilanz wie der Rechner, mit Berliner Sonnendaten (35° Süd), synthetischem Verbrauchsprofil und einem Exportlimit von 60 %. Für Kauf und Miete gilt dieselbe Anlage. Ein Restwert am Ende, Steuern, Förderung, Laden des Speichers aus dem Netz und zeitvariable Netzentgelte sind nicht enthalten. Pacht, Mietrate, Aufschlag des Komplettanbieters und die Tarifannahmen sind Größenordnungen aus den Quellen unten oder eigene Annahmen, keine Angebotspreise. Eigenheiten einzelner Geräte wie Speicherkühlung oder Klimageräte im Sommer bleiben außen vor: Es geht um die Größenordnung, nicht um die letzte Kilowattstunde.</p>
-      <p class="leading-relaxed">Für deine eigene Anlage mit Ort, Ausrichtung, Kosten und Vergütungsregeln nutze den <a href="/">Rechner</a>; wie er rechnet, steht im <a href="/de/rechenweg/">Rechenweg</a>.</p>
+    <section>
+      <h2>Kritik an den Paketen</h2>
+      <ul class="cards">
+        <li><span class="tag">Gesamtkosten</span><p>Miete ist laut Verbraucherzentrale meist teurer als Kauf; manche Anbieter rechnen mit zwei- bis dreimal so hohen Strompreissteigerungen wie üblich. Der Rechner zeigt den Kreditzins, dem die Miete entspricht.</p></li>
+        <li><span class="tag">Lock-in</span><p>Paket-Tarife gibt es teils nur zusammen mit Anlage, Messstelle und Energiemanager desselben Anbieters. Beworbene Arbeitspreise enthalten mitunter schon Rabatte auf Netzentgelte und liegen effektiv deutlich höher.</p></li>
+        <li><span class="tag">Anbieterrisiko</span><p>Seit 2025 sind mehrere Komplettanbieter in Insolvenz oder Eigenverwaltung gegangen, andere haben ihre Mietanlagen an Investoren verkauft. Über 20 Jahre ist der Vertragspartner von heute nicht sicher der von morgen.</p></li>
+        <li><span class="tag">Solarspitzengesetz</span><p>Keine Vergütung bei negativen Preisen, ohne Smart Meter nur 60 % Einspeisung. Das macht Steuerung wertvoller und ist das wichtigste Verkaufsargument der Pakete.</p></li>
+      </ul>
+      <p>Dafür sprechen: kein Kapital, Service aus einer Hand und eine Steuerung, die Auto, Wärmepumpe und Speicher wirklich nach Preisen fährt. Ob sich der Aufpreis lohnt, hängt fast nur davon ab, wie viel Verbrauch sich verschieben lässt.</p>
     </section>
 
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">Quellen</h2>
-      <p class="mb-4 leading-relaxed">Abgerufen am 30.10.2026. Mietraten, Übernahmepreis und Dachpacht stammen aus Ratgeber- und Anbieterangaben und sind nicht amtlich belegt.</p>
-      <ul class="list-disc space-y-1 pl-6">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    <section>
+      <aside class="energy-note">
+        <h3>Ökostrom statt eigener Anlage</h3>
+        <p>Rechnet sich keines der Modelle, etwa bei wenig Verbrauch, ungünstigem Dach oder Bedarf vor allem im Winter, ist ein Ökostromtarif oft die nüchternere Wahl: ohne Investition und ohne 20 Jahre Bindung. Achte auf Labels wie „Grüner Strom“ oder „ok-power“, die den Ausbau neuer Anlagen verlangen. Den Tarifpreis trägst du oben als Arbeitspreis ein.</p>
+      </aside>
     </section>
+
+    <details class="more">
+      <summary>Was das Modell vereinfacht</summary>
+      <p>Alle Modelle nutzen die stündliche Energiebilanz des Rechners mit Berliner Sonnendaten (35° Süd), synthetischem Verbrauchsprofil und 60 % Exportlimit; Kauf und Miete dieselbe Anlage. Restwert, Steuern, Förderung, Netzladen des Speichers und zeitvariable Netzentgelte fehlen, ebenso Geräteeigenheiten wie Speicherkühlung. Pacht, Mietrate, Anbieteraufschlag und Tarifannahmen sind Größenordnungen, keine Angebotspreise. Für deine eigene Anlage nutze den <a href="/">Rechner</a> und den <a href="/de/rechenweg/">Rechenweg</a>.</p>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <p>Abgerufen am 30.10.2026. Mietraten, Übernahmepreis und Dachpacht stammen aus Ratgeber- und Anbieterangaben und sind nicht amtlich belegt.</p>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
   </article>
 </SolarLayout>

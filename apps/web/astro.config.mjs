@@ -49,6 +49,19 @@ export default defineConfig({
               { title: 'Solarrechner', url: '/' },
               { title: 'Anbieter-Modelle: kaufen, mieten, Dach verpachten', url: '/de/anbieter/' },
               { title: 'So rechnet der Solarrechner', url: '/de/rechenweg/' },
+              {
+                title: 'Stromversorgung in Deutschland: Strommix, Dunkelflaute, Netz, Länder',
+                url: '/de/stromversorgung/',
+              },
+              {
+                title:
+                  'Energie richtig zählen: warum Strom fossile Energie nicht 1:1 ersetzen muss',
+                url: '/de/energie-zaehlen/',
+              },
+              {
+                title: 'Stromsystem 2045: Szenario-Spiel zu Bedarf, Speicher und Klimaziel',
+                url: '/de/stromsystem-2045/',
+              },
               { title: 'Datenquellen und Grenzen', url: '/de/about/' },
               { title: 'About this project (English)', url: '/about/' },
             ],

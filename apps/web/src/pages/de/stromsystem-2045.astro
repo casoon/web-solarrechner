@@ -1,0 +1,99 @@
+---
+import SystemGame from '@/components/SystemGame.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import { co2Limit, facts } from '@/lib/energy/game';
+import { number } from '@/lib/solar/format';
+
+const limits = ([2030, 2037, 2045] as const).map((y) => ({ year: y, limit: co2Limit(y) }));
+const sources = [
+  [
+    'Bundesnetzagentur | SMARD.de: Netzlast und Erzeugung 2024, stündlich (CC BY 4.0)',
+    'https://www.smard.de/home/downloadcenter/download-marktdaten/',
+  ],
+  [
+    'Bundes-Klimaschutzgesetz, § 3 und Anlage 2: Ziele und Jahresemissionsmengen',
+    'https://www.gesetze-im-internet.de/ksg/',
+  ],
+  [
+    'Umweltbundesamt: Emissionsübersichten KSG-Sektoren 1990–2025',
+    'https://www.umweltbundesamt.de/system/files/document/Emissions%C3%BCbersichten%20KSG-Sektoren%201990-2025.xlsx',
+  ],
+  [
+    'Umweltbundesamt: Entwicklung der spezifischen Treibhausgas-Emissionen des deutschen Strommix 1990–2025 (Climate Change 16/2026)',
+    'https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf',
+  ],
+  [
+    '§ 4 Kohleverstromungsbeendigungsgesetz: Zielniveau 2030 und 2038',
+    'https://www.gesetze-im-internet.de/kvbg/__4.html',
+  ],
+  [
+    'Bundeswirtschaftsministerium: Versorgungssicherheit Strom, Bericht 2025',
+    'https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Publikationen/Energie/versorgungssicherheit-strom-bericht-2025.pdf',
+  ],
+  [
+    'Übertragungsnetzbetreiber: Netzentwicklungsplan Strom 2037/2045 (2025)',
+    'https://www.netzentwicklungsplan.de/',
+  ],
+  ['§ 4 EEG 2023: Ausbaupfad', 'https://www.gesetze-im-internet.de/eeg_2014/__4.html'],
+  [
+    '§ 1 WindSeeG: Ausbauziele Wind auf See',
+    'https://www.gesetze-im-internet.de/windseeg/__1.html',
+  ],
+  [
+    'Bundesnetzagentur: Ausbau Erneuerbarer Energien 2025 (08.01.2026)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2026/20260108_EEG.html',
+  ],
+  [
+    'Fachagentur Wind und Solar: Status des Windenergieausbaus an Land 2025',
+    'https://www.fachagentur-wind-solar.de/fileadmin/Veroeffentlichungen/Wind/Analysen/FA_Wind_Solar_Status_des_Windenergieausbaus_an_Land_Jahr_2025.pdf',
+  ],
+  [
+    'Sachverständigenrat für Umweltfragen: CO₂-Budget, Stellungnahme an das Bundesverfassungsgericht (15.10.2025)',
+    'https://idw-online.de/de/attachmentdata111147',
+  ],
+  [
+    'Bundeswirtschaftsministerium: FAQ Stromspeicher-Strategie (Pumpspeicher)',
+    'https://www.bundeswirtschaftsministerium.de/Redaktion/DE/FAQ/Stromspeicher-Strategie/faq-stromspeicher-strategie.html',
+  ],
+];
+---
+<SolarLayout title="Stromsystem 2045 – das Szenario-Spiel zu Bedarf, Speicher und Klimaziel" description="Stell das deutsche Stromsystem für 2030, 2037 oder 2045 selbst ein: Bedarf, Wind, Sonne, Speicher, Wasserstoff und Reserven, Stunde für Stunde mit echtem Wetter. Hält es die Versorgung und das Klimaziel?">
+  <div class="page-intro"><div><h1>Stromsystem 2045: schaffst du es?</h1><p>Wärmepumpen, Elektroautos und Industrie brauchen mehr Strom, das Klimaschutzgesetz erlaubt immer weniger CO₂. Stell Erzeugung, Speicher und Reserven ein und rechne ein ganzes Jahr Stunde für Stunde durch, mit dem Wetter von 2024 und seiner Dunkelflaute.</p></div><ul class="intro-facts"><li><strong>8.784 Stunden</strong><span>Echtes Wetter 2024, skaliert</span></li><li><strong>Zwei harte Bedingungen</strong><span>Versorgung und Klimaziel</span></li><li><a href="#regeln">Spielregeln und Grenzen</a></li></ul></div>
+
+  <noscript><p class="error">Das Szenario-Spiel braucht JavaScript. Die Regeln und Quellen unten sind auch ohne lesbar.</p></noscript>
+  <SystemGame client:load />
+
+  <article class="method-page">
+    <section id="regeln">
+      <h2>Die Spielregeln</h2>
+      <p class="lead">Gewonnen hat, wer zwei harte Bedingungen erfüllt. Drei weitere sind Warnungen: auf dem Papier machbar, in der Wirklichkeit schwer.</p>
+      <ul class="cards">
+        <li><span class="tag">Versorgung</span><span class="figure">≤ {number(facts.lole, 2)} h</span><p>im Jahr ohne genug Strom; der deutsche Zuverlässigkeitsstandard</p></li>
+        <li><span class="tag">Klimaziel</span><span class="figure">{limits.map((l) => number(l.limit, 0)).join(' · ')} Mt</span><p>CO₂ aus Kraftwerken in {limits.map((l) => l.year).join(', ')}, abgeleitet aus dem Klimaschutzgesetz</p></li>
+        <li><span class="tag">Warnungen</span><p>Ausbautempo über dem bisherigen Rekord, Importanteil über 15 %, Bedarf außerhalb des Netzentwicklungsplans</p></li>
+      </ul>
+      <p>Die Energiewirtschaft darf 2030 noch {number(facts.sectorLimit2030)} Mio. t ausstoßen; auf Kraftwerke entfällt ihr Anteil von 2025 (rund {number(facts.power2025)} von {number(facts.sector2025, 1)} Mio. t). Danach gilt eine gerade Linie bis zur Klimaneutralität 2045.</p>
+      <aside class="energy-note">
+        <h3>Und das 1,5-Grad-Ziel?</h3>
+        <p>Laut Sachverständigenrat für Umweltfragen ist Deutschlands Budget dafür aufgebraucht; dieses Spiel lässt sich nicht mehr gewinnen. Für 1,75 Grad blieben ab 2025 rund 2,5 Mrd. t CO₂ für alle Sektoren, linear verbraucht bis 2033.</p>
+      </aside>
+    </section>
+
+    <details class="more">
+      <summary>Wie gerechnet wird und was fehlt</summary>
+      <ul class="bullets">
+        <li><strong>Wetter 2024</strong>, Stunde für Stunde auf die eingestellte Leistung hochgerechnet. Ein anderes Jahr kann besser oder schlechter ausfallen.</li>
+        <li><strong>Bedarf</strong> wie die Netzlast 2024; Wärmepumpen nach einer vereinfachten Monatsverteilung, alles Neue sonst gleichmäßig. Gesteuertes Laden und flexible Industrie, die entlasten würden, fehlen.</li>
+        <li><strong>Reihenfolge:</strong> Überschuss geht in Speicher, Elektrolyse, Export, sonst wird abgeregelt. Bei Mangel liefern Speicher, Wasserstoff, Import, Erdgas, zuletzt Kohle. Das ist die klimafreundlichste Reihenfolge, nicht die des Marktes.</li>
+        <li><strong>Kupferplatte:</strong> keine Netzengpässe innerhalb Deutschlands.</li>
+        <li><strong>Wirkungsgrade:</strong> Speicher 90 %, Elektrolyse 65 %, Wasserstoffkraftwerk 55 %.</li>
+        <li><strong>CO₂:</strong> {number(facts.factors.gas, 2)} t/MWh aus Erdgas, {number(facts.factors.coal, 2)} t aus Kohle (Mix des Kohleausstiegs 2030). Importe zählen hier mit null.</li>
+        <li><strong>Vorgaben:</strong> Sonne und Wind nach den gesetzlichen Zielen, alles andere eigene Annahmen, die knapp aufgehen. Keine Prognose; den heutigen Stand zeigt <a href="/de/stromversorgung/">Stromversorgung</a>.</li>
+      </ul>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
+  </article>
+</SolarLayout>

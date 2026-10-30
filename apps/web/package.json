@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "type-check": "wrangler types && astro check",
     "clean": "rm -rf dist .astro node_modules/.vite",
-    "test:solar": "node --import tsx --test src/lib/solar/*.test.ts",
+    "test:solar": "node --import tsx --test src/lib/solar/*.test.ts src/lib/energy/*.test.ts",
     "test:unit": "node --import tsx --test config/*.test.ts src/env.test.ts"
   },
   "dependencies": {

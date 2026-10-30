@@ -1045,3 +1045,222 @@ label.text-button:focus-within {
     gap: 0.25rem;
   }
 }
+.nav-menu {
+  position: relative;
+}
+.nav-menu summary {
+  padding-block: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-menu summary.current {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+.nav-menu > div {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 30;
+  display: grid;
+  min-width: 220px;
+  padding: 6px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(24 59 50 / 12%);
+}
+.nav-menu > div a {
+  padding-block: 10px;
+}
+.energy-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.energy-figures div {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.energy-figures dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.energy-figures dd {
+  margin: 4px 0 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.energy-note {
+  padding: 18px 20px;
+  border-left: 4px solid var(--accent);
+  background: #fff;
+}
+.energy-note h3 {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.energy-note p {
+  margin: 0;
+}
+.target-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.target-list li {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 150px;
+  align-items: center;
+  gap: 12px;
+}
+.target-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: #e6e9e1;
+  overflow: hidden;
+}
+.target-bar span {
+  display: block;
+  height: 100%;
+  background: #4f9a94;
+}
+@media (max-width: 760px) {
+  .target-list li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .nav-menu > div {
+    right: auto;
+    left: 0;
+  }
+}
+/* Explanatory pages: readable column, short sections, cards instead of long paragraphs. */
+.method-page {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 48px 24px;
+}
+.method-page.wide {
+  max-width: 1040px;
+}
+.method-page > section,
+.method-page > div > section {
+  margin-bottom: 52px;
+}
+.method-page h2 {
+  margin-bottom: 12px;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.method-page h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.method-page p {
+  margin-bottom: 14px;
+  max-width: 68ch;
+}
+.method-page .lead {
+  font-size: 1.08rem;
+  color: var(--muted);
+}
+.method-page ul.bullets {
+  display: grid;
+  gap: 8px;
+  max-width: 68ch;
+  margin: 0 0 14px;
+  padding-left: 1.2rem;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin: 18px 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.cards > li {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.cards > li p {
+  margin: 0;
+  color: var(--muted);
+}
+.cards .figure {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cards .tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #f4e7bd;
+  font-size: 12px;
+  font-weight: 600;
+}
+.method-page details.more {
+  margin: 0 0 18px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.method-page details.more > summary {
+  font-size: 15px;
+}
+.method-page .source-list {
+  display: grid;
+  gap: 4px;
+  padding-left: 1.2rem;
+  font-size: 14px;
+}
+.method-page.flush {
+  padding-bottom: 0;
+}
+@media (max-width: 760px) {
+  .site-header nav {
+    flex-wrap: wrap;
+    column-gap: 14px;
+  }
+  .method-page {
+    padding: 36px 18px;
+  }
+}
+.model-cards {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.cards.model-cards > li > p {
+  margin-bottom: 12px;
+}
+.model-cards dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.model-cards dl > div {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr;
+  gap: 8px;
+}
+.model-cards dt {
+  font-weight: 700;
+}
+.model-cards dd {
+  margin: 0;
+}

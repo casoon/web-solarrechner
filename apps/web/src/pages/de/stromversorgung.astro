@@ -1,0 +1,206 @@
+---
+import SolarChart from '@/components/SolarChart.svelte';
+import SolarTable from '@/components/SolarTable.svelte';
+import StatePrices from '@/components/StatePrices.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import {
+  keyFigures,
+  lullFigures,
+  lullSpec,
+  monthlySpec,
+  monthName,
+  smard,
+  yearlyRows,
+  yearlySpec,
+} from '@/lib/energy/overview';
+import { number } from '@/lib/solar/format';
+
+const k = keyFigures();
+const lull = lullFigures();
+const pct = (n: number) => `${number(n, 1)} %`;
+const fetched = new Date(smard.fetched).toLocaleDateString('de-DE', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+const targets = [
+  { label: 'Photovoltaik', now: 117, target: 215 },
+  { label: 'Wind an Land', now: 68.1, target: 115 },
+  { label: 'Wind auf See', now: 9.5, target: 30 },
+];
+const sources = [
+  [
+    'Bundesnetzagentur | SMARD.de: Marktdaten (CC BY 4.0)',
+    'https://www.smard.de/home/downloadcenter/download-marktdaten/',
+  ],
+  [
+    'Länderarbeitskreis Energiebilanzen: Bruttostromerzeugung und Endenergieverbrauch nach Ländern',
+    'https://www.lak-energiebilanzen.de/energiebilanzen/',
+  ],
+  [
+    'Fraunhofer ISE: Öffentliche Stromerzeugung 2025 (02.01.2026)',
+    'https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2026/oeffentliche-stromerzeugung-2025-wind-und-solar-erstmals-als-doppelspitze.html',
+  ],
+  [
+    'Bundesnetzagentur: Strommarktdaten 2025 (05.01.2026)',
+    'https://bundesnetzagentur.de/SharedDocs/Pressemitteilungen/EN/2026/20260104_SMARD.html',
+  ],
+  [
+    'Bundesnetzagentur und Bundeskartellamt: Preisspitzen in den Dunkelflauten 2024 (21.10.2025)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2025/20251021_Preisspitzen.html',
+  ],
+  [
+    'Bundesnetzagentur: Bericht zur Versorgungssicherheit Strom (03.09.2025)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/EN/2025/20250903_Versorgungsmonitoring.html',
+  ],
+  [
+    'Deutscher Bundestag: Kosten des Netzengpassmanagements 2025 (hib 689/2026)',
+    'https://www.bundestag.de/presse/hib/kurzmeldungen-1210750',
+  ],
+  [
+    'Bundesnetzagentur: Verteilung der Netzkosten in Regionen mit viel erneuerbarer Erzeugung (30.08.2024)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2024/20240830_Netzkosten.html',
+  ],
+  [
+    '§ 24c EnWG: Zuschuss zu den Übertragungsnetzkosten 2026',
+    'https://www.gesetze-im-internet.de/enwg_2005/__24c.html',
+  ],
+  [
+    'Bundeswirtschaftsministerium: Erhalt der einheitlichen Stromgebotszone (15.12.2025)',
+    'https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Pressemitteilungen/2025/12/20251215-erhalt-der-einheitlichen-stromgebotszone.html',
+  ],
+  [
+    'Science Media Center: Fact Sheet Strompreiszonen (22.04.2025)',
+    'https://media.sciencemediacenter.de/stories/67c0418ad91c0335178d7abd/Strompreiszone_SMC_Fact_Sheet_2025-04-22.pdf',
+  ],
+  [
+    'Bundesnetzagentur: Ausbau Erneuerbarer Energien 2025 (08.01.2026)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2026/20260108_EEG.html',
+  ],
+  [
+    'AG Energiebilanzen: Bruttostromverbrauch 2024 und 2025 (02/2026)',
+    'https://ag-energiebilanzen.de/wp-content/uploads/Abgabe-2026-02.pdf',
+  ],
+  [
+    'BDEW: Strompreisanalyse',
+    'https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/',
+  ],
+  ['§ 4 EEG 2023: Ausbaupfad', 'https://www.gesetze-im-internet.de/eeg_2014/__4.html'],
+  [
+    '§ 1 WindSeeG: Ausbauziele Wind auf See',
+    'https://www.gesetze-im-internet.de/windseeg/__1.html',
+  ],
+  [
+    'Fraunhofer ISE: Stromgestehungskosten Erneuerbare Energien (07/2024)',
+    'https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html',
+  ],
+  [
+    'Umweltbundesamt: Methodenkonvention 4.0, Kostensätze (2026)',
+    'https://www.umweltbundesamt.de/system/files/medien/14437/publikationen/2026-10/MK_4_0_Kostens%C3%A4tze_final2.pdf',
+  ],
+  [
+    'Bundesumweltministerium: Bericht über Kosten und Finanzierung der Entsorgung (22.12.2025)',
+    'https://www.bundesumweltministerium.de/fileadmin/Daten_BMU/Download_PDF/Nukleare_Sicherheit/kostenbericht_nukleare_entsorgung_deutschland_2025_de.pdf',
+  ],
+  ['Kerntechnik Deutschland: 5.560 Mrd. kWh Kernstrom 1961–2021', 'https://www.kernd.de/'],
+];
+---
+<SolarLayout title="Stromversorgung in Deutschland – Strommix, Dunkelflaute, Netz und Länder" description="Wie sich Deutschlands Stromerzeugung seit 2015 verändert hat, was in einer Dunkelflaute passiert, warum der Transport das Nadelöhr ist, und was Strom je Bundesland aus eigener Erzeugung kosten würde.">
+  <div class="page-intro"><div><h1>Woher Deutschlands Strom kommt</h1><p>Strommix, Dunkelflaute, Netz und Bundesländer in Zahlen. Jede Zahl mit Bezugsgröße und Quelle; die Erzeugungsdaten werden monatlich aktualisiert.</p></div><ul class="intro-facts"><li><strong>Datenstand {fetched}</strong><span>Letzter voller Monat: {monthName(k.month)}</span></li><li><strong>Quelle der Zeitreihen</strong><span>Bundesnetzagentur | SMARD.de</span></li><li><a href="#laender">Zum Landesstrompreis</a></li></ul></div>
+
+  <article class="method-page wide">
+    <section aria-labelledby="lage">
+      <h2 id="lage">Die Lage in Zahlen</h2>
+      <dl class="energy-figures">
+        <div><dt>Erneuerbare, {monthName(k.month)}</dt><dd>{pct(k.monthShare)}</dd></div>
+        <div><dt>Erneuerbare, {k.year} bis {monthName(k.month).split(' ')[0]}</dt><dd>{pct(k.yearShare)}</dd></div>
+        <div><dt>Erneuerbare, {k.previous}</dt><dd>{pct(k.previousShare)}</dd></div>
+        <div><dt>Erneuerbare, {k.first}</dt><dd>{pct(k.firstShare)}</dd></div>
+      </dl>
+      <p>Anteil an der Einspeisung ins öffentliche Netz. Kohlestrom fiel von {number(k.coal.first)} TWh ({k.first}) auf {number(k.coal.last)} TWh ({k.previous}); die Kernkraftwerke sind seit April 2023 abgeschaltet.</p>
+      <aside class="energy-note">
+        <h3>Warum es mehrere Erneuerbaren-Anteile gibt</h3>
+        <p>Für 2025 nennt die Bundesnetzagentur 58,8 %, Fraunhofer ISE 55,9 %. Beide stimmen: Sie zählen mit oder ohne Eigenverbrauch und Kraftwerkseigenbedarf. Vor jedem Vergleich die Bezugsgröße prüfen.</p>
+      </aside>
+    </section>
+
+    <section aria-labelledby="wandel">
+      <h2 id="wandel">Der Wandel seit {smard.years[0].year}</h2>
+      <p>Kernenergie und viel Kohle sind weg, Wind an Land ist seit 2023 die größte Quelle. 2025 lagen Wind und Photovoltaik erstmals auf den Plätzen eins und zwei.</p>
+      <SolarChart client:visible spec={yearlySpec()} id="energy-years" />
+      <h3>Die letzten 24 Monate</h3>
+      <p>Photovoltaik trägt im Sommer, Wind im Winter. In dunklen, windarmen Monaten springen Gas und Kohle ein: die Winterlücke.</p>
+      <SolarChart client:visible spec={monthlySpec()} id="energy-months" scrollable />
+      <details>
+        <summary>Jahreswerte je Energieträger als Tabelle</summary>
+        <SolarTable client:visible rows={yearlyRows()} label="Stromerzeugung nach Energieträgern in TWh" />
+      </details>
+    </section>
+
+    <section aria-labelledby="dunkelflaute">
+      <h2 id="dunkelflaute">Dunkelflaute: was wirklich passiert</h2>
+      <p>Anfang November 2024 lieferten Wind und Sonne eine Woche lang nur {pct(lull.weatherShare)} der Last, in der schwächsten Stunde {number(lull.minWeatherGw, 1)} GW. Bis zu {number(lull.maxGapGw)} GW kamen aus Kohle, Gas, Biomasse, Wasser, Speichern und Importen.</p>
+      <SolarChart client:visible spec={lullSpec()} id="energy-lull" scrollable />
+      <ul class="cards">
+        <li><span class="figure">936 €/MWh</span><p>höchster Börsenpreis, gut zehnmal das Jahresmittel</p></li>
+        <li><span class="figure">35 Stunden</span><p>von 1.464 im November und Dezember 2024 über 300 €/MWh</p></li>
+        <li><span class="figure">22–36 GW</span><p>zusätzliche steuerbare Leistung bis 2035 laut Bundesnetzagentur</p></li>
+      </ul>
+      <p>Das Licht ging nicht aus, und das Kartellamt fand keinen Missbrauch. Es fehlt nicht Energie übers Jahr, sondern gesicherte Leistung in wenigen Wochen. Ausprobieren lässt sich das im <a href="/de/stromsystem-2045/">Szenario-Spiel</a>.</p>
+    </section>
+
+    <section aria-labelledby="netz">
+      <h2 id="netz">Transport statt Produktion: das Netz</h2>
+      <p>Wind weht im Norden und Osten, große Verbraucher sitzen im Süden und Westen. Reicht die Leitung nicht, wird vor dem Engpass abgeregelt und dahinter hochgefahren.</p>
+      <ul class="cards">
+        <li><span class="figure">3,1 Mrd. €</span><p>Engpassmanagement 2025, nach 4,2 Mrd. € im Jahr 2022</p></li>
+        <li><span class="figure">0,43 Mrd. €</span><p>davon für abgeregelten Ökostrom; der Rest bezahlt Ersatzkraftwerke</p></li>
+        <li><span class="figure">6,5 Mrd. €</span><p>Bundeszuschuss senkt 2026 die Übertragungsnetzentgelte</p></li>
+        <li><span class="figure">bis zu 5</span><p>Preiszonen wären laut Netzbetreibern effizienter; die Regierung bleibt bei einer</p></li>
+      </ul>
+      <p>Lange zahlten ausgerechnet die Windländer die höchsten Netzentgelte. Seit 2025 wird ein Teil dieser Mehrkosten bundesweit verteilt.</p>
+    </section>
+
+    <section aria-labelledby="ziele">
+      <h2 id="ziele">Ziele und Stand</h2>
+      <p>Installierte Leistung Ende 2025 und gesetzliches Ziel für 2030.</p>
+      <ul class="target-list">
+        {targets.map((t) => (
+          <li>
+            <span class="target-label">{t.label}</span>
+            <span class="target-bar" role="img" aria-label={`${number(t.now, 1)} von ${t.target} GW`}><span style={`width:${Math.min(100, (t.now / t.target) * 100)}%`} /></span>
+            <span>{number(t.now, 1)} von {t.target} GW</span>
+          </li>
+        ))}
+      </ul>
+      <p>Photovoltaik liegt über dem gesetzlichen Pfad, Wind darunter. Der Strombedarf soll von 526 TWh (2025) auf 989 bis 1.294 TWh im Jahr 2045 wachsen; warum der Energiebedarf trotzdem sinkt, zeigt <a href="/de/energie-zaehlen/">Energie richtig zählen</a>.</p>
+    </section>
+  </article>
+
+  <section id="laender" class="method-page wide flush" aria-labelledby="laender-title">
+    <h2 id="laender-title">Gedankenexperiment: der Landesstrompreis</h2>
+    <p class="lead">Was, wenn jedes Bundesland die Durchschnittskosten seiner eigenen Kraftwerke zahlte statt eines bundesweiten Börsenpreises, der sich am teuersten noch gebrauchten Kraftwerk orientiert?</p>
+    <p>Ein Gedankenexperiment mit Jahressummen, kein Reformvorschlag: Schleswig-Holstein hat übers Jahr Überschuss, in einer Dunkelflaute nicht.</p>
+  </section>
+  <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt.</p></noscript>
+  <StatePrices client:visible />
+
+  <article class="method-page wide">
+    <details class="more">
+      <summary>So rechnet das Experiment</summary>
+      <ul class="bullets">
+        <li><strong>Erzeugung und Verbrauch</strong> je Land aus den Länderenergiebilanzen. Fehlt ein Wert, gilt das nächste vollständige Jahr, mit * markiert.</li>
+        <li><strong>Kosten</strong> neuer Anlagen nach Fraunhofer ISE (2024), unterer, mittlerer oder oberer Wert, ohne Folgekosten der Kernkraft.</li>
+        <li><strong>Endlagerung und Rückbau:</strong> 41,8 Mrd. € (Fonds und Rückstellungen) oder rund 170 Mrd. € (Gesamtkosten bis 2099), verteilt auf rund 5.600 TWh Atomstrom seit 1961.</li>
+        <li><strong>Umweltkosten</strong> nach Umweltbundesamt; für Kernenergie gibt es dort keinen Kostensatz.</li>
+        <li><strong>Defizitländer</strong> kaufen zum Mittel der Überschussländer oder zum Preis eines Spitzenlastkraftwerks.</li>
+        <li><strong>Nicht enthalten:</strong> Netzentgelte, Steuern und Abgaben, laut BDEW rund zwei Drittel des Haushaltspreises, sowie die stündliche Knappheit.</li>
+      </ul>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <p>Zeitreihen: Bundesnetzagentur | SMARD.de, CC BY 4.0, abgerufen am {fetched}. Börsenpreise nur als Zahlen aus Berichten zitiert. Länderdaten: Länderarbeitskreis Energiebilanzen, Weitergabe mit Quellenangabe.</p>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
+  </article>
+</SolarLayout>
