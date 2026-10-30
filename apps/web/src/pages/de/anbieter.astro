@@ -1,0 +1,131 @@
+---
+import OfferComparison from '@/components/OfferComparison.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+
+const models = [
+  {
+    name: 'Kauf beim Fachbetrieb',
+    how: 'Du kaufst die Anlage beim Handwerksbetrieb vor Ort und bist von Anfang an Eigentümer und Betreiber. Stromtarif und Energiemanagement wählst du selbst.',
+    pro: 'Meist der niedrigste Preis je kWp; freie Wahl von Tarif, Messstellenbetreiber und Komponenten; Ansprechpartner in der Nähe.',
+    contra:
+      'Kapital oder eigener Kredit nötig; Wartung, Versicherung und Ersatzgeräte organisierst du selbst.',
+    fit: 'Wer Eigenkapital oder günstigen Kredit hat und sich um Angebote kümmern mag.',
+  },
+  {
+    name: 'Kauf beim Komplettanbieter',
+    how: 'Bundesweite Komplettanbieter verkaufen Anlage, Speicher, Wallbox, Energiemanager und oft einen eigenen dynamischen Tarif als Paket, mit Beratung per Video und eigenen Montageteams.',
+    pro: 'Alles aus einer Hand, schnelle Terminplanung, Software zur Steuerung von Speicher, Auto und Wärmepumpe.',
+    contra:
+      'Paketpreise lassen sich schwer mit Einzelangeboten vergleichen; laufendes Software-Abo; Tarif und Energiemanager sind oft an die eigene Hardware gebunden. Fällt der Anbieter aus, fehlen Service und Software.',
+    fit: 'Wer wenig Aufwand möchte und Auto oder Wärmepumpe wirklich steuern lässt.',
+  },
+  {
+    name: 'Miete',
+    how: 'Der Anbieter stellt die Anlage auf dein Dach und vermietet sie dir über meist 20 Jahre. Service, Versicherung und Ersatz defekter Teile sind enthalten; danach geht die Anlage meist für einen symbolischen Betrag an dich.',
+    pro: 'Kein Kapital, feste Rate, Rundum-Service inklusive Speichertausch.',
+    contra:
+      'Über die Laufzeit meist deutlich teurer als Kauf; praktisch unkündbar, beim Hausverkauf oder Erbfall muss der Vertrag übernommen oder abgelöst werden. Du bist trotzdem Anlagenbetreiber mit allen Pflichten.',
+    fit: 'Wer kein Kapital und keinen Kredit bekommt und den Aufpreis für Service bewusst zahlt.',
+  },
+  {
+    name: 'Dachfläche verpachten',
+    how: 'Ein Investor baut und betreibt die Anlage auf deinem Dach und zahlt dafür eine Pacht. Den Strom verkauft er, du beziehst weiter Netzstrom.',
+    pro: 'Kein Risiko, keine Arbeit, ein kleiner fester Ertrag.',
+    contra:
+      'Bei Einfamilienhäusern selten angeboten; Laufzeit 20 bis 30 Jahre, Sicherung im Grundbuch, Dachsanierung und Rückbau müssen geregelt sein. Keine Stromersparnis.',
+    fit: 'Große Scheunen-, Hallen- und Gewerbedächer; beim Einfamilienhaus eher die Ausnahme.',
+  },
+  {
+    name: 'Solarstrom vom Dach kaufen (Contracting)',
+    how: 'Ein Betreiber baut die Anlage auf deinem Dach und verkauft dir ihren Strom zu einem festen Preis je kWh. Ähnlich funktionieren Mieterstrom und die gemeinschaftliche Gebäudeversorgung im Mehrfamilienhaus.',
+    pro: 'Günstiger Solarstrom ohne Investition, kein Betreiberaufwand.',
+    contra:
+      'Der Preisvorteil gegenüber Netzstrom ist begrenzt; lange Bindung; die Einspeisevergütung bekommt der Betreiber.',
+    fit: 'Mehrfamilienhäuser, Eigentümergemeinschaften, Vermieter.',
+  },
+];
+const sources = [
+  [
+    'Verbraucherzentrale: Photovoltaik mieten statt kaufen (23.07.2026)',
+    'https://www.verbraucherzentrale.de/wissen/energie/erneuerbare-energien/photovoltaik-solaranlage-mieten-eine-alternative-zum-kauf-71086',
+  ],
+  [
+    'Verbraucherzentrale: Dynamische Stromtarife (06.10.2025)',
+    'https://www.verbraucherzentrale.de/wissen/energie/preise-tarife-anbieterwechsel/dynamische-stromtarife-fuer-wen-es-sich-lohnt-und-worauf-sie-achten-sollten-97836',
+  ],
+  [
+    'Verbraucherzentrale: Smart Meter und Preisobergrenzen (10.08.2026)',
+    'https://www.verbraucherzentrale.de/wissen/energie/preise-tarife-anbieterwechsel/smart-meter-was-sie-ueber-die-stromzaehler-wissen-muessen-13275',
+  ],
+  [
+    'Verbraucherzentrale NRW: Checkliste Photovoltaik (07/2024)',
+    'https://www.verbraucherzentrale.nrw/sites/default/files/2024-07/checkliste_photovoltaik_edit_final.pdf',
+  ],
+  [
+    'pv magazine: Studie zu dynamischen Tarifen und zeitvariablen Netzentgelten (27.10.2025)',
+    'https://www.pv-magazine.de/2025/10/27/studie-sieht-hohes-einsparpotenzial-durch-dynamische-stromtarife-und-zeitvariable-netzentgelte/',
+  ],
+  [
+    'Bundesnetzagentur: Strommarktdaten 2025 (05.01.2026)',
+    'https://bundesnetzagentur.de/SharedDocs/Pressemitteilungen/EN/2026/20260104_SMARD.html',
+  ],
+  [
+    'BDEW-Strompreisanalyse (08/2026)',
+    'https://www.bdew.de/media/documents/BDEW_Strompreisanalyse_082026.pdf',
+  ],
+  ['§ 41a EnWG, dynamische Tarife', 'https://www.gesetze-im-internet.de/enwg_2005/__41a.html'],
+  ['§ 51 EEG, negative Preise', 'https://www.gesetze-im-internet.de/eeg_2014/__51.html'],
+];
+---
+<SolarLayout title="Kaufen, mieten, verpachten – Anbieter-Modelle im Vergleich" description="Komplettanbieter, Miete, Dachpacht und dynamische Stromtarife: wie die Modelle rechnen, was sie kosten und wo die Haken liegen.">
+  <div class="page-intro"><div><h1>Kaufen, mieten oder Dach verpachten?</h1><p>Bundesweite Komplettanbieter verkaufen Solaranlage, Speicher und dynamischen Stromtarif als Paket, zum Kauf oder zur Miete. Hier rechnest du die Konzepte grundsätzlich gegeneinander, mit eigenen Annahmen und unabhängig von deiner Anlage im Rechner.</p></div><ul class="intro-facts"><li><strong>Konzepte, keine Angebote</strong><span>Typische Konditionen, alle veränderbar</span></li><li><strong>Gleiche Energiebilanz</strong><span>Stündlich gerechnet, Berliner Sonnendaten</span></li><li><a href="#konzepte">Vor- und Nachteile lesen</a></li></ul></div>
+  <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. Die Einordnung der Modelle weiter unten ist auch ohne JavaScript lesbar.</p></noscript>
+  <OfferComparison client:load />
+
+  <article class="method-page mx-auto max-w-3xl px-6 py-12" id="konzepte">
+    <h2 class="mb-4 text-3xl font-extrabold tracking-tight">Die Modelle im Überblick</h2>
+    <p class="mb-8 leading-relaxed">Alle Modelle bringen Solarstrom aufs Dach. Sie unterscheiden sich darin, wem die Anlage gehört, wer das Risiko trägt und wie lange du gebunden bist.</p>
+    {models.map((m) => (
+      <section class="mb-8">
+        <h3 class="mb-2 text-xl font-bold">{m.name}</h3>
+        <p class="mb-3 leading-relaxed">{m.how}</p>
+        <dl class="method-list">
+          <div><dt>Vorteile</dt><dd>{m.pro}</dd></div>
+          <div><dt>Nachteile</dt><dd>{m.contra}</dd></div>
+          <div><dt>Interessant für</dt><dd>{m.fit}</dd></div>
+        </dl>
+      </section>
+    ))}
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Dynamische Stromtarife: was sie bringen</h2>
+      <p class="mb-4 leading-relaxed">Seit 2025 muss jeder Stromlieferant einen dynamischen Tarif anbieten (§ 41a EnWG). Der Preis folgt dann stündlich, seit Oktober 2025 viertelstündlich, der Strombörse. Voraussetzung ist ein intelligentes Messsystem. Mit Photovoltaik über 7 kW ist es ohnehin Pflicht; freiwillig kostet es bis zu 30 € im Jahr, mit Photovoltaik bis 15 kW bis zu 50 €.</p>
+      <p class="mb-4 leading-relaxed">Nur der Börsenanteil schwankt. Netzentgelte, Steuern und Abgaben machen laut BDEW rund zwei Drittel des Haushaltspreises von 37 ct/kWh aus und bleiben fest. Der Börsenpreis lag 2025 im Mittel bei 8,9 ct/kWh, in 573 Stunden war er negativ. Wer Verbrauch in solche Stunden schiebt, spart; wer zu teuren Abendstunden Strom bezieht, zahlt drauf.</p>
+      <p class="mb-4 leading-relaxed">Eine Studie (Preisdaten 09/2024–08/2025) kommt für Haushalte ohne steuerbare Geräte auf 1 bis 4 % Ersparnis, für ein gesteuert geladenes E-Auto auf rund 31 %, für eine Wärmepumpe auf 7 %, mit zeitvariablen Netzentgelten nach § 14a auf 26 bis 28 %. Die Verbraucherzentrale hält dynamische Tarife für normale Haushalte meist nicht für lohnend.</p>
+      <p class="leading-relaxed">Im Rechner oben steckt das in drei Annahmen: wie viel jeder Verbraucher verschieben kann, wie viel eine verschobene Kilowattstunde spart und was Smart Meter und Grundgebühr zusätzlich kosten. Das ist eine Vereinfachung ohne echte Börsenpreise; die Werte für die Ersparnis je kWh sind eigene Annahmen, keine Messung.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Kritik an den Paketen</h2>
+      <ul class="mb-4 list-disc space-y-2 pl-6 leading-relaxed">
+        <li><strong>Gesamtkosten der Miete.</strong> Die Verbraucherzentrale hält Miete meist für teurer als Kauf; Ersparnisse zeigten sich oft erst gegen Ende der Laufzeit. Manche Anbieterrechnungen setzen Strompreissteigerungen an, die zwei- bis dreimal über den üblichen 2 bis 3 % im Jahr liegen. Der Rechner zeigt, welchem Kreditzins die Miete entspricht.</li>
+        <li><strong>Lock-in.</strong> Paket-Tarife gibt es teils nur zusammen mit Anlage, Speicher, Messstellenbetrieb und Energiemanager desselben Anbieters; beworbene Arbeitspreise enthalten mitunter schon Rabatte auf Netzentgelte und liegen effektiv deutlich höher. Werbeversprechen wie „bis zu 80 % weniger Stromkosten“ beziehen sich auf günstige Einzelfälle.</li>
+        <li><strong>Anbieterrisiko.</strong> Seit 2025 sind mehrere Komplettanbieter in Insolvenz oder Eigenverwaltung gegangen, andere haben ihre Mietanlagen an Investoren verkauft. Bei 20 Jahren Laufzeit ist der Vertragspartner von heute nicht unbedingt der von morgen.</li>
+        <li><strong>Solarspitzengesetz.</strong> Für neue Anlagen gibt es in Stunden mit negativen Börsenpreisen keine Vergütung, ohne Smart Meter dürfen sie nur 60 % ihrer Leistung einspeisen. Das macht Speicher und Steuerung wertvoller – und ist zugleich das wichtigste Verkaufsargument der Pakete.</li>
+      </ul>
+      <p class="leading-relaxed">Für die Pakete spricht: kein Kapitaleinsatz, Service und Gerätetausch aus einer Hand, und eine Steuerung, die Auto, Wärmepumpe und Speicher tatsächlich nach Preisen fährt. Ob das den Aufpreis wert ist, hängt fast nur davon ab, wie viel Verbrauch sich verschieben lässt.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Was das Modell vereinfacht</h2>
+      <p class="mb-4 leading-relaxed">Alle Modelle nutzen dieselbe stündliche Energiebilanz wie der Rechner, mit Berliner Sonnendaten (35° Süd), synthetischem Verbrauchsprofil und einem Exportlimit von 60 %. Für Kauf und Miete gilt dieselbe Anlage. Ein Restwert am Ende, Steuern, Förderung, Laden des Speichers aus dem Netz und zeitvariable Netzentgelte sind nicht enthalten. Pacht, Mietrate, Aufschlag des Komplettanbieters und die Tarifannahmen sind Größenordnungen aus den Quellen unten oder eigene Annahmen, keine Angebotspreise.</p>
+      <p class="leading-relaxed">Für deine eigene Anlage mit Ort, Ausrichtung, Kosten und Vergütungsregeln nutze den <a href="/">Rechner</a>; wie er rechnet, steht im <a href="/de/rechenweg/">Rechenweg</a>.</p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="mb-4 text-2xl font-bold">Quellen</h2>
+      <p class="mb-4 leading-relaxed">Abgerufen am 30.10.2026. Mietraten, Übernahmepreis und Dachpacht stammen aus Ratgeber- und Anbieterangaben und sind nicht amtlich belegt.</p>
+      <ul class="list-disc space-y-1 pl-6">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </section>
+  </article>
+</SolarLayout>

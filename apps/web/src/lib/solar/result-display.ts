@@ -1,6 +1,7 @@
 import { energyColors, energyTokens } from './energy-display';
 import { number, percent } from './format';
 import { type calculate, type Energy, type Inputs, paybackYear, priceScenario } from './model';
+import type { OfferResult } from './offers';
 
 type Result = ReturnType<typeof calculate>;
 /** One side of the comparison: the same system with or without the storage. */
@@ -208,5 +209,25 @@ export function scenarioSpec(
     valueAxis: { title: 'Kumulierter Saldo in EUR' },
     categories: cashflows.map((r) => String(r.year)),
     series: scenarios.map((s) => ({ name: s.label, values: s.balances.map(Math.round) })),
+  };
+}
+
+/** Total payments of every provider model over the period; lower is cheaper. */
+export function offerCostSpec(offers: OfferResult[], years: number) {
+  return {
+    schemaVersion: 1,
+    showTitle: false,
+    type: 'bar',
+    orientation: 'horizontal',
+    tokens: { 'color-1': energyColors.grid },
+    title: `Was jedes Modell in ${years} Jahren kostet`,
+    source:
+      'Eigene Modellrechnung · Berliner PVGIS-Profil · stündliche Bilanz · Annahmen veränderbar',
+    categoryAxis: { title: 'Modell' },
+    valueAxis: { title: 'Summe aller Zahlungen in EUR' },
+    categories: offers.map((o) => o.label),
+    series: [
+      { name: `Kosten über ${years} Jahre`, values: offers.map((o) => Math.round(o.total)) },
+    ],
   };
 }
