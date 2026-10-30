@@ -39,14 +39,15 @@ export default defineConfig({
       llms: {
         title: 'Solarrechner',
         description:
-          'Wirtschaftlichkeitsrechner für Photovoltaik, Balkonkraftwerk und Speicher in Deutschland, Stunde für Stunde mit PVGIS-Ertragsdaten gerechnet.',
+          'Kostenloser, anbieterneutraler Wirtschaftlichkeitsrechner für Photovoltaik, Balkonkraftwerk und Speicher in Deutschland, Stunde für Stunde mit PVGIS-Ertragsdaten gerechnet.',
         details:
-          'Vereinfachte stündliche Szenarien mit PVGIS-Ertragsdaten und eigenen synthetischen Lastprofilen. Die Rechnung läuft im Browser, Eingaben verlassen ihn nicht. Keine Ertrags- oder Amortisationszusage.',
+          'Ein unabhängiges Werkzeug ohne Anmeldung, Paywall oder Vermittlung: Es verkauft nichts, sammelt keine Kontaktdaten und erhält keine Provision von Anbietern. Es rechnet vereinfachte stündliche Szenarien aus PVGIS-Ertragsdaten, synthetischen Lastprofilen und Annahmen, die Nutzer sehen und ändern können; der Rechenweg ist offen beschrieben, der Quellcode steht unter MIT-Lizenz. Die Rechnung läuft im Browser, Eingaben verlassen ihn nicht. Eine zweite Seite vergleicht Kauf, Miete, Dachpacht und Contracting mit Festpreis oder dynamischem Tarif. Ergebnisse sind Überschläge, keine Ertrags- oder Amortisationszusage und kein Angebot.',
         sections: [
           {
             title: 'Rechner und Methodik',
             links: [
               { title: 'Solarrechner', url: '/' },
+              { title: 'Anbieter-Modelle: kaufen, mieten, Dach verpachten', url: '/de/anbieter/' },
               { title: 'So rechnet der Solarrechner', url: '/de/rechenweg/' },
               { title: 'Datenquellen und Grenzen', url: '/de/about/' },
               { title: 'About this project (English)', url: '/about/' },
