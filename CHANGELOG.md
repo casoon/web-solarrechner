@@ -22,6 +22,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 ### Changed
 
 - **Anbieter-Modelle:** Die Einordnung ist kürzer und in Karten gegliedert; Vereinfachungen und Quellen stehen aufklappbar am Ende.
+- **Anbieter-Modelle:** Die Seite beschreibt Konzepte ohne Firmen- oder Markennamen; Quellen, die einzelne Anbieter betreffen, sind entfernt.
 
 ### Fixed
 
