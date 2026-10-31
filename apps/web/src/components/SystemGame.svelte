@@ -2,12 +2,17 @@
 import { onMount } from 'svelte';
 import {
   advice,
+  carBalance,
+  climateBalance,
+  climateSpec,
   conditions,
   facts,
   fromParams,
   grossDemand,
+  heatBalance,
   monthSpec,
   presets,
+  switchEffect,
   type TargetYear,
   targetYears,
   toParams,
@@ -54,6 +59,25 @@ const failed = $derived(checks.filter((c) => c.hard && !c.ok));
 const tips = $derived(result ? advice(applied, result, failed) : []);
 const week = $derived(result ? weekSpec(result, 2024) : undefined);
 const months = $derived(result ? monthSpec(result, 2024) : undefined);
+const climate = $derived(result ? climateBalance(applied, result) : undefined);
+const climateChart = $derived(result ? climateSpec(applied, result) : undefined);
+const hard = $derived(checks.filter((c) => c.hard));
+const soft = $derived(checks.filter((c) => !c.hard));
+const heat = $derived(heatBalance(applied));
+const fleet = $derived(carBalance(applied));
+const savings = $derived(switchEffect(applied));
+const pct = (part: number, whole: number) => `${number(whole ? (part / whole) * 100 : 0)} %`;
+const t = (n: number) => number(n, 1);
+/** Short figure under each verdict tile. */
+function headline(id: string) {
+  if (id === 'supply' && result)
+    return result.unservedHours === 0
+      ? 'keine Stunde ohne Strom'
+      : `${number(result.unservedHours)} Stunden ohne Strom`;
+  if (id === 'climate' && climate)
+    return `${number(climate.emitted, 1)} von ${number(climate.allowed, 1)} Mt CO₂`;
+  return '';
+}
 
 function choose(year: TargetYear) {
   input = { ...presets[year] };
@@ -88,15 +112,21 @@ const twh = (n: number) => `${number(n / 1e3)} TWh`;
     </fieldset>
     <fieldset class="input-section">
       <legend><span class="step">2</span> Bedarf</legend>
-      <NumberField label="Heutiger Verbrauch" bind:value={input.baseDemand} unit="TWh" max={1000} step={5} hint="Netzlast 2024 ohne neue Verbraucher, im Stundenverlauf von 2024." />
-      <NumberField label="Wärmepumpen" bind:value={input.heatPumps} unit="Mio." max={25} step={0.5} slider />
-      <NumberField label="Strom je Wärmepumpe" bind:value={input.heatPumpKwh} unit="kWh/Jahr" max={15000} step={100} />
-      <NumberField label="Elektroautos" bind:value={input.cars} unit="Mio." max={50} step={1} slider />
-      <NumberField label="Strom je Elektroauto" bind:value={input.carKwh} unit="kWh/Jahr" max={10000} step={100} />
+      <NumberField label="Bevölkerung" bind:value={input.population} unit="Mio." min={50} max={100} step={0.1} slider hint="Ende 2024: 83,6 Mio. Die amtliche Vorausberechnung reicht für 2070 je nach Variante von 67,0 bis 83,2 Mio. Skaliert heutigen Verbrauch, Wärmebedarf und Pkw-Bestand." />
+      <NumberField label="Heutiger Verbrauch" bind:value={input.baseDemand} unit="TWh" max={1000} step={5} hint="Netzlast 2024 ohne neue Verbraucher, im Stundenverlauf von 2024, für 83,6 Mio. Menschen." />
       <NumberField label="Industrie, Rechenzentren und mehr" bind:value={input.extraDemand} unit="TWh" max={800} step={10} slider hint="Zusätzlicher Bedarf, gleichmäßig über alle Stunden." />
     </fieldset>
     <fieldset class="input-section">
-      <legend><span class="step">3</span> Erzeugung</legend>
+      <legend><span class="step">3</span> Heizen und Autofahren</legend>
+      <NumberField label="Wärmepumpen" bind:value={input.heatPumps} unit="Mio." max={40} step={0.5} slider hint={`Decken ${pct(heat.pumped, heat.demand)} der Gebäudewärme. Den Rest heizen Wärmenetze und Öl- und Gaskessel.`} />
+      <NumberField label="Strom je Wärmepumpe" bind:value={input.heatPumpKwh} unit="kWh/Jahr" max={15000} step={100} hint="Mit einer Jahresarbeitszahl von 3 wird daraus dreimal so viel Wärme." />
+      <NumberField label="Sanierung" bind:value={input.retrofit} unit="% weniger Wärme" max={60} step={5} slider hint="Gedämmte Häuser brauchen weniger Wärme, gemessen am Bedarf 2025." />
+      <NumberField label="Wärmenetze" bind:value={input.heatNetworks} unit="% der Wärme" max={60} step={5} slider hint="Angenommen klimaneutral, ohne eigenen Strombedarf." />
+      <NumberField label="Elektroautos" bind:value={input.cars} unit="Mio." max={60} step={1} slider hint={`${pct(fleet.electric, fleet.fleet)} von ${number(fleet.fleet, 1)} Mio. Pkw. Die übrigen fahren mit Benzin oder Diesel.`} />
+      <NumberField label="Strom je Elektroauto" bind:value={input.carKwh} unit="kWh/Jahr" max={10000} step={100} />
+    </fieldset>
+    <fieldset class="input-section">
+      <legend><span class="step">4</span> Erzeugung</legend>
       <NumberField label="Photovoltaik" bind:value={input.solar} unit="GW" max={800} step={5} slider />
       <NumberField label="Wind an Land" bind:value={input.windOnshore} unit="GW" max={300} step={5} slider />
       <NumberField label="Wind auf See" bind:value={input.windOffshore} unit="GW" max={120} step={1} slider />
@@ -104,7 +134,7 @@ const twh = (n: number) => `${number(n / 1e3)} TWh`;
       <NumberField label="Kohlekraftwerke" bind:value={input.coal} unit="GW" max={45} step={1} slider />
     </fieldset>
     <fieldset class="input-section">
-      <legend><span class="step">4</span> Puffer und Reserven</legend>
+      <legend><span class="step">5</span> Puffer und Reserven</legend>
       <NumberField label="Batterie- und Pumpspeicher" bind:value={input.battery} unit="GW" max={300} step={5} slider hint="Heute knapp 16 GW Batterien und knapp 10 GW Pumpspeicher." />
       <NumberField label="Speicherdauer" bind:value={input.batteryHours} unit="h" min={0.5} max={12} step={0.5} />
       <NumberField label="Gaskraftwerke" bind:value={input.gasPlants} unit="GW" max={150} step={5} slider hint="Verbrennen Wasserstoff, solange der Speicher etwas hergibt, sonst Erdgas." />
@@ -137,13 +167,37 @@ const twh = (n: number) => `${number(n / 1e3)} TWh`;
           </h2>
           <span>Wetter des Jahres 2024, Stunde für Stunde</span>
         </div>
-        <ul class="conditions">
-          {#each checks as c}
-            <li class:ok={c.ok} class:soft={!c.hard} data-testid={`condition-${c.id}`}>
-              <strong
-                >{c.ok ? '✓' : c.hard ? '✗' : '!'}
-                {c.label}{#if !c.hard}<span class="soft-label">Hinweis</span>{/if}</strong
+        <ul class="verdict-tiles">
+          {#each hard as c}
+            <li class:ok={c.ok} data-testid={`condition-${c.id}`}>
+              <span class="mark" aria-hidden="true">{c.ok ? '✓' : '✗'}</span>
+              <span class="tile-text"
+                ><strong>{c.label} {c.ok ? 'erreicht' : 'verfehlt'}</strong><span>{headline(c.id)}</span></span
               >
+              <details>
+                <summary>Warum?</summary>
+                <p>{c.text}</p>
+                {#if c.id === 'supply'}<p>
+                    Gerechnet wird jede Stunde mit dem Wetter von 2024. Fehlt Strom, helfen Speicher,
+                    Gaskraftwerke mit Wasserstoff oder Austausch mit den Nachbarn, nicht mehr Sonne im Sommer.
+                  </p>{/if}
+                {#if c.id === 'climate' && climate}<p>
+                    Strom {t(climate.parts[0].emitted)} Mt, Heizen {t(climate.parts[1].emitted)} Mt,
+                    Autofahren {t(climate.parts[2].emitted)} Mt. Jede Wärmepumpe spart im Heizungskeller
+                    rund {t(savings.heatPump)} t CO₂ im Jahr; ihr Strom aus einem Erdgaskraftwerk verursacht
+                    {t(savings.heatPumpOnGas)} t. Ein Elektroauto spart {t(savings.car)} t, sein Strom aus Gas
+                    kostet {t(savings.carOnGas)} t. Weniger Wärmepumpen entlasten also das Stromnetz, aber nicht
+                    das Klima. Eine Infrarot- oder andere Direktstromheizung bräuchte für dieselbe Wärme
+                    dreimal so viel Strom wie die Wärmepumpe.
+                  </p>{/if}
+              </details>
+            </li>
+          {/each}
+        </ul>
+        <ul class="conditions">
+          {#each soft as c}
+            <li class:ok={c.ok} class="soft" data-testid={`condition-${c.id}`}>
+              <strong>{c.ok ? '✓' : '!'} {c.label}<span class="soft-label">Hinweis</span></strong>
               <span>{c.text}</span>
             </li>
           {/each}
@@ -153,6 +207,16 @@ const twh = (n: number) => `${number(n / 1e3)} TWh`;
           {copied ? 'Link kopiert' : 'Szenario als Link teilen'}
         </button>
       </section>
+
+      {#if climateChart}<section class="chart-section" aria-labelledby="game-climate-title">
+          <h2 id="game-climate-title">Klimabilanz: Strom, Heizen, Autofahren</h2>
+          <p class="field-hint">
+            Was Kraftwerke, Öl- und Gasheizungen und Verbrenner {applied.year} ausstoßen, gegen den Pfad
+            des Klimaschutzgesetzes. Ein Bereich darf über seinem Anteil liegen, wenn ein anderer darunter
+            bleibt, denn es zählt die Summe.
+          </p>
+          <SolarChart spec={climateChart} id="game-climate" />
+        </section>{/if}
 
       <section class="comparison" aria-labelledby="game-balance-title">
         <h2 id="game-balance-title">Jahresbilanz</h2>
@@ -222,6 +286,59 @@ const twh = (n: number) => `${number(n / 1e3)} TWh`;
   .conditions li {
     display: grid;
     gap: 2px;
+  }
+  .verdict-tiles {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .verdict-tiles li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 6px 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 0.08);
+  }
+  .verdict-tiles .mark {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffc2b8;
+    color: #6b2a22;
+    font-size: 24px;
+    font-weight: 800;
+  }
+  .verdict-tiles li.ok .mark {
+    background: #b9e6c4;
+    color: #183b32;
+  }
+  .tile-text {
+    display: grid;
+    gap: 2px;
+  }
+  .tile-text strong {
+    font-size: 17px;
+  }
+  .verdict-tiles details {
+    grid-column: 1 / -1;
+    font-size: 14px;
+  }
+  .verdict-tiles summary {
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .verdict-tiles details p {
+    margin: 8px 0 0;
   }
   .conditions li strong {
     color: #ffc2b8;

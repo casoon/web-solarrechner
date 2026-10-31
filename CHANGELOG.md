@@ -34,6 +34,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 - **Anbieter-Modelle:** Die Seite beschreibt Konzepte ohne Firmen- oder Markennamen; Quellen, die einzelne Anbieter betreffen, sind entfernt.
 - **Anbieter-Modelle:** Das Verbrauchsfeld heißt „Strombedarf im Haushalt“ und ist klar vom Ertrag der Anlage getrennt; ein Hinweis zur Anlagengröße erklärt, warum keine Anlage den ganzen Bedarf deckt.
 - **Stromversorgung:** Der Netz-Abschnitt erklärt Redispatch, Entschädigungen, Bundeszuschuss und Preiszonen ausführlicher, die Kennzahlen stehen als 2 × 2. Das Gedankenexperiment ist durch Abstand, Linie und „Zum Ausprobieren“ vom Leseteil abgesetzt.
+- **Stromsystem 2045:** Das Klimaziel zählt neben Kraftwerken auch Öl- und Gasheizungen und Verbrenner-Pkw gegen den Pfad des Klimaschutzgesetzes; neue Regler für Bevölkerung, Sanierung und Wärmenetze. Das Ergebnis zeigt beide Bedingungen als Kacheln mit „Warum?“ und ein Diagramm der Klimabilanz je Bereich.
 - **Contributors:** Biome und fallow lassen die synchronisierten Dateien in `apps/web/public/vendor` aus.
 
 ### Fixed

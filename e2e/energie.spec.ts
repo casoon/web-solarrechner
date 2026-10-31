@@ -44,6 +44,11 @@ test('scenario game can be lost and won', async ({ page }) => {
   await expect(page.getByTestId('condition-supply')).toContainText('fehlt Strom');
   await page.getByRole('button', { name: 'Zurück auf die Vorgabe für 2045' }).click();
   await expect(verdict).toContainText('Geschafft');
-  await expect(page.locator('.solar-chart svg')).toHaveCount(2);
+  await page.getByLabel('Wärmepumpen', { exact: true }).fill('8');
+  await expect(verdict).toContainText('Verloren: Klimaziel');
+  await expect(page.getByTestId('condition-supply')).toContainText('erreicht');
+  await page.getByRole('button', { name: 'Zurück auf die Vorgabe für 2045' }).click();
+  await expect(verdict).toContainText('Geschafft');
+  await expect(page.locator('.solar-chart svg')).toHaveCount(3);
   await axeAndPhone(page);
 });

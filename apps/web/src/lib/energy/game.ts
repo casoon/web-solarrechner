@@ -2,7 +2,13 @@
  * Rules of the scenario game: presets per target year, the conditions a scenario has to meet and
  * the chart specs. The hourly balance itself lives in system.ts.
  */
-import { type Factors, profileCapacity, type SystemInputs, type SystemResult } from './system';
+import {
+  type Factors,
+  population2024,
+  profileCapacity,
+  type SystemInputs,
+  type SystemResult,
+} from './system';
 
 export type TargetYear = SystemInputs['year'];
 export const targetYears: TargetYear[] = [2030, 2037, 2045];
@@ -24,11 +30,38 @@ export const facts = {
   /** Installed capacity at the end of 2025, GW, and the best year of additions so far. */
   installed: { solar: 117, windOnshore: 68.1, windOffshore: 9.5 },
   record: { solar: 16.4, windOnshore: 5.5, windOffshore: 2.3 },
+  /** Climate Protection Act, Anlage 2a: Gebäude and Verkehr 2030 in Mt CO₂e; UBA emissions 2025. */
+  buildings2030: 67,
+  buildings2025: 103.4,
+  transport2030: 85,
+  transport2025: 146.3,
+  /**
+   * Fossil heating in 2025 (Schornsteinfegerhandwerk): 14.8 million gas and 4.7 million oil units,
+   * weighted with the UBA fuel factors of 0.201 and 0.266 t CO₂ per MWh.
+   */
+  heatingFuel: (14.8 * 0.201 + 4.7 * 0.266) / 19.5,
+  /** Assumptions: boiler efficiency, heat pump seasonal performance in existing buildings. */
+  boilerEfficiency: 0.9,
+  heatPumpCop: 3,
+  /** Heat pumps for space heating at the end of 2025, estimated from BWP sales, million. */
+  heatPumps2025: 2.2,
+  /** Cars on 1 January 2026 (KBA), million, of them battery-electric. */
+  carStock: 49.5,
+  electricCars2025: 2,
+  /** Assumption: t CO₂ per combustion car and year, about 12,000 km at 145 g/km on the road. */
+  carCo2: 1.74,
   /** Grid development plan, gross electricity demand corridors in TWh. */
   demandCorridor: { 2037: [866, 1087], 2045: [989, 1294] } as Record<number, [number, number]>,
 };
 
-const shared = { baseDemand: 465, heatPumpKwh: 4000, carKwh: 2500, biomass: 100, batteryHours: 2 };
+const shared = {
+  population: population2024,
+  baseDemand: 465,
+  heatPumpKwh: 4000,
+  carKwh: 2500,
+  biomass: 100,
+  batteryHours: 2,
+};
 
 /**
  * Starting points per target year. Solar and wind follow the legal expansion targets (EEG 2023,
@@ -38,6 +71,8 @@ export const presets: Record<TargetYear, SystemInputs> = {
   2030: {
     ...shared,
     year: 2030,
+    retrofit: 5,
+    heatNetworks: 10,
     heatPumps: 6,
     cars: 15,
     extraDemand: 40,
@@ -55,8 +90,10 @@ export const presets: Record<TargetYear, SystemInputs> = {
   2037: {
     ...shared,
     year: 2037,
-    heatPumps: 12,
-    cars: 25,
+    retrofit: 12,
+    heatNetworks: 20,
+    heatPumps: 15,
+    cars: 32,
     extraDemand: 230,
     electrolysis: 40,
     solar: 345,
@@ -72,17 +109,19 @@ export const presets: Record<TargetYear, SystemInputs> = {
   2045: {
     ...shared,
     year: 2045,
-    heatPumps: 16,
-    cars: 37,
+    retrofit: 25,
+    heatNetworks: 30,
+    heatPumps: 20,
+    cars: 50,
     extraDemand: 280,
     electrolysis: 80,
     solar: 400,
     windOnshore: 160,
     windOffshore: 70,
-    battery: 100,
-    gasPlants: 90,
-    hydrogenStore: 100,
-    hydrogenImport: 250,
+    battery: 120,
+    gasPlants: 100,
+    hydrogenStore: 120,
+    hydrogenImport: 300,
     coal: 0,
     imports: 25,
   },
@@ -95,6 +134,88 @@ export const presets: Record<TargetYear, SystemInputs> = {
 export function co2Limit(year: TargetYear) {
   const at2030 = facts.sectorLimit2030 * (facts.power2025 / facts.sector2025);
   return year >= 2045 ? 1 : at2030 * ((2045 - year) / (2045 - 2030));
+}
+
+/** Straight line from the 2030 value to zero in 2045. */
+const path = (at2030: number, year: TargetYear) =>
+  year >= 2045 ? 0 : at2030 * ((2045 - year) / (2045 - 2030));
+
+const scale = (input: SystemInputs) => input.population / population2024;
+
+/** Building heat in TWh: the fossil heat of 2025 plus the heat of 2025's heat pumps, per head. */
+export function heatBalance(input: SystemInputs) {
+  const fossil2025 = (facts.buildings2025 / facts.heatingFuel) * facts.boilerEfficiency;
+  const pumped2025 = (facts.heatPumps2025 * shared.heatPumpKwh * facts.heatPumpCop) / 1e3;
+  const demand = (fossil2025 + pumped2025) * scale(input) * (1 - input.retrofit / 100);
+  const networks = (demand * input.heatNetworks) / 100;
+  const pumped = Math.min(
+    demand - networks,
+    (input.heatPumps * input.heatPumpKwh * facts.heatPumpCop) / 1e3
+  );
+  return { demand, networks, pumped, fossil: demand - networks - pumped };
+}
+
+export function carBalance(input: SystemInputs) {
+  const fleet = facts.carStock * scale(input);
+  const electric = Math.min(fleet, input.cars);
+  return { fleet, electric, combustion: fleet - electric };
+}
+
+/** The cars' part of the 2030 transport limit: their 2025 emissions, cut like the whole sector. */
+const carsLimit2030 = () =>
+  ((facts.carStock - facts.electricCars2025) * facts.carCo2 * facts.transport2030) /
+  facts.transport2025;
+
+/** CO₂ the climate law's path leaves power, heating and cars together in a target year, Mt. */
+export const climateBudget = (year: TargetYear) =>
+  co2Limit(year) + path(facts.buildings2030, year) + path(carsLimit2030(), year);
+
+export type ClimatePart = {
+  id: 'power' | 'heat' | 'cars';
+  label: string;
+  emitted: number;
+  allowed: number;
+};
+
+/**
+ * CO₂ of the three areas the game steers, Mt, against what the climate law's path leaves them:
+ * the power share of the energy sector, the building sector, and the cars' part of transport.
+ */
+export function climateBalance(input: SystemInputs, r: SystemResult) {
+  const heat = heatBalance(input);
+  const cars = carBalance(input);
+  const parts: ClimatePart[] = [
+    { id: 'power', label: 'Strom', emitted: r.co2, allowed: co2Limit(input.year) },
+    {
+      id: 'heat',
+      label: 'Heizen',
+      emitted: (heat.fossil / facts.boilerEfficiency) * facts.heatingFuel,
+      allowed: path(facts.buildings2030, input.year),
+    },
+    {
+      id: 'cars',
+      label: 'Autofahren',
+      emitted: cars.combustion * facts.carCo2,
+      allowed: path(carsLimit2030(), input.year),
+    },
+  ];
+  return {
+    parts,
+    emitted: parts.reduce((s, p) => s + p.emitted, 0),
+    allowed: parts.reduce((s, p) => s + p.allowed, 0),
+  };
+}
+
+/** CO₂ a heat pump or an electric car saves, and what its electricity costs from a gas plant, t. */
+export function switchEffect(input: SystemInputs) {
+  const heatPump =
+    (input.heatPumpKwh * facts.heatPumpCop * facts.heatingFuel) / facts.boilerEfficiency / 1e3;
+  return {
+    heatPump,
+    heatPumpOnGas: (input.heatPumpKwh * facts.factors.gas) / 1e3,
+    car: facts.carCo2,
+    carOnGas: (input.carKwh * facts.factors.gas) / 1e3,
+  };
 }
 
 export type Condition = {
@@ -113,7 +234,7 @@ const fmt = (n: number, digits = 0) =>
 export const grossDemand = (r: SystemResult) => (r.demand + r.electrolysis) / 1e3;
 
 export function conditions(input: SystemInputs, r: SystemResult): Condition[] {
-  const limit = co2Limit(input.year);
+  const climate = climateBalance(input, r);
   const years = input.year - 2025;
   const keys = ['solar', 'windOnshore', 'windOffshore'] as const;
   const names = {
@@ -145,8 +266,8 @@ export function conditions(input: SystemInputs, r: SystemResult): Condition[] {
       id: 'climate',
       label: 'Klimaziel',
       hard: true,
-      ok: r.co2 <= limit,
-      text: `Kraftwerke stoßen ${fmt(r.co2, 1)} Mt CO₂ aus, der Pfad des Klimaschutzgesetzes erlaubt ${fmt(limit, 1)} Mt.`,
+      ok: climate.emitted <= climate.allowed,
+      text: `Strom, Heizen und Autofahren stoßen zusammen ${fmt(climate.emitted, 1)} Mt CO₂ aus, der Pfad des Klimaschutzgesetzes erlaubt ${fmt(climate.allowed, 1)} Mt.`,
     },
     {
       id: 'build',
@@ -190,21 +311,32 @@ export function advice(input: SystemInputs, r: SystemResult, failed: Condition[]
         ? 'Die Lücke ist zu groß oder dauert zu lange für Batterien: mehr Gaskraftwerke mit Wasserstoff oder mehr Austausch mit den Nachbarn.'
         : 'Mehr Speicherdauer oder ein größerer Wasserstoffspeicher schließt die Lücke.'
     );
-  if (failed.some((c) => c.id === 'climate'))
-    tips.push(
-      input.coal > 0
-        ? 'Kohle stößt je kWh mehr als doppelt so viel CO₂ aus wie Gas. Weniger Kohle, mehr Wind und Wasserstoff für die Flaute.'
-        : 'Erdgas läuft zu oft. Mehr Wind, mehr Elektrolyse und ein größerer Wasserstoffspeicher ersetzen es in den dunklen Wochen.'
+  if (failed.some((c) => c.id === 'climate')) {
+    const worst = climateBalance(input, r).parts.reduce((a, b) =>
+      b.emitted - b.allowed > a.emitted - a.allowed ? b : a
     );
+    tips.push(
+      worst.id === 'heat'
+        ? 'Zu viele Öl- und Gasheizungen: mehr Wärmepumpen, Wärmenetze oder Sanierung. Jede Wärmepumpe spart mehr CO₂, als ihr Strom selbst aus einem Gaskraftwerk verursacht.'
+        : worst.id === 'cars'
+          ? 'Zu viele Verbrenner: mehr Elektroautos. Auch mit Strom aus Gas stößt ein Elektroauto weniger aus als ein Benziner.'
+          : input.coal > 0
+            ? 'Kohle stößt je kWh mehr als doppelt so viel CO₂ aus wie Gas. Weniger Kohle, mehr Wind und Wasserstoff für die Flaute.'
+            : 'Erdgas läuft zu oft. Mehr Wind, mehr Elektrolyse und ein größerer Wasserstoffspeicher ersetzen es in den dunklen Wochen.'
+    );
+  }
   return tips;
 }
 
 /** Share URL parameters: every input as a short key. */
 const shortKeys: Record<keyof SystemInputs, string> = {
   year: 'j',
+  population: 'bev',
   baseDemand: 'b',
   heatPumps: 'wp',
   heatPumpKwh: 'wpk',
+  retrofit: 'san',
+  heatNetworks: 'wn',
   cars: 'ea',
   carKwh: 'eak',
   extraDemand: 'x',
@@ -336,5 +468,27 @@ export function fullLoadHours(p: {
     solar: hours(p.solar, profileCapacity.solar),
     windOnshore: hours(p.windOnshore, profileCapacity.windOnshore),
     windOffshore: hours(p.windOffshore, profileCapacity.windOffshore),
+  };
+}
+
+/** CO₂ per area against the climate law's path, Mt. */
+export function climateSpec(input: SystemInputs, r: SystemResult) {
+  const { parts } = climateBalance(input, r);
+  const round = (n: number) => Math.round(n * 10) / 10;
+  return {
+    schemaVersion: 1,
+    showTitle: false,
+    type: 'bar',
+    tokens: { 'color-1': '#c0392b', 'color-2': '#9fb8ad' },
+    title: `CO₂ ${input.year} je Bereich gegen den Pfad des Klimaschutzgesetzes, in Mt`,
+    source:
+      'Umweltbundesamt, Klimaschutzgesetz Anlage 2a, KBA, Schornsteinfegerhandwerk · eigene Rechnung',
+    categoryAxis: { title: 'Bereich' },
+    valueAxis: { title: 'Mt CO₂' },
+    categories: parts.map((p) => p.label),
+    series: [
+      { name: 'Ausstoß', values: parts.map((p) => round(p.emitted)) },
+      { name: 'Erlaubt', values: parts.map((p) => round(p.allowed)) },
+    ],
   };
 }
