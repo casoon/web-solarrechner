@@ -47,6 +47,10 @@ export default defineConfig({
             title: 'Rechner und Methodik',
             links: [
               { title: 'Solarrechner', url: '/' },
+              {
+                title: 'Häufige Fragen: Lohnen sich Photovoltaik, Speicher und Balkonkraftwerk?',
+                url: '/#fragen',
+              },
               { title: 'Anbieter-Modelle: kaufen, mieten, Dach verpachten', url: '/de/anbieter/' },
               { title: 'So rechnet der Solarrechner', url: '/de/rechenweg/' },
               {

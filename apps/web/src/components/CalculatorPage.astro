@@ -1,10 +1,70 @@
 ---
+import { FAQSchema, SoftwareAppSchema } from '@casoon/astro-structured-data/components';
 import SolarLayout from '@/layouts/SolarLayout.astro';
 import SolarCalculator from './SolarCalculator.svelte';
+
+// Questions people put to search engines and AI assistants, answered in the page text and as FAQPage data.
+const questions = [
+  {
+    question: 'Lohnt sich eine Photovoltaikanlage?',
+    answer:
+      'Das hängt vor allem davon ab, wie viel Solarstrom du selbst nutzt, was dich Netzstrom kostet und was eingespeister Strom noch bringt. Jede selbst genutzte Kilowattstunde spart den vollen Arbeitspreis; eingespeister Strom bringt je nach Inbetriebnahme eine Vergütung, einen Marktwert oder nichts. Zeigt die Rechnung einen positiven Saldo erst nach 15 oder 20 Jahren, ist die Anlage als Geldanlage schwach, weil in diese Zeit der Ersatz von Wechselrichter und Speicher fällt.',
+    link: { href: '/de/rechenweg/', label: 'So rechnet der Solarrechner' },
+  },
+  {
+    question: 'Lohnt sich ein Stromspeicher?',
+    answer:
+      'Ein Speicher verschiebt Mittagsstrom in den Abend und hebt so den Eigenverbrauch. Dafür kostet er in der Anschaffung, verliert beim Laden und Entladen Energie, braucht Strom im Bereitschaftsbetrieb und muss während der Laufzeit meist einmal ersetzt werden. Ob sich das rechnet, hängt vor allem vom Verbrauch am Abend und in der Nacht ab. Der Solarrechner zeigt jedes Ergebnis mit und ohne Speicher nebeneinander.',
+  },
+  {
+    question: 'Lohnt sich ein Balkonkraftwerk?',
+    answer:
+      'Ein Balkonkraftwerk rechnet sich über den Strom, den der Haushalt im selben Moment verbraucht. Überschüsse fließen in der Regel ohne Vergütung ins Netz. Entscheidend sind deshalb Ausrichtung, Verschattung und wie viel tagsüber läuft, wenn die Sonne scheint. Der Rechner hat einen eigenen Balkonkraftwerk-Modus mit bis zu 2 kWp Modulleistung.',
+  },
+  {
+    question: 'Wie viel Solarstrom kann ich selbst verbrauchen?',
+    answer:
+      'Das lässt sich nur Stunde für Stunde sinnvoll rechnen. Wer Jahres- oder Monatssummen vergleicht, tut so, als könnte Mittagssonne den Abendverbrauch decken, und überschätzt den Eigenverbrauch. Der Solarrechner gleicht für jede der 8.760 Stunden des Jahres den Ertrag aus PVGIS-Sonnendaten, den Verbrauch und den Speicher ab; kurze Lastspitzen, E-Auto und Wärmepumpe kommen als eigene Lasten dazu.',
+  },
+  {
+    question: 'Solaranlage kaufen, mieten oder das Dach verpachten?',
+    answer:
+      'Miete ist laut Verbraucherzentrale meist teurer als Kauf, braucht aber kein eigenes Kapital. Bei Miete, Dachpacht und Komplettpaketen zählen außerdem Laufzeit, die Bindung an einen Stromtarif und das Risiko, dass der Vertragspartner über 20 Jahre nicht derselbe bleibt. Die Seite Anbieter-Modelle rechnet Kauf, Miete, Dachpacht und Contracting mit denselben Annahmen gegeneinander.',
+    link: { href: '/de/anbieter/', label: 'Anbieter-Modelle vergleichen' },
+  },
+  {
+    question: 'Was ändert das Solarspitzengesetz für neue Anlagen?',
+    answer:
+      'Neue Anlagen erhalten bei negativen Börsenpreisen keine Vergütung, und ohne Smart Meter dürfen sie nur 60 % ihrer Leistung einspeisen. Beides senkt den Wert des eingespeisten Stroms und macht den Eigenverbrauch wichtiger. Der Rechner wählt die Erlösregel nach dem Datum der Inbetriebnahme und rechnet mit einem Einspeiselimit.',
+  },
+  {
+    question: 'Ist der Solarrechner unabhängig und kostenlos?',
+    answer:
+      'Ja. Er verkauft nichts, vermittelt keine Angebote, verlangt keine Anmeldung und erhält keine Provision. Die Rechnung läuft im Browser; Verbrauch und Kosten verlassen ihn nicht. Rechenweg und Quellcode unter MIT-Lizenz sind offen. Die Ergebnisse sind Überschläge mit veränderbaren Annahmen, keine Ertragszusage und kein Angebot.',
+    link: { href: '/de/about/', label: 'Datenquellen und Grenzen' },
+  },
+];
 ---
 <SolarLayout title="Solarrechner – was rechnet sich für dich?" description="Kostenloser, anbieterneutraler Solarrechner für Photovoltaik, Balkonkraftwerk und Speicher: stündlich gerechnet, Rechenweg offen, ohne Anmeldung und Paywall.">
-  <div class="page-intro"><div><h1>Dein Strom. Deine Rechnung.</h1><p>Wie viel Sonne passt zu deinem Alltag? Vergleiche Photovoltaik und Speicher – mit Annahmen, die du selbst verändern kannst.</p></div><ul class="intro-facts"><li><strong>Jede Stunde des Jahres</strong><span>Sonnendaten von PVGIS für deinen Ort</span></li><li><strong>Bleibt bei dir</strong><span>Verbrauch und Kosten verlassen den Browser nicht</span></li><li><strong>Unabhängig und kostenlos</strong><span>Kein Anbieter dahinter, keine Anmeldung, keine Paywall</span></li><li><a href="/de/rechenweg/">So rechnet der Solarrechner</a></li></ul></div>
+  <div class="page-intro"><div><h1>Dein Strom. Deine Rechnung.</h1><p>Wie viel Sonne passt zu deinem Alltag? Vergleiche Photovoltaik und Speicher – mit Annahmen, die du selbst verändern kannst.</p></div><ul class="intro-facts"><li><strong>Jede Stunde des Jahres</strong><span>Sonnendaten von PVGIS für deinen Ort</span></li><li><strong>Keine Anfrage, kein Rückruf</strong><span>Rechnet lokal, Verbrauch und Kosten gehen nirgends hin</span></li><li><strong>Unabhängig und kostenlos</strong><span>Kein Anbieter dahinter, keine Anmeldung, keine Paywall</span></li><li><a href="/de/rechenweg/">So rechnet der Solarrechner</a></li></ul></div>
   <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. <a href="/de/about/">Datenquellen und Methodik</a> sind auch ohne JavaScript lesbar.</p></noscript>
   <div class="mobile-jump"><a href="#ergebnis">Direkt zum Ergebnis</a></div>
   <SolarCalculator client:load />
+  <article class="method-page" id="fragen" aria-labelledby="fragen-title">
+    <section>
+      <h2 id="fragen-title">Häufige Fragen</h2>
+      {questions.map((q) => <><h3>{q.question}</h3><p>{q.answer}{q.link && <> <a href={q.link.href}>{q.link.label}</a></>}</p></>)}
+    </section>
+  </article>
+  <SoftwareAppSchema
+    id={new URL('/#app', Astro.site).href}
+    name="Solarrechner"
+    description="Kostenloser, anbieterneutraler Wirtschaftlichkeitsrechner für Photovoltaik, Balkonkraftwerk und Speicher in Deutschland. Rechnet Stunde für Stunde mit PVGIS-Sonnendaten, ohne Anmeldung; die Eingaben bleiben im Browser."
+    url={new URL('/', Astro.site).href}
+    operatingSystem="Web"
+    applicationCategory="FinanceApplication"
+    price={0}
+    priceCurrency="EUR"
+  />
+  <FAQSchema questions={questions.map(({ question, answer }) => ({ question, answer }))} />
 </SolarLayout>
