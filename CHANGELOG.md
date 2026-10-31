@@ -13,7 +13,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 - **Site-Dateien:** `/.well-known/security.txt` und `humans.txt`; `llms.txt` nennt jetzt auch Rechenweg, englische Projektseite und Quellcode.
 - **Build:** Die Prüfung nach dem Build (`astro-post-audit`) kontrolliert zusätzlich Go-live-Bedingungen (Herkunft von Canonical, Open Graph und Sitemap, kein `noindex`, keine lokalen Adressen), Sprachversionen, Crawl-Budget, Render-Blocking, Datenschutz und den JSON-LD-Graphen.
 - **SEO:** Startseite, Projektseite, `llms.txt` und strukturierte Daten beschreiben den Rechner als kostenloses, anbieterneutrales Werkzeug ohne Anmeldung und Paywall mit offengelegtem Rechenweg; der Website-Knoten im JSON-LD-Graphen trägt dafür Beschreibung, freien Zugang und Lizenz, `llms.txt` verlinkt die Anbieter-Modelle.
-- **Hintergrund:** Neues Menü in der Navigation mit drei Seiten zur Energieversorgung; die Erzeugungsdaten von SMARD und die Länderbilanzen werden mit `node apps/web/scripts/sync-energy-data.mjs` als Snapshot aktualisiert.
+- **Hintergrund:** Drei Seiten zur Energieversorgung; Stromversorgung und Stromsystem 2045 stehen in der Navigation, „Energie richtig zählen“ ist von der Stromversorgung und im Fußbereich verlinkt; die Erzeugungsdaten von SMARD und die Länderbilanzen werden mit `node apps/web/scripts/sync-energy-data.mjs` als Snapshot aktualisiert.
 - **Stromversorgung:** Neue Seite zeigt den Strommix seit 2015 nach Jahren und Monaten, eine Dunkelflaute-Woche, Netzengpässe, den Stand der Ausbauziele und als Gedankenexperiment den Strompreis je Bundesland aus eigener Erzeugung, wahlweise mit Umweltkosten und mit Endlagerkosten der Kernkraft beim Land oder bei der Allgemeinheit.
 - **Energie richtig zählen:** Neue Seite rechnet mit eigenen Annahmen vor, warum Wärmepumpe und Elektroauto fossile Energie nicht 1:1 ersetzen müssen, und nennt die Einwände, bei denen Strom nicht gewinnt.
 - **Stromsystem 2045:** Neues Szenario-Spiel rechnet Bedarf, Wind, Sonne, Speicher, Wasserstoff und Reserven für 2030, 2037 oder 2045 Stunde für Stunde mit dem Wetter von 2024 und prüft Versorgungsstandard und Klimaschutzgesetz; Szenarien lassen sich als Link teilen.
@@ -22,6 +22,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Navigation:** Rechner, Rechenweg, Stromversorgung, Stromsystem 2045, Anbieter und Über stehen ohne Untermenü in einer Reihe; die aktuelle Seite ist unterstrichen.
 - **Logo:** Neues Symbol zeigt die Sonne als Anteilsring, dessen gelber Bogen für die Eigenversorgung steht; Kopfzeile, Favicon, App-Symbol und Vorschaubild verwenden es.
 - **Site-Dateien:** `robots.txt` lässt KI-Such- und Antwortdienste die Seiten lesen und zitieren; Crawler, die nur Trainingsdaten sammeln, bleiben ausgeschlossen.
 - **Anbieter-Modelle:** Die Einordnung ist kürzer und in Karten gegliedert; Vereinfachungen und Quellen stehen aufklappbar am Ende.

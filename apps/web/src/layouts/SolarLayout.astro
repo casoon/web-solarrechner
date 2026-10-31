@@ -14,12 +14,21 @@ interface Props {
 const { title, description, lang = 'de', alternates = [], noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname === '/de/' ? '/' : Astro.url.pathname, Astro.site);
 const website = new URL('/#website', Astro.site).href;
-const backgroundPages = [
-  { href: '/de/stromversorgung/', label: 'Stromversorgung' },
-  { href: '/de/energie-zaehlen/', label: 'Energie richtig zählen' },
+const path = Astro.url.pathname;
+// "Energie richtig zählen" belongs to Stromversorgung and is linked from there and the footer.
+const navItems = [
+  { href: '/', label: 'Rechner', current: path === '/' },
+  { href: '/de/rechenweg/', label: 'Rechenweg' },
+  { href: '/de/stromversorgung/', label: 'Stromversorgung', also: '/de/energie-zaehlen/' },
   { href: '/de/stromsystem-2045/', label: 'Stromsystem 2045' },
-];
-const background = backgroundPages.some((p) => Astro.url.pathname.startsWith(p.href));
+  { href: '/de/anbieter/', label: 'Anbieter' },
+  { href: '/de/about/', label: 'Über' },
+].map((item) => ({
+  ...item,
+  current:
+    item.current ??
+    (path.startsWith(item.href) || (item.also !== undefined && path.startsWith(item.also))),
+}));
 ---
 <!doctype html>
 <html lang={lang}>
@@ -43,7 +52,7 @@ const background = backgroundPages.some((p) => Astro.url.pathname.startsWith(p.h
   </head>
   <body class="solar-site">
     <a class="skip-link" href="#main">Zum Inhalt</a>
-    <header class="site-header"><a href="/" class="wordmark"><svg viewBox="0 0 40 40" aria-hidden="true" width="40" height="40"><rect width="40" height="40" rx="9" fill="currentColor" /><circle cx="20" cy="20" r="10" fill="none" stroke="#3d5d53" stroke-width="5" /><path d="M20 10A10 10 0 1 1 10 20" fill="none" stroke="#e6b734" stroke-width="5" stroke-linecap="round" /></svg><span class="wordmark-text">Solarrechner<span>von CASOON</span></span></a><nav aria-label="Hauptnavigation"><div class="nav-group"><a href="/" aria-current={Astro.url.pathname === "/" ? "page" : undefined}>Rechner</a><a href="/de/rechenweg/" aria-current={Astro.url.pathname.includes("rechenweg") ? "page" : undefined}>Rechenweg</a><a href="/de/anbieter/" aria-current={Astro.url.pathname.includes("anbieter") ? "page" : undefined}>Anbieter-Modelle</a></div><div class="nav-group"><details class="nav-menu"><summary class:list={{ current: background }}>Hintergrund</summary><div>{backgroundPages.map((p) => <a href={p.href} aria-current={Astro.url.pathname.startsWith(p.href) ? "page" : undefined}>{p.label}</a>)}</div></details></div><div class="nav-group"><a href="/de/about/" aria-current={Astro.url.pathname.includes("about") ? "page" : undefined}>Über die Demo</a></div></nav></header>
+    <header class="site-header"><a href="/" class="wordmark"><svg viewBox="0 0 40 40" aria-hidden="true" width="40" height="40"><rect width="40" height="40" rx="9" fill="currentColor" /><circle cx="20" cy="20" r="10" fill="none" stroke="#3d5d53" stroke-width="5" /><path d="M20 10A10 10 0 1 1 10 20" fill="none" stroke="#e6b734" stroke-width="5" stroke-linecap="round" /></svg><span class="wordmark-text">Solarrechner<span>von CASOON</span></span></a><nav aria-label="Hauptnavigation">{navItems.map((item) => <a href={item.href} aria-current={item.current ? "page" : undefined}>{item.label}</a>)}</nav></header>
     <main id="main"><slot /></main>
     <Schema
       item={{
@@ -74,7 +83,7 @@ const background = backgroundPages.some((p) => Astro.url.pathname.startsWith(p.h
         : undefined}
       robots={noindex ? 'noindex' : undefined}
     />
-    <footer class="site-footer"><p>Eine Demonstration mit Chartlet, Open Grid, Astro & Svelte.</p><a href="/de/rechenweg/">So rechnet der Solarrechner</a><a href="/de/about/">Datenquellen & Methodik</a><a href="https://github.com/casoon/web-solarrechner">Quellcode auf GitHub</a><a href="https://www.casoon.de/impressum/">Impressum</a><a href="https://www.casoon.de/datenschutz/">Datenschutz</a></footer>
+    <footer class="site-footer"><p>Eine Demonstration mit Chartlet, Open Grid, Astro & Svelte.</p><a href="/de/rechenweg/">So rechnet der Solarrechner</a><a href="/de/about/">Datenquellen & Methodik</a><a href="/de/energie-zaehlen/">Energie richtig zählen</a><a href="https://github.com/casoon/web-solarrechner">Quellcode auf GitHub</a><a href="https://www.casoon.de/impressum/">Impressum</a><a href="https://www.casoon.de/datenschutz/">Datenschutz</a></footer>
     <SchemaGraph />
   </body>
 </html>

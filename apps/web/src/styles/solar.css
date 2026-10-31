@@ -100,19 +100,9 @@
 .site-header nav {
   display: flex;
   align-items: center;
+  gap: 22px;
   font-size: 13px;
   font-weight: 600;
-}
-/* Calculators, background pages and the project page as separate groups. */
-.nav-group {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
-.nav-group + .nav-group {
-  margin-left: 22px;
-  padding-left: 22px;
-  border-left: 1px solid var(--line);
 }
 .site-header nav a {
   text-decoration: none;
@@ -121,6 +111,10 @@
 }
 .site-header nav a:hover {
   text-decoration: underline;
+}
+.site-header nav a[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 .page-intro {
   padding-block: 52px 38px;
@@ -649,15 +643,12 @@ label.text-button:focus-within {
     font-size: 19px;
   }
   .site-header nav {
+    flex-wrap: wrap;
+    gap: 0 14px;
     font-size: 12px;
   }
-  .nav-group {
-    gap: 14px;
-  }
-  .nav-group + .nav-group {
-    margin-left: 0;
-    padding-left: 0;
-    border-left: 0;
+  .site-header nav a {
+    padding-block: 8px;
   }
   .site-header,
   .site-footer,
@@ -1072,59 +1063,6 @@ label.text-button:focus-within {
     gap: 0.25rem;
   }
 }
-.solar-site .nav-menu {
-  position: relative;
-  margin-block: 0;
-}
-.solar-site .nav-menu > summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  padding-block: 12px;
-  font-size: inherit;
-  list-style: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.nav-menu > summary::-webkit-details-marker {
-  display: none;
-}
-.nav-menu > summary::after {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: translateY(-2px) rotate(45deg);
-  transition: transform 0.15s;
-}
-.nav-menu[open] > summary::after {
-  transform: translateY(1px) rotate(-135deg);
-}
-.nav-menu > summary:hover {
-  text-decoration: underline;
-}
-.nav-menu summary.current {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-}
-.nav-menu > div {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  z-index: 30;
-  display: grid;
-  min-width: 220px;
-  padding: 6px 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgb(24 59 50 / 12%);
-}
-.nav-menu > div a {
-  padding-block: 10px;
-}
 .energy-figures {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -1186,10 +1124,6 @@ label.text-button:focus-within {
   .target-list li {
     grid-template-columns: 1fr;
     gap: 4px;
-  }
-  .nav-menu > div {
-    right: auto;
-    left: 0;
   }
 }
 /* Explanatory pages: readable column, short sections, cards instead of long paragraphs. */

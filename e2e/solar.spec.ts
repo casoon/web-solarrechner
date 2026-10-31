@@ -56,7 +56,7 @@ test('keyboard and accessible structure have no axe violations', async ({ page }
 test('mobile stays within viewport and methodology is linked', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('link', { name: 'Über die Demo', exact: true }).click();
+  await page.getByRole('link', { name: 'Über', exact: true }).click();
   await expect(page.locator('h1')).toHaveText('Über dieses Projekt');
   await expect(
     page.getByRole('heading', { name: 'Datenquellen und eigene Annahmen' })
