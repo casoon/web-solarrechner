@@ -1239,6 +1239,104 @@ label.text-button:focus-within {
   margin: 0 0 14px;
   padding-left: 1.2rem;
 }
+/* Template B: section bar on the left, reading column of 720 px, figures across the content width. */
+.reading-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 40px 40px 0;
+  align-items: start;
+}
+.section-nav {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.section-nav p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.section-nav ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+.section-nav li a {
+  display: block;
+  padding: 6px 0 6px 14px;
+  margin-left: -2px;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.section-nav li a:hover {
+  border-left-color: var(--ink);
+}
+.section-nav .section-back {
+  margin-top: 16px;
+  font-weight: 600;
+}
+.solar-site .reading-body.method-page {
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+.reading-body > section,
+.reading-body > p,
+.reading-body > details {
+  max-width: 720px;
+}
+.reading-body > section:has(.energy-figures, .solar-chart, .method-table, .target-list) {
+  max-width: none;
+}
+.marked-values strong {
+  width: fit-content;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #f6ecc9;
+}
+.about-highlight {
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+@media (max-width: 1000px) {
+  .reading-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-inline: 24px;
+  }
+  .section-nav {
+    position: static;
+  }
+  .section-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border: 0;
+  }
+  .section-nav li a {
+    margin: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+  }
+}
+@media (max-width: 760px) {
+  .reading-layout {
+    padding-inline: 18px;
+  }
+}
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

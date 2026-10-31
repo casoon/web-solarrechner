@@ -1,6 +1,8 @@
 ---
 import SolarLayout from '@/layouts/SolarLayout.astro';
 import ArchitectureOverview from './ArchitectureOverview.astro';
+import PageIntro from './PageIntro.astro';
+import ReadingLayout from './ReadingLayout.astro';
 import '@/styles/app.css';
 
 interface Props {
@@ -15,6 +17,12 @@ const copy = de
         'Solarrechnung im Browser: TypeScript für das Modell, WebAssembly für Diagramme, Tabellen und PDF. Eine Demo mit Chartlet, Open Grid, Astro und Svelte.',
       intro:
         'Ein kleines Werkzeug, das zeigt, wie viel heute direkt im Browser möglich ist: Solaranlage und Speicher vergleichen, Kosten verändern und das Ergebnis als PDF mitnehmen. Eine Demonstration mit Chartlet, Open Grid und Lightweight PDF, gebaut mit Astro und Svelte.',
+      facts: [
+        { title: 'Die Rechnung läuft bei dir', text: 'Kein Rechenaufruf an den Server' },
+        { title: 'Quellcode offen', text: 'MIT-Lizenz, auf GitHub' },
+      ],
+      toSources: 'Zu den Datenquellen',
+      onPage: 'Auf dieser Seite',
       specialTitle: 'Was diese Demo besonders macht',
       special: [
         [
@@ -117,6 +125,12 @@ const copy = de
         'Solar calculations in your browser: TypeScript for the model, WebAssembly for charts, tables and PDF. A demo with Chartlet, Open Grid, Astro and Svelte.',
       intro:
         'A small tool demonstrating what can run directly in your browser: compare solar and battery options, adjust costs and download a PDF report. A demonstration of Chartlet, Open Grid and Lightweight PDF, built with Astro and Svelte.',
+      facts: [
+        { title: 'The calculation runs on your device', text: 'No server call to calculate' },
+        { title: 'Open source', text: 'MIT licence, on GitHub' },
+      ],
+      toSources: 'Go to data sources',
+      onPage: 'On this page',
       specialTitle: 'What makes this demo different',
       special: [
         [
@@ -225,30 +239,33 @@ const copy = de
     { hreflang: 'x-default', href: '/about/' },
   ]}
 >
-  <article class="mx-auto max-w-3xl px-6 py-12">
-    <h1 class="mb-6 text-4xl font-extrabold tracking-tight">{copy.title}</h1>
-    <p class="mb-8 text-xl leading-relaxed">{copy.intro}</p>
-    <section class="mb-10 rounded-lg border border-border p-5" aria-labelledby="special-title">
-      <h2 id="special-title" class="mb-4 text-2xl font-bold">{copy.specialTitle}</h2>
+  <PageIntro title={copy.title} facts={copy.facts} link={{ href: '#quellen', label: copy.toSources }}>{copy.intro}</PageIntro>
+  <ReadingLayout
+    label={copy.onPage}
+    sections={[{ id: 'besonders', label: copy.specialTitle }, { id: 'technik', label: copy.techTitle }, { id: 'quellen', label: copy.sourcesTitle }, { id: 'grenzen', label: copy.limitsTitle }]}
+    back={{ href: '/', label: copy.back }}
+    class="method-page"
+  >
+    <section id="besonders" class="about-highlight" aria-labelledby="special-title">
+      <h2 id="special-title">{copy.specialTitle}</h2>
       <dl class="space-y-4">{copy.special.map(([name, description]) => <div><dt class="font-bold">{name}</dt><dd class="leading-relaxed text-text-secondary">{description}</dd></div>)}</dl>
     </section>
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">{copy.techTitle}</h2>
+    <section id="technik">
+      <h2>{copy.techTitle}</h2>
       <dl class="space-y-4">{copy.tech.map(([name, description, href]) => <div><dt class="font-bold"><a href={href}>{name} · GitHub</a></dt><dd class="leading-relaxed text-text-secondary">{description}</dd></div>)}</dl>
     </section>
     <p class="mb-6 leading-relaxed">{copy.source} <a href="https://github.com/casoon/web-solarrechner">casoon/web-solarrechner</a></p>
     <details class="mb-10"><summary>{copy.architecture}</summary><div class="mt-6"><ArchitectureOverview locale={locale} /></div></details>
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">{copy.sourcesTitle}</h2>
+    <section id="quellen">
+      <h2>{copy.sourcesTitle}</h2>
       <ul class="mb-4 list-disc space-y-3 pl-6">{copy.sources.map(([name, description, href]) => <li><a href={href}>{name}</a><p class="leading-relaxed text-text-secondary">{description}</p></li>)}</ul>
       <p class="leading-relaxed">{copy.profiles}</p>
     </section>
-    <section class="mb-10">
-      <h2 class="mb-4 text-2xl font-bold">{copy.limitsTitle}</h2>
+    <section id="grenzen">
+      <h2>{copy.limitsTitle}</h2>
       <p class="mb-4 leading-relaxed">{copy.limits}</p>
       {de && <p class="mb-4 leading-relaxed">Wie aus diesen Annahmen eine Zahl wird, zeigt <a href="/de/rechenweg/">So rechnet der Solarrechner</a> an einem durchgerechneten Beispiel.</p>}
       <p class="leading-relaxed">{copy.closing}</p>
     </section>
-    <a href="/">{copy.back}</a>
-  </article>
+  </ReadingLayout>
 </SolarLayout>

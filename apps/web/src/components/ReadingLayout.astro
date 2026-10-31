@@ -1,0 +1,11 @@
+---
+/** Template B: section bar on the left, reading column on the right. */
+interface Props {
+  sections: { id: string; label: string }[];
+  label?: string;
+  back?: { href: string; label: string };
+  class?: string;
+}
+const { sections, label = 'Auf dieser Seite', back, class: className } = Astro.props;
+---
+<div class="reading-layout"><nav class="section-nav" aria-label={label}><p>{label}</p><ul>{sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}</ul>{back && <a class="section-back" href={back.href}>{back.label}</a>}</nav><article class:list={['reading-body', className]}><slot /></article></div>

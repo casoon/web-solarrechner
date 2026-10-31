@@ -1,5 +1,6 @@
 ---
 import PageIntro from '@/components/PageIntro.astro';
+import ReadingLayout from '@/components/ReadingLayout.astro';
 import SolarChart from '@/components/SolarChart.svelte';
 import SolarTable from '@/components/SolarTable.svelte';
 import StatePrices from '@/components/StatePrices.svelte';
@@ -113,7 +114,10 @@ const sources = [
     link={{ href: '#laender', label: 'Zum Landesstrompreis' }}
   >Strommix, Dunkelflaute, Netz und Bundesländer in Zahlen. Jede Zahl mit Bezugsgröße und Quelle; die Erzeugungsdaten werden monatlich aktualisiert.</PageIntro>
 
-  <article class="method-page wide">
+  <ReadingLayout
+    sections={[{ id: 'lage', label: 'Die Lage in Zahlen' }, { id: 'wandel', label: `Der Wandel seit ${smard.years[0].year}` }, { id: 'dunkelflaute', label: 'Dunkelflaute' }, { id: 'netz', label: 'Das Netz' }, { id: 'ziele', label: 'Ziele und Stand' }, { id: 'laender', label: 'Landesstrompreis' }]}
+    class="method-page"
+  >
     <section aria-labelledby="lage">
       <h2 id="lage">Die Lage in Zahlen</h2>
       <dl class="energy-figures">
@@ -180,7 +184,7 @@ const sources = [
       </ul>
       <p>Photovoltaik liegt über dem gesetzlichen Pfad, Wind darunter. Der Strombedarf soll von 526 TWh (2025) auf 989 bis 1.294 TWh im Jahr 2045 wachsen; warum der Energiebedarf trotzdem sinkt, zeigt <a href="/de/energie-zaehlen/">Energie richtig zählen</a>.</p>
     </section>
-  </article>
+  </ReadingLayout>
 
   <section id="laender" class="method-page calc-intro flush" aria-labelledby="laender-title">
     <h2 id="laender-title">Gedankenexperiment: der Landesstrompreis</h2>
