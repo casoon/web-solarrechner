@@ -423,67 +423,91 @@
   background: #eff2e9;
 }
 .results {
+  display: grid;
+  gap: 24px;
   min-width: 0;
 }
 .result-summary {
-  background: #183b32;
-  color: #fffcef;
-  padding: 30px;
-  border-radius: 8px;
+  display: grid;
+  gap: 26px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 28px 32px;
+  border-radius: 12px;
 }
 .summary-heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 16px;
-  margin-bottom: 22px;
+}
+.summary-heading > div:first-child {
+  display: grid;
+  gap: 4px;
 }
 .summary-heading h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
-.summary-heading > span {
-  font-size: 12px;
+.summary-heading > div:first-child > span {
+  font-size: 14px;
   color: #d0dfd1;
 }
 .result-toggle {
-  background: #315044;
-  max-width: 390px;
+  flex: none;
+  background: rgb(255 255 255 / 8%);
 }
 .result-toggle button {
   color: #e1e8db;
+  white-space: nowrap;
 }
 .result-toggle button.active {
-  background: #e8c45a;
-  color: #183b32;
+  background: var(--accent);
+  color: var(--ink);
 }
 .key-results {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 25px 24px;
-  margin: 26px 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px 32px;
+  margin: 0;
   font-variant-numeric: tabular-nums;
 }
+.key-results > div {
+  padding-top: 14px;
+  border-top: 1px solid rgb(247 247 240 / 18%);
+}
 .key-results dt {
-  font-size: 12px;
+  font-size: 14px;
   color: #d0dfd1;
 }
 .key-results dd {
   margin: 6px 0 0;
   font-size: clamp(22px, 2.5vw, 32px);
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 .result-summary > p {
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 1.55;
   color: #d0dfd1;
   margin-bottom: 0;
   max-width: 75ch;
 }
-.comparison {
-  padding: 28px 0;
-  border-bottom: 1px solid var(--line);
+/* Every result block below the summary is a card of its own. */
+.comparison,
+.chart-section,
+.table-section,
+.method-note,
+.annual-table {
+  min-width: 0;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
 }
 .comparison-line {
   display: flex;
@@ -501,12 +525,6 @@
   color: var(--muted);
   font-size: 13px;
   max-width: 75ch;
-}
-.chart-section,
-.table-section {
-  padding-top: 34px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
 }
 .section-heading {
   display: flex;
@@ -585,14 +603,9 @@
   --og-accent: #183b32;
   --og-font-family: Inter, sans-serif;
 }
-.annual-table {
-  padding-block: 18px;
-}
 .method-note {
-  padding-top: 30px;
   font-size: 12px;
   color: var(--muted);
-  max-width: 75ch;
 }
 .method-note h2 {
   font-size: 18px;
@@ -742,17 +755,22 @@ label.text-button:focus-within {
     width: 100%;
   }
   .key-results {
-    gap: 24px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 12px;
   }
   .summary-heading {
-    display: block;
-  }
-  .summary-heading > span {
-    display: block;
-    margin-top: 8px;
+    flex-direction: column;
+    align-items: stretch;
   }
   .result-summary {
     padding: 22px;
+  }
+  .comparison,
+  .chart-section,
+  .table-section,
+  .method-note,
+  .annual-table {
+    padding: 18px 16px;
   }
   .result-toggle button {
     font-size: 11px;

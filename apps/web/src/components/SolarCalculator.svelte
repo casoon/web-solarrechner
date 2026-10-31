@@ -1113,30 +1113,32 @@ function download() {
       </p>{/if}
     <section class="result-summary" aria-labelledby="result-title">
       <div class="summary-heading">
-        <h2 id="result-title">Was könnte sich lohnen?</h2>
-        <span>
-          {#if computing}<span class="calc-status" role="status">
-              Rechnet …
-            </span>{/if}{profile.location}
-        </span>
-      </div>
-      <div class="segmented result-toggle">
-        <button
-          type="button"
-          class:active={!selectedBattery}
-          aria-pressed={!selectedBattery}
-          onclick={() => (selectedBattery = false)}
-        >
-          Ohne Speicher
-        </button>
-        <button
-          type="button"
-          class:active={selectedBattery}
-          aria-pressed={selectedBattery}
-          onclick={() => (selectedBattery = true)}
-        >
-          Mit {number(applied.battery, 1)} kWh Speicher
-        </button>
+        <div>
+          <h2 id="result-title">Was könnte sich lohnen?</h2>
+          <span>
+            {#if computing}<span class="calc-status" role="status">
+                Rechnet …
+              </span>{/if}{profile.location} · {number(applied.kwp, 1)} kWp · {applied.years} Jahre
+          </span>
+        </div>
+        <div class="segmented result-toggle">
+          <button
+            type="button"
+            class:active={!selectedBattery}
+            aria-pressed={!selectedBattery}
+            onclick={() => (selectedBattery = false)}
+          >
+            Ohne Speicher
+          </button>
+          <button
+            type="button"
+            class:active={selectedBattery}
+            aria-pressed={selectedBattery}
+            onclick={() => (selectedBattery = true)}
+          >
+            Mit {number(applied.battery, 1)} kWh Speicher
+          </button>
+        </div>
       </div>
       <dl class="key-results">
         <div>
