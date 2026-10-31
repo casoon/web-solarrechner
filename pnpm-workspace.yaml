@@ -1,11 +1,23 @@
 packages:
   - "apps/*"
 
+# Build scripts are reviewed: allowBuilds is pnpm 11's replacement for
+# onlyBuiltDependencies / ignoredBuiltDependencies.
 allowBuilds:
   "@casoon/astro-post-audit": true
   esbuild: true
   sharp: true
   workerd: true
+
+# A new version installs only after it has been public for a day.
+minimumReleaseAge: 1440
+
+# GHSA-gcqx-w48m-w2h4 (deepmerge <=4.3.1, low): no patched release on npm. The only path is
+# @sveltejs/vite-plugin-svelte merging the project's own Svelte config at build time, so no
+# untrusted input reaches it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-gcqx-w48m-w2h4
 
 # Transitive dependencies pinned to patched versions (pnpm audit), all dev/build-time-only
 # tooling (astro's asset pipeline, @astrojs/internal-helpers, vite/postcss,
