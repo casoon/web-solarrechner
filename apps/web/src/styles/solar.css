@@ -1267,6 +1267,44 @@ label.text-button:focus-within {
   margin: 0 0 14px;
   padding-left: 1.2rem;
 }
+/* FAQ below the calculator: full layout width, two columns on wide screens. */
+.faq {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 56px 40px;
+}
+.solar-site .faq h2 {
+  margin-bottom: 24px;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+.faq-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 48px;
+}
+.faq-list h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.faq-list p {
+  margin: 0;
+  max-width: 68ch;
+}
+@media (max-width: 1000px) {
+  .faq {
+    padding-inline: 24px;
+  }
+  .faq-list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .faq {
+    padding: 40px 18px;
+  }
+}
 /* Template B: section bar on the left, reading column of 720 px, figures across the content width. */
 .reading-layout {
   display: grid;

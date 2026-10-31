@@ -55,12 +55,10 @@ const questions = [
   <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. <a href="/de/about/">Datenquellen und Methodik</a> sind auch ohne JavaScript lesbar.</p></noscript>
   <div class="mobile-jump"><a href="#ergebnis">Direkt zum Ergebnis</a></div>
   <SolarCalculator client:load />
-  <article class="method-page" id="fragen" aria-labelledby="fragen-title">
-    <section>
-      <h2 id="fragen-title">Häufige Fragen</h2>
-      {questions.map((q) => <><h3>{q.question}</h3><p>{q.answer}{q.link && <> <a href={q.link.href}>{q.link.label}</a></>}</p></>)}
-    </section>
-  </article>
+  <section class="faq" id="fragen" aria-labelledby="fragen-title">
+    <h2 id="fragen-title">Häufige Fragen</h2>
+    <div class="faq-list">{questions.map((q) => <div><h3>{q.question}</h3><p>{q.answer}{q.link && <> <a href={q.link.href}>{q.link.label}</a></>}</p></div>)}</div>
+  </section>
   <SoftwareAppSchema
     id={new URL('/#app', Astro.site).href}
     name="Solarrechner"
