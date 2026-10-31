@@ -1,6 +1,7 @@
 @import "@fontsource/inter/latin-400.css";
 @import "@fontsource/inter/latin-600.css";
 @import "@fontsource/inter/latin-700.css";
+@import "@fontsource/inter/latin-800.css";
 .solar-site {
   color-scheme: light;
   --ink: #183b32;
@@ -114,7 +115,9 @@
 }
 .site-header nav a[aria-current="page"] {
   text-decoration: underline;
+  text-decoration-color: var(--accent);
   text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }
 .page-intro {
   padding-block: 48px 40px;
