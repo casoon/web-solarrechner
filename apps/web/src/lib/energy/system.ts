@@ -37,13 +37,22 @@ export const heatingShares = [
  */
 export type Factors = { gas: number; coal: number };
 
+/** Population at the end of 2024 in millions (Destatis), the reference all per-head values scale from. */
+export const population2024 = 83.6;
+
 export type SystemInputs = {
   year: 2030 | 2037 | 2045;
+  /** Population in millions; scales today's demand, the heat demand and the car fleet. */
+  population: number;
   /** Today's demand without new consumers, TWh, shaped like the 2024 grid load. */
   baseDemand: number;
   /** Million heat pumps and their yearly consumption in kWh. */
   heatPumps: number;
   heatPumpKwh: number;
+  /** Building heat saved by insulation against 2025, percent. */
+  retrofit: number;
+  /** Share of building heat from heat networks, assumed climate-neutral, percent. */
+  heatNetworks: number;
   /** Million electric cars and their yearly consumption in kWh. */
   cars: number;
   carKwh: number;
@@ -126,7 +135,8 @@ export function demandProfile(p: Profiles, input: SystemInputs) {
   const heat = input.heatPumps * input.heatPumpKwh;
   const flat = (input.cars * input.carKwh + input.extraDemand * 1e3) / p.hours;
   return Float64Array.from({ length: p.hours }, (_, h) => {
-    const base = ((p.load[h] ?? 0) / loadSum) * input.baseDemand * 1e3;
+    const base =
+      ((p.load[h] ?? 0) / loadSum) * input.baseDemand * 1e3 * (input.population / population2024);
     const m = months[h] ?? 11;
     return base + (heat * heatingShares[m]) / per[m] + flat;
   });
@@ -257,5 +267,8 @@ export function validateSystem(input: SystemInputs) {
   if (values.some((v) => typeof v === 'number' && v < 0))
     return 'Negative Eingabewerte sind nicht möglich.';
   if (input.baseDemand <= 0) return 'Der Grundbedarf muss größer als null sein.';
+  if (input.population <= 0) return 'Die Bevölkerung muss größer als null sein.';
+  if (input.retrofit > 100 || input.heatNetworks > 100)
+    return 'Sanierung und Wärmenetze gehen höchstens bis 100 %.';
   return '';
 }

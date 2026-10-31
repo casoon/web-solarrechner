@@ -2,9 +2,27 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { compare, efficiencyDefaults, household } from './efficiency';
-import { co2Limit, conditions, facts, fromParams, presets, targetYears, toParams } from './game';
+import {
+  carBalance,
+  climateBalance,
+  climateBudget,
+  co2Limit,
+  conditions,
+  facts,
+  fromParams,
+  heatBalance,
+  presets,
+  targetYears,
+  toParams,
+} from './game';
 import { stateDefaults, statePrices } from './states';
-import { type Profiles, profileCapacity, type SystemInputs, simulate } from './system';
+import {
+  type Profiles,
+  profileCapacity,
+  type SystemInputs,
+  type SystemResult,
+  simulate,
+} from './system';
 
 const close = (a: number, b: number, eps = 1e-6) =>
   assert.ok(Math.abs(a - b) <= eps, `${a} ≠ ${b}`);
@@ -108,6 +126,35 @@ test('the climate limit falls on a straight line to 2045', () => {
   const at2030 = facts.sectorLimit2030 * (facts.power2025 / facts.sector2025);
   close(co2Limit(2030), at2030);
   close(co2Limit(2037), (at2030 * 8) / 15);
+});
+
+test('the climate balance reproduces 2025 and falls to zero with full electrification', () => {
+  const today = {
+    ...presets[2030],
+    population: 83.6,
+    retrofit: 0,
+    heatNetworks: 0,
+    heatPumps: facts.heatPumps2025,
+    heatPumpKwh: 4000,
+    cars: facts.electricCars2025,
+  };
+  const r = { co2: 0 } as SystemResult;
+  const [, heat, cars] = climateBalance(today, r).parts;
+  close(heat.emitted, facts.buildings2025);
+  close(cars.emitted, (facts.carStock - facts.electricCars2025) * facts.carCo2);
+  const electric = { ...today, heatPumps: 100, cars: 100 };
+  assert.equal(climateBalance(electric, r).emitted, 0);
+  // Heat pumps never cover more than the heat left after the networks.
+  const h = heatBalance({ ...electric, heatNetworks: 40 });
+  close(h.pumped, h.demand * 0.6);
+  // Twice the people, twice the cars.
+  close(carBalance({ ...today, population: 167.2 }).fleet, facts.carStock * 2);
+});
+
+test('the climate budget adds the three paths and ends near zero in 2045', () => {
+  assert.ok(climateBudget(2030) > climateBudget(2037));
+  close(climateBudget(2045), co2Limit(2045));
+  close(climateBudget(2037), (climateBudget(2030) * 8) / 15);
 });
 
 test('a shared link restores the scenario', () => {

@@ -2,10 +2,13 @@
 import PageIntro from '@/components/PageIntro.astro';
 import SystemGame from '@/components/SystemGame.svelte';
 import SolarLayout from '@/layouts/SolarLayout.astro';
-import { co2Limit, facts } from '@/lib/energy/game';
+import { climateBudget, facts } from '@/lib/energy/game';
 import { number } from '@/lib/solar/format';
 
-const limits = ([2030, 2037, 2045] as const).map((y) => ({ year: y, limit: co2Limit(y) }));
+const budgets = ([2030, 2037, 2045] as const).map((year) => ({
+  year,
+  allowed: climateBudget(year),
+}));
 const sources = [
   [
     'Bundesnetzagentur | SMARD.de: Netzlast und Erzeugung 2024, stündlich (CC BY 4.0)',
@@ -22,6 +25,22 @@ const sources = [
   [
     'Umweltbundesamt: Entwicklung der spezifischen Treibhausgas-Emissionen des deutschen Strommix 1990–2025 (Climate Change 16/2026)',
     'https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf',
+  ],
+  [
+    'Umweltbundesamt: Treibhausgasdaten 2025 (Gebäude 103,4, Verkehr 146,3 Mio. t)',
+    'https://www.umweltbundesamt.de/presse/pressemitteilungen/treibhausgasdaten-zeigen-klimaschutz-braucht-neuen',
+  ],
+  [
+    'Schornsteinfegerhandwerk via Solarserver: Heizungsbestand 2025 (22.05.2026)',
+    'https://www.solarserver.de/2026/05/22/heizungsbestand-2025-waermewende-stockt/',
+  ],
+  [
+    'Kraftfahrt-Bundesamt via electrive: Pkw-Bestand am 1. Januar 2026 (27.02.2026)',
+    'https://www.electrive.net/2026/02/27/endlich-ueber-zwei-millionen-elektroautos-auf-deutschen-strassen/',
+  ],
+  [
+    'Statistisches Bundesamt: 16. koordinierte Bevölkerungsvorausberechnung (11.12.2025)',
+    'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Bevoelkerungsvorausberechnung/annahmen_ergebnisse_16te_kBv.html',
   ],
   [
     '§ 4 Kohleverstromungsbeendigungsgesetz: Zielniveau 2030 und 2038',
@@ -61,9 +80,9 @@ const sources = [
 <SolarLayout title="Stromsystem 2045: Szenario-Spiel zu Bedarf und Klimaziel" description="Stell Bedarf, Wind, Sonne, Speicher und Reserven für 2030 bis 2045 ein und rechne mit echtem Wetter: Hält die Versorgung, hält das Klimaziel?">
   <PageIntro
     title="Stromsystem 2045: schaffst du es?"
-    facts={[{ title: '8.784 Stunden', text: 'Echtes Wetter 2024, skaliert' }, { title: 'Zwei harte Bedingungen', text: 'Versorgung und Klimaziel' }]}
+    facts={[{ title: '8.784 Stunden', text: 'Echtes Wetter 2024, skaliert' }, { title: 'Zwei harte Bedingungen', text: 'Versorgung und Klimaziel für Strom, Heizen und Autofahren' }]}
     link={{ href: '#regeln', label: 'Spielregeln und Grenzen' }}
-  >Wärmepumpen, Elektroautos und Industrie brauchen mehr Strom, das Klimaschutzgesetz erlaubt immer weniger CO₂. Stell Erzeugung, Speicher und Reserven ein und rechne ein ganzes Jahr Stunde für Stunde durch, mit dem Wetter von 2024 und seiner Dunkelflaute.</PageIntro>
+  >Wärmepumpen, Elektroautos und Industrie brauchen mehr Strom, das Klimaschutzgesetz erlaubt immer weniger CO₂. Stell Bevölkerung, Heizungen, Autos, Erzeugung, Speicher und Reserven ein und rechne ein ganzes Jahr Stunde für Stunde durch, mit dem Wetter von 2024 und seiner Dunkelflaute. Wer weniger elektrifiziert, entlastet das Stromnetz, aber nicht das Klima.</PageIntro>
 
   <noscript><p class="error">Das Szenario-Spiel braucht JavaScript. Die Regeln und Quellen unten sind auch ohne lesbar.</p></noscript>
   <SystemGame client:load />
@@ -74,10 +93,10 @@ const sources = [
       <p class="lead">Gewonnen hat, wer zwei harte Bedingungen erfüllt. Drei weitere sind Warnungen: auf dem Papier machbar, in der Wirklichkeit schwer.</p>
       <ul class="cards">
         <li><span class="tag">Versorgung</span><span class="figure">≤ {number(facts.lole, 2)} h</span><p>im Jahr ohne genug Strom; der deutsche Zuverlässigkeitsstandard</p></li>
-        <li><span class="tag">Klimaziel</span><span class="figure">{limits.map((l) => number(l.limit, 0)).join(' · ')} Mt</span><p>CO₂ aus Kraftwerken in {limits.map((l) => l.year).join(', ')}, abgeleitet aus dem Klimaschutzgesetz</p></li>
+        <li><span class="tag">Klimaziel</span><span class="figure">{budgets.map((b) => number(b.allowed, 0)).join(' · ')} Mt</span><p>CO₂ aus Kraftwerken, Öl- und Gasheizungen und Verbrennern in {budgets.map((b) => b.year).join(', ')}, abgeleitet aus dem Klimaschutzgesetz</p></li>
         <li><span class="tag">Warnungen</span><p>Ausbautempo über dem bisherigen Rekord, Importanteil über 15 %, Bedarf außerhalb des Netzentwicklungsplans</p></li>
       </ul>
-      <p>Die Energiewirtschaft darf 2030 noch {number(facts.sectorLimit2030)} Mio. t ausstoßen; auf Kraftwerke entfällt ihr Anteil von 2025 (rund {number(facts.power2025)} von {number(facts.sector2025, 1)} Mio. t). Danach gilt eine gerade Linie bis zur Klimaneutralität 2045.</p>
+      <p>Die Energiewirtschaft darf 2030 noch {number(facts.sectorLimit2030)} Mio. t ausstoßen; auf Kraftwerke entfällt ihr Anteil von 2025 (rund {number(facts.power2025)} von {number(facts.sector2025, 1)} Mio. t). Gebäude dürfen 2030 noch {number(facts.buildings2030)} Mio. t ausstoßen (2025: {number(facts.buildings2025, 1)}), der Verkehr {number(facts.transport2030)} Mio. t (2025: {number(facts.transport2025, 1)}); den Pkw steht davon ihr Anteil von 2025 zu. Danach gilt jeweils eine gerade Linie bis zur Klimaneutralität 2045. Gezählt wird die Summe: Sauberer Strom darf ausgleichen, was beim Heizen noch fehlt, und umgekehrt.</p>
       <aside class="energy-note">
         <h3>Und das 1,5-Grad-Ziel?</h3>
         <p>Laut Sachverständigenrat für Umweltfragen ist Deutschlands Budget dafür aufgebraucht; dieses Spiel lässt sich nicht mehr gewinnen. Für 1,75 Grad blieben ab 2025 rund 2,5 Mrd. t CO₂ für alle Sektoren, linear verbraucht bis 2033.</p>
@@ -90,6 +109,9 @@ const sources = [
         <li><strong>Wetter 2024</strong>, Stunde für Stunde auf die eingestellte Leistung hochgerechnet. Ein anderes Jahr kann besser oder schlechter ausfallen.</li>
         <li><strong>Bedarf</strong> wie die Netzlast 2024; Wärmepumpen nach einer vereinfachten Monatsverteilung, alles Neue sonst gleichmäßig. Gesteuertes Laden und flexible Industrie, die entlasten würden, fehlen.</li>
         <li><strong>Reihenfolge:</strong> Überschuss geht in Speicher, Elektrolyse, Export, sonst wird abgeregelt. Bei Mangel liefern Speicher, Wasserstoff, Import, Erdgas, zuletzt Kohle. Das ist die klimafreundlichste Reihenfolge, nicht die des Marktes.</li>
+        <li><strong>Heizen:</strong> Wärmebedarf der Gebäude aus den Emissionen 2025 und {number(facts.heatPumps2025, 1)} Mio. Wärmepumpen (Schätzung aus dem Absatz), je Kopf skaliert. Wärmepumpen mit Jahresarbeitszahl {number(facts.heatPumpCop)}, Kessel mit {number(facts.boilerEfficiency * 100)} % Wirkungsgrad, Brennstoff wie der Bestand aus 14,8 Mio. Gas- und 4,7 Mio. Ölheizungen. Wärmenetze gelten als klimaneutral, ihr Strombedarf fehlt.</li>
+        <li><strong>Autofahren:</strong> {number(facts.carStock, 1)} Mio. Pkw, je Kopf skaliert; ein Verbrenner stößt angenommen {number(facts.carCo2, 2)} t CO₂ im Jahr aus (rund 12.000 km bei 145 g/km). Lkw, Industrie und Fernwärme stehen nicht im Spiel.</li>
+        <li><strong>Bevölkerung:</strong> skaliert heutigen Verbrauch, Wärmebedarf und Pkw-Bestand, nicht Industrie und Elektrolyse.</li>
         <li><strong>Kupferplatte:</strong> keine Netzengpässe innerhalb Deutschlands.</li>
         <li><strong>Wirkungsgrade:</strong> Speicher 90 %, Elektrolyse 65 %, Wasserstoffkraftwerk 55 %.</li>
         <li><strong>CO₂:</strong> {number(facts.factors.gas, 2)} t/MWh aus Erdgas, {number(facts.factors.coal, 2)} t aus Kohle (Mix des Kohleausstiegs 2030). Importe zählen hier mit null.</li>
