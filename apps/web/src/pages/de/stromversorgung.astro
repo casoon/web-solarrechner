@@ -140,7 +140,7 @@ const sources = [
     <section aria-labelledby="dunkelflaute">
       <h2 id="dunkelflaute">Dunkelflaute: was wirklich passiert</h2>
       <p>Anfang November 2024 lieferten Wind und Sonne eine Woche lang nur {pct(lull.weatherShare)} der Last, in der schwächsten Stunde {number(lull.minWeatherGw, 1)} GW. Bis zu {number(lull.maxGapGw)} GW kamen aus Kohle, Gas, Biomasse, Wasser, Speichern und Importen.</p>
-      <SolarChart client:visible spec={lullSpec()} id="energy-lull" scrollable />
+      <SolarChart client:visible spec={lullSpec()} id="energy-lull" />
       <ul class="cards">
         <li><span class="figure">936 €/MWh</span><p>höchster Börsenpreis, gut zehnmal das Jahresmittel</p></li>
         <li><span class="figure">35 Stunden</span><p>von 1.464 im November und Dezember 2024 über 300 €/MWh</p></li>
@@ -177,7 +177,7 @@ const sources = [
     </section>
   </article>
 
-  <section id="laender" class="method-page wide flush" aria-labelledby="laender-title">
+  <section id="laender" class="method-page calc-intro flush" aria-labelledby="laender-title">
     <h2 id="laender-title">Gedankenexperiment: der Landesstrompreis</h2>
     <p class="lead">Was, wenn jedes Bundesland die Durchschnittskosten seiner eigenen Kraftwerke zahlte statt eines bundesweiten Börsenpreises, der sich am teuersten noch gebrauchten Kraftwerk orientiert?</p>
     <p>Ein Gedankenexperiment mit Jahressummen, kein Reformvorschlag: Schleswig-Holstein hat übers Jahr Überschuss, in einer Dunkelflaute nicht.</p>

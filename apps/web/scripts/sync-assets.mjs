@@ -12,7 +12,7 @@ cpSync(resolve(app, 'node_modules/@casoon/opengrid/pkg'), resolve(app, 'public/v
 
 writeFileSync(
   resolve(app, 'public/vendor/chartlet.css'),
-  stylesheet({ types: ['line', 'bar', 'sankey', 'waterfall', 'heatmap'] })
+  stylesheet({ types: ['line', 'time', 'bar', 'sankey', 'waterfall', 'heatmap'] })
 );
 
 mkdirSync(resolve(app, 'public/vendor/lightweight-pdf'), { recursive: true });

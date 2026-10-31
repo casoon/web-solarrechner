@@ -57,6 +57,7 @@
 .site-header,
 .site-footer,
 .page-intro,
+.calc-intro,
 .calculator-layout {
   max-width: 1440px;
   margin-inline: auto;
@@ -177,7 +178,7 @@
 .input-section legend + * {
   clear: both;
 }
-.solar-site input:not([type="range"], [type="checkbox"]),
+.solar-site input:not([type="range"], [type="checkbox"], [type="radio"]),
 .solar-site select {
   width: 100%;
   border: 1px solid #9caea3;
@@ -221,7 +222,8 @@
   align-items: center;
   margin-block: 16px;
 }
-.solar-site input[type="checkbox"] {
+.solar-site input[type="checkbox"],
+.solar-site input[type="radio"] {
   accent-color: var(--ink);
   width: 18px;
   height: 18px;
@@ -607,6 +609,7 @@ label.text-button:focus-within {
   .site-header,
   .site-footer,
   .page-intro,
+  .calc-intro,
   .calculator-layout {
     padding-inline: 24px;
   }
@@ -641,6 +644,7 @@ label.text-button:focus-within {
   .site-header,
   .site-footer,
   .page-intro,
+  .calc-intro,
   .calculator-layout {
     padding-inline: 18px;
   }
@@ -968,6 +972,11 @@ label.text-button:focus-within {
 .storage-table th:first-child {
   text-align: left;
 }
+/* Tabular figures widen Inter's hyphen; names like Mecklenburg-Vorpommern keep proportional ones. */
+.storage-table th,
+.key-results dd.name {
+  font-variant-numeric: normal;
+}
 .storage-table thead th {
   color: var(--muted);
   font-weight: 600;
@@ -1045,13 +1054,38 @@ label.text-button:focus-within {
     gap: 0.25rem;
   }
 }
-.nav-menu {
+.solar-site .nav-menu {
   position: relative;
+  margin-block: 0;
 }
-.nav-menu summary {
+.solar-site .nav-menu > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
   padding-block: 12px;
+  font-size: inherit;
+  list-style: none;
   cursor: pointer;
   white-space: nowrap;
+}
+.nav-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.nav-menu > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s;
+}
+.nav-menu[open] > summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+.nav-menu > summary:hover {
+  text-decoration: underline;
 }
 .nav-menu summary.current {
   text-decoration: underline;
@@ -1229,6 +1263,11 @@ label.text-button:focus-within {
 }
 .method-page.flush {
   padding-bottom: 0;
+}
+/* Intro of a calculator below an explanatory page: aligned with the calculator's left edge. */
+.method-page.calc-intro {
+  max-width: 1440px;
+  padding-top: 0;
 }
 @media (max-width: 760px) {
   .site-header nav {

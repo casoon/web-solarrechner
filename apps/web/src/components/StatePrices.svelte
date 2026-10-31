@@ -107,11 +107,11 @@ const ct = (n: number) => `${number(n, 1)} ct/kWh`;
       <dl class="key-results">
         <div>
           <dt>Am günstigsten</dt>
-          <dd data-testid="cheapest-state">{cheapest.name}</dd>
+          <dd class="name" data-testid="cheapest-state">{cheapest.name}</dd>
         </div>
         <div>
           <dt>Am teuersten</dt>
-          <dd>{dearest.name}</dd>
+          <dd class="name">{dearest.name}</dd>
         </div>
         <div>
           <dt>Spanne</dt>
@@ -187,7 +187,13 @@ const ct = (n: number) => `${number(n, 1)} ct/kWh`;
     margin: 12px 0 0;
   }
   .choice legend {
+    float: none;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 4px;
+    letter-spacing: 0;
+    margin-bottom: 0;
+  }
+  .choice .check {
+    margin-block: 10px;
   }
 </style>

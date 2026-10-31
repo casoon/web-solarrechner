@@ -130,43 +130,47 @@ export function yearlyRows() {
   }));
 }
 
-/** The windless week of November 2024 in three-hour blocks, mean power in GW. */
+/** The windless week of November 2024 hour by hour, power in GW, with the grid load as a line. */
 export function lullSpec() {
-  const lull = data.lull;
-  const block = 3;
-  const start = new Date(lull.start);
-  const blocks = Array.from({ length: Math.floor(lull.hours / block) }, (_, b) => b * block);
-  const mean = (values: number[], at: number) =>
-    round1(values.slice(at, at + block).reduce((s, v) => s + v, 0) / block / 1000);
-  const label = (at: number) => {
-    const t = new Date(start.getTime() + at * 3600e3);
-    const day = t.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'numeric',
-      timeZone: 'Europe/Berlin',
-    });
-    const hour = t.toLocaleTimeString('de-DE', { hour: '2-digit', timeZone: 'Europe/Berlin' });
-    return `${day} ${hour}`;
-  };
+  const lull = data.lull as unknown as Record<string, number[]>;
+  const start = new Date(data.lull.start).getTime() / 1000;
+  const hours = Array.from({ length: data.lull.hours }, (_, h) => h);
+  const points = (keys: readonly string[]) =>
+    hours.map((h) => ({
+      time: start + h * 3600,
+      value: round1(keys.reduce((s, k) => s + lull[k][h], 0) / 1000),
+    }));
   return {
     schemaVersion: 1,
+    type: 'time',
     showTitle: false,
-    type: 'bar',
-    stack: 'normal',
+    showValues: false,
+    locale: 'de',
     tokens,
     title: 'Eine windarme Novemberwoche 2024: wer den Strom geliefert hat',
-    source: `${source} · Mittelwerte je drei Stunden · Import nicht enthalten`,
-    categoryAxis: { title: 'Tag und Uhrzeit' },
-    valueAxis: { title: 'GW' },
-    categories: blocks.map(label),
-    series: chartGroups.map((g) => ({
-      name: g.label,
-      values: blocks.map((at) =>
-        round1(
-          g.keys.reduce((s, k) => s + mean((lull as unknown as Record<string, number[]>)[k], at), 0)
-        )
-      ),
-    })),
+    source: `${source} · Stundenwerte · Lücke zur Netzlast: vor allem Import`,
+    timeAxis: { timezone: '+01:00', title: 'Tag' },
+    panes: [
+      {
+        valueAxis: { title: 'GW' },
+        stack: 'normal',
+        layers: [
+          ...chartGroups.map((g) => ({
+            mark: 'area',
+            name: g.label,
+            color: g.color,
+            points: points(g.keys),
+          })),
+          {
+            mark: 'line',
+            name: 'Netzlast',
+            color: '#183b32',
+            stroke: 'medium',
+            points: points(['load']),
+          },
+        ],
+      },
+    ],
   };
 }
 
