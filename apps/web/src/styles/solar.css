@@ -99,9 +99,20 @@
 }
 .site-header nav {
   display: flex;
-  gap: 26px;
+  align-items: center;
   font-size: 13px;
   font-weight: 600;
+}
+/* Calculators, background pages and the project page as separate groups. */
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.nav-group + .nav-group {
+  margin-left: 22px;
+  padding-left: 22px;
+  border-left: 1px solid var(--line);
 }
 .site-header nav a {
   text-decoration: none;
@@ -638,8 +649,15 @@ label.text-button:focus-within {
     font-size: 19px;
   }
   .site-header nav {
-    gap: 14px;
     font-size: 12px;
+  }
+  .nav-group {
+    gap: 14px;
+  }
+  .nav-group + .nav-group {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
   }
   .site-header,
   .site-footer,
