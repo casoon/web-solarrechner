@@ -45,12 +45,46 @@ const dynamicYear = $derived(byKey.dynamic.firstYear - byKey.grid.firstYear);
 const rentExtra = $derived(byKey.rent.total - byKey.buyProvider.total);
 const providerExtra = $derived(prices.provider - prices.local);
 const spec = $derived(offerCostSpec(result.offers, applied.years));
+/** Steps open and close like the calculator's; the first one starts open. */
+let openSteps = $state([true, false, false, false, false, false, false]);
+const ct = (euro: number) => `${number(euro * 100, 1)} ct/kWh`;
+const summaries = $derived([
+  [
+    `${number(input.household)} kWh/Jahr`,
+    ['kein E-Auto', 'ein E-Auto', 'zwei E-Autos'][input.cars],
+    ...(input.heat ? ['Wärmepumpe'] : []),
+    ct(input.price),
+  ].join(' · '),
+  `${number(input.kwp, 1)} kWp · ${input.battery > 0 ? `${number(input.battery, 1)} kWh Speicher` : 'ohne Speicher'}`,
+  `${number(input.localPrice)} €/kWp · Komplettanbieter +${number(input.providerMarkup)} %`,
+  `${number(input.rent)} €/Monat · ${number(input.rentYears)} Jahre`,
+  `Pacht ${number(input.lease)} €/kWp · Solarstrom ${ct(input.contractPrice)}`,
+  `${input.bundleDynamic ? 'mit' : 'ohne'} Energiemanager · ${ct(input.spread)} Ersparnis`,
+  `${number(input.years)} Jahre · Diskont ${number(input.discount, 1)} %`,
+]);
 </script>
 
+{#snippet stepHead(n: number, title: string, summary: string)}
+  <legend>
+    <button
+      type="button"
+      class="step-toggle"
+      aria-expanded={openSteps[n - 1]}
+      aria-controls={`offer-step-${n}`}
+      onclick={() => (openSteps[n - 1] = !openSteps[n - 1])}
+    >
+      <span class="step">{n}</span>
+      <span class="step-title">{title}<span class="step-summary">{summary}</span></span>
+      <span class="step-sign" aria-hidden="true">{openSteps[n - 1] ? '−' : '+'}</span>
+    </button>
+  </legend>
+{/snippet}
+
 <div class="calculator-layout">
-  <form class="controls" onsubmit={(e) => e.preventDefault()} aria-label="Annahmen des Modellvergleichs">
+  <form class="controls steps" onsubmit={(e) => e.preventDefault()} aria-label="Annahmen des Modellvergleichs">
     <fieldset class="input-section">
-      <legend><span class="step">1</span> Dein Haushalt</legend>
+      {@render stepHead(1, 'Dein Haushalt', summaries[0])}
+      <div class="step-body" id="offer-step-1" hidden={!openSteps[0]}>
       <NumberField
         label="Strombedarf im Haushalt"
         bind:value={input.household}
@@ -90,10 +124,12 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         max={10}
         step={0.5}
       />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">2</span> Dach und Paket</legend>
+      {@render stepHead(2, 'Dach und Paket', summaries[1])}
+      <div class="step-body" id="offer-step-2" hidden={!openSteps[1]}>
       <NumberField
         label="Anlagengröße"
         bind:value={input.kwp}
@@ -120,10 +156,12 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         max={100}
         hint="Etwa Stunden mit negativen Börsenpreisen, in denen neue Anlagen nichts erhalten."
       />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">3</span> Kaufen</legend>
+      {@render stepHead(3, 'Kaufen', summaries[2])}
+      <div class="step-body" id="offer-step-3" hidden={!openSteps[2]}>
       <NumberField label="Fachbetrieb, ohne Speicher" bind:value={input.localPrice} unit="€/kWp" max={4000} step={50} />
       <NumberField label="Speicher" bind:value={input.storagePrice} unit="€/kWh" max={2000} step={25} />
       <NumberField
@@ -137,18 +175,22 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
       <NumberField label="Laufende Kosten" bind:value={input.running} unit="€/Jahr" max={1000} step={10} hint="Versicherung, Wartung, Zähler. In der Miete enthalten." />
       <NumberField label="Ersatz Wechselrichter und Speicher" bind:value={input.replacement} unit="€" max={20000} step={100} />
       <NumberField label="Ersatz im Betriebsjahr" bind:value={input.replacementYear} unit="Jahr" min={1} max={30} />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">4</span> Mieten</legend>
+      {@render stepHead(4, 'Mieten', summaries[3])}
+      <div class="step-body" id="offer-step-4" hidden={!openSteps[3]}>
       <NumberField label="Monatliche Miete" bind:value={input.rent} unit="€/Monat" max={2000} step={5} slider />
       <NumberField label="Laufzeit" bind:value={input.rentYears} unit="Jahre" min={1} max={30} />
       <NumberField label="Mieterhöhung pro Jahr" bind:value={input.rentChange} unit="%" min={-5} max={10} step={0.5} />
       <NumberField label="Übernahme am Ende" bind:value={input.takeover} unit="€" max={20000} />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">5</span> Dach überlassen</legend>
+      {@render stepHead(5, 'Dach überlassen', summaries[4])}
+      <div class="step-body" id="offer-step-5" hidden={!openSteps[4]}>
       <NumberField
         label="Dachpacht"
         bind:value={input.lease}
@@ -164,10 +206,12 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         step={0.01}
         hint="Contracting: Der Betreiber verkauft dir den Strom seiner Anlage, den Rest liefert das Netz."
       />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">6</span> Dynamischer Tarif</legend>
+      {@render stepHead(6, 'Dynamischer Tarif', summaries[5])}
+      <div class="step-body" id="offer-step-6" hidden={!openSteps[5]}>
       <label class="check">
         <input type="checkbox" bind:checked={input.bundleDynamic} />
          Anbieterpakete mit dynamischem Tarif und Energiemanager
@@ -194,15 +238,18 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
       {#if input.heat}<NumberField label="Verschiebbar: Wärmepumpe" bind:value={input.heatFlex} unit="%" max={100} />{/if}
       <NumberField label="Smart Meter und Tarif-Grundgebühr" bind:value={input.meterCost} unit="€/Jahr" max={500} step={5} hint="Mehrkosten gegenüber dem Festpreistarif." />
       <NumberField label="Abo Energiemanager" bind:value={input.subscription} unit="€/Monat" max={100} hint="Nur in den Paketen von Komplettanbietern." />
+      </div>
     </fieldset>
 
     <fieldset class="input-section">
-      <legend><span class="step">7</span> Zeitraum</legend>
+      {@render stepHead(7, 'Zeitraum', summaries[6])}
+      <div class="step-body" id="offer-step-7" hidden={!openSteps[6]}>
       <NumberField label="Betrachtungszeitraum" bind:value={input.years} unit="Jahre" min={1} max={30} />
       <NumberField label="Diskontsatz" bind:value={input.discount} unit="%" max={15} step={0.5} hint="Für den Barwert: späteres Geld zählt weniger." />
       <button type="button" class="text-button" onclick={() => (input = { ...offerDefaults })}>
         Annahmen zurücksetzen
       </button>
+      </div>
     </fieldset>
   </form>
 
@@ -249,7 +296,7 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
       </p>
     </section>
 
-    <section class="comparison" aria-labelledby="offer-reading-title">
+    <section class="comparison offer-reading" aria-labelledby="offer-reading-title">
       <h2 id="offer-reading-title">Was die Zahlen hier sagen</h2>
       <p>
         <strong>Anlage:</strong>
@@ -339,6 +386,19 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
 </div>
 
 <style>
+  /* Six short readings side by side on wide screens instead of one narrow column. */
+  .offer-reading {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 0 32px;
+    align-items: start;
+  }
+  .offer-reading > :global(h2) {
+    grid-column: 1 / -1;
+  }
+  .offer-reading > :global(p) {
+    max-width: none;
+  }
   .offer-table th[scope="row"] {
     white-space: normal;
   }

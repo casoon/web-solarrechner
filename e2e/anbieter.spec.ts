@@ -15,10 +15,14 @@ test('provider models recalculate locally from their own inputs', async ({ page 
   await expect(page.locator('.offer-table tbody tr')).toHaveCount(7);
   const rentRate = page.getByTestId('rent-rate');
   const before = (await rentRate.textContent()) ?? '';
+  const rent = page.getByRole('button', { name: /Mieten/ });
+  await expect(rent).toHaveAttribute('aria-expanded', 'false');
+  await rent.click();
   await page.getByLabel('Monatliche Miete', { exact: true }).fill('300');
   await expect(rentRate).not.toHaveText(before);
   await page.getByLabel('Monatliche Miete', { exact: true }).fill('-1');
   await expect(page.getByRole('alert')).toContainText('Negative Eingabewerte');
+  await expect(rent).toContainText('-1 €/Monat');
   expect(upstream).toBe(0);
   expect(errors).toEqual([]);
 });
