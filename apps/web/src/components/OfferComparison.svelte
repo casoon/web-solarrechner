@@ -249,44 +249,6 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
       </p>
     </section>
 
-    <section class="comparison" aria-labelledby="offer-table-title">
-      <h2 id="offer-table-title">Die Modelle nebeneinander</h2>
-      <div class="table-scroll">
-        <table class="storage-table offer-table" aria-labelledby="offer-table-title">
-          <thead>
-            <tr>
-              <th scope="col">Modell</th>
-              <th scope="col">Vorab</th>
-              <th scope="col">Jahr 1</th>
-              <th scope="col">{applied.years} Jahre</th>
-              <th scope="col">Barwert</th>
-              <th scope="col">Gegenüber Netz&shy;strom</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each result.offers as o}
-              <tr class:current={o.key === cheapest.key}>
-                <th scope="row">{o.label}{#if o.dynamic}<span class="offer-tag">dynamisch</span>{/if}</th>
-                <td>{currency(o.upfront)}</td>
-                <td>{currency(o.firstYear)}</td>
-                <td>{currency(o.total)}</td>
-                <td>{currency(o.presentCost)}</td>
-                <td>{o.key === 'grid' ? '–' : currency(o.versusGrid)}</td>
-              </tr>{/each}
-          </tbody>
-        </table>
-      </div>
-      <p class="field-hint">
-        Jahr 1 und Summe enthalten alle laufenden Zahlungen; negative Beträge heißen, dass Erlöse die
-        Kosten übersteigen. Barwert mit {number(applied.discount, 1)} % Diskontsatz.
-      </p>
-    </section>
-
-    <section class="chart-section" aria-labelledby="offer-chart-title">
-      <h2 id="offer-chart-title">Kosten über den ganzen Zeitraum</h2>
-      <SolarChart {spec} id="offer-costs" />
-    </section>
-
     <section class="comparison" aria-labelledby="offer-reading-title">
       <h2 id="offer-reading-title">Was die Zahlen hier sagen</h2>
       <p>
@@ -333,6 +295,45 @@ const spec = $derived(offerCostSpec(result.offers, applied.years));
         {currency(Math.abs(byKey.contract.versusGrid))}
         {byKey.contract.versusGrid <= 0 ? 'weniger' : 'mehr'} als reiner Netzstrom.
       </p>
+    </section>
+  </div>
+  <div class="results results-wide">
+    <section class="comparison" aria-labelledby="offer-table-title">
+      <h2 id="offer-table-title">Die Modelle nebeneinander</h2>
+      <div class="table-scroll">
+        <table class="storage-table offer-table" aria-labelledby="offer-table-title">
+          <thead>
+            <tr>
+              <th scope="col">Modell</th>
+              <th scope="col">Vorab</th>
+              <th scope="col">Jahr 1</th>
+              <th scope="col">{applied.years} Jahre</th>
+              <th scope="col">Barwert</th>
+              <th scope="col">Gegenüber Netz&shy;strom</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each result.offers as o}
+              <tr class:current={o.key === cheapest.key}>
+                <th scope="row">{o.label}{#if o.dynamic}<span class="offer-tag">dynamisch</span>{/if}</th>
+                <td>{currency(o.upfront)}</td>
+                <td>{currency(o.firstYear)}</td>
+                <td>{currency(o.total)}</td>
+                <td>{currency(o.presentCost)}</td>
+                <td>{o.key === 'grid' ? '–' : currency(o.versusGrid)}</td>
+              </tr>{/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="field-hint">
+        Jahr 1 und Summe enthalten alle laufenden Zahlungen; negative Beträge heißen, dass Erlöse die
+        Kosten übersteigen. Barwert mit {number(applied.discount, 1)} % Diskontsatz.
+      </p>
+    </section>
+
+    <section class="chart-section" aria-labelledby="offer-chart-title">
+      <h2 id="offer-chart-title">Kosten über den ganzen Zeitraum</h2>
+      <SolarChart {spec} id="offer-costs" />
     </section>
   </div>
 </div>

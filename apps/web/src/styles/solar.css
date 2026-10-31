@@ -192,11 +192,32 @@
   gap: 24px;
   align-items: start;
 }
-.steps {
+.controls {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
   overflow: hidden;
+}
+/* Tools without collapsible steps: the same card, each step with a plain heading. */
+.controls:not(.steps) .input-section {
+  padding: 18px 18px 22px;
+}
+.controls:not(.steps) .input-section legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.controls:not(.steps) .step {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+/* Wide result blocks below inputs and results, such as comparison tables. */
+.results-wide {
+  grid-column: 1 / -1;
 }
 .input-section {
   margin: 0;
@@ -474,6 +495,10 @@
   gap: 22px 32px;
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+/* Cards only in full rows: four figures as 2 × 2, never 3 + 1. */
+.key-results:has(> :nth-child(4):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .key-results > div {
   padding-top: 14px;
