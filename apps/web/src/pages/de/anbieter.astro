@@ -1,5 +1,6 @@
 ---
 import OfferComparison from '@/components/OfferComparison.svelte';
+import PageIntro from '@/components/PageIntro.astro';
 import SolarLayout from '@/layouts/SolarLayout.astro';
 
 const models = [
@@ -78,7 +79,11 @@ const sources = [
 ];
 ---
 <SolarLayout title="Kaufen, mieten, verpachten – Anbieter-Modelle im Vergleich" description="Anbieterneutral und kostenlos: Kauf, Miete, Dachpacht und dynamische Stromtarife der Komplettanbieter im Vergleich – was sie kosten, wo die Haken liegen.">
-  <div class="page-intro"><div><h1>Kaufen, mieten oder Dach verpachten?</h1><p>Bundesweite Komplettanbieter verkaufen Solaranlage, Speicher und dynamischen Stromtarif als Paket, zum Kauf oder zur Miete. Hier rechnest du die Konzepte grundsätzlich gegeneinander, mit eigenen Annahmen und unabhängig von deiner Anlage im Rechner.</p></div><ul class="intro-facts"><li><strong>Konzepte, keine Angebote</strong><span>Typische Konditionen, alle veränderbar</span></li><li><strong>Gleiche Energiebilanz</strong><span>Stündlich gerechnet, Berliner Sonnendaten</span></li><li><a href="#konzepte">Vor- und Nachteile lesen</a></li></ul></div>
+  <PageIntro
+    title="Kaufen, mieten oder Dach verpachten?"
+    facts={[{ title: 'Konzepte, keine Angebote', text: 'Typische Konditionen, alle veränderbar' }, { title: 'Gleiche Energiebilanz', text: 'Stündlich gerechnet, Berliner Sonnendaten' }]}
+    link={{ href: '#konzepte', label: 'Vor- und Nachteile lesen' }}
+  >Bundesweite Komplettanbieter verkaufen Solaranlage, Speicher und dynamischen Stromtarif als Paket, zum Kauf oder zur Miete. Hier rechnest du die Konzepte grundsätzlich gegeneinander, mit eigenen Annahmen und unabhängig von deiner Anlage im Rechner.</PageIntro>
   <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. Die Einordnung der Modelle weiter unten ist auch ohne JavaScript lesbar.</p></noscript>
   <OfferComparison client:load />
 

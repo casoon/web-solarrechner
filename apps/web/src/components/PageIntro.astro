@@ -1,0 +1,10 @@
+---
+/** Shared page opening: title, intro text (slot), key facts and one link into the page. */
+interface Props {
+  title: string;
+  facts: { title: string; text: string }[];
+  link?: { href: string; label: string };
+}
+const { title, facts, link } = Astro.props;
+---
+<div class="page-intro"><div><h1>{title}</h1><p><slot /></p></div><ul class="intro-facts">{facts.map((f) => <li><strong>{f.title}</strong><span>{f.text}</span></li>)}{link && <li><a href={link.href}>{link.label} →</a></li>}</ul></div>

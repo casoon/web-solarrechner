@@ -1,4 +1,5 @@
 ---
+import PageIntro from '@/components/PageIntro.astro';
 import SolarChart from '@/components/SolarChart.svelte';
 import SolarTable from '@/components/SolarTable.svelte';
 import StatePrices from '@/components/StatePrices.svelte';
@@ -106,7 +107,11 @@ const sources = [
 ];
 ---
 <SolarLayout title="Stromversorgung in Deutschland: Mix, Dunkelflaute, Netz" description="Wie sich der Strommix seit 2015 verändert hat, was in der Dunkelflaute passiert, warum das Netz das Nadelöhr ist und was Strom je Bundesland kosten würde.">
-  <div class="page-intro"><div><h1>Woher Deutschlands Strom kommt</h1><p>Strommix, Dunkelflaute, Netz und Bundesländer in Zahlen. Jede Zahl mit Bezugsgröße und Quelle; die Erzeugungsdaten werden monatlich aktualisiert.</p></div><ul class="intro-facts"><li><strong>Datenstand {fetched}</strong><span>Letzter voller Monat: {monthName(k.month)}</span></li><li><strong>Quelle der Zeitreihen</strong><span>Bundesnetzagentur | SMARD.de</span></li><li><a href="#laender">Zum Landesstrompreis</a></li></ul></div>
+  <PageIntro
+    title="Woher Deutschlands Strom kommt"
+    facts={[{ title: `Datenstand ${fetched}`, text: `Letzter voller Monat: ${monthName(k.month)}` }, { title: 'Quelle der Zeitreihen', text: 'Bundesnetzagentur | SMARD.de' }]}
+    link={{ href: '#laender', label: 'Zum Landesstrompreis' }}
+  >Strommix, Dunkelflaute, Netz und Bundesländer in Zahlen. Jede Zahl mit Bezugsgröße und Quelle; die Erzeugungsdaten werden monatlich aktualisiert.</PageIntro>
 
   <article class="method-page wide">
     <section aria-labelledby="lage">

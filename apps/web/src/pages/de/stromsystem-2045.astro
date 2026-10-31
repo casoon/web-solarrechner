@@ -1,4 +1,5 @@
 ---
+import PageIntro from '@/components/PageIntro.astro';
 import SystemGame from '@/components/SystemGame.svelte';
 import SolarLayout from '@/layouts/SolarLayout.astro';
 import { co2Limit, facts } from '@/lib/energy/game';
@@ -58,7 +59,11 @@ const sources = [
 ];
 ---
 <SolarLayout title="Stromsystem 2045: Szenario-Spiel zu Bedarf und Klimaziel" description="Stell Bedarf, Wind, Sonne, Speicher und Reserven für 2030 bis 2045 ein und rechne mit echtem Wetter: Hält die Versorgung, hält das Klimaziel?">
-  <div class="page-intro"><div><h1>Stromsystem 2045: schaffst du es?</h1><p>Wärmepumpen, Elektroautos und Industrie brauchen mehr Strom, das Klimaschutzgesetz erlaubt immer weniger CO₂. Stell Erzeugung, Speicher und Reserven ein und rechne ein ganzes Jahr Stunde für Stunde durch, mit dem Wetter von 2024 und seiner Dunkelflaute.</p></div><ul class="intro-facts"><li><strong>8.784 Stunden</strong><span>Echtes Wetter 2024, skaliert</span></li><li><strong>Zwei harte Bedingungen</strong><span>Versorgung und Klimaziel</span></li><li><a href="#regeln">Spielregeln und Grenzen</a></li></ul></div>
+  <PageIntro
+    title="Stromsystem 2045: schaffst du es?"
+    facts={[{ title: '8.784 Stunden', text: 'Echtes Wetter 2024, skaliert' }, { title: 'Zwei harte Bedingungen', text: 'Versorgung und Klimaziel' }]}
+    link={{ href: '#regeln', label: 'Spielregeln und Grenzen' }}
+  >Wärmepumpen, Elektroautos und Industrie brauchen mehr Strom, das Klimaschutzgesetz erlaubt immer weniger CO₂. Stell Erzeugung, Speicher und Reserven ein und rechne ein ganzes Jahr Stunde für Stunde durch, mit dem Wetter von 2024 und seiner Dunkelflaute.</PageIntro>
 
   <noscript><p class="error">Das Szenario-Spiel braucht JavaScript. Die Regeln und Quellen unten sind auch ohne lesbar.</p></noscript>
   <SystemGame client:load />

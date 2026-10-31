@@ -23,6 +23,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 ### Changed
 
 - **Navigation:** Rechner, Rechenweg, Stromversorgung, Stromsystem 2045, Anbieter und Über stehen ohne Untermenü in einer Reihe; die aktuelle Seite ist unterstrichen.
+- **Seiten:** Rechner, Anbieter-Modelle, Stromversorgung, Stromsystem 2045 und Energie richtig zählen beginnen mit demselben Einstieg aus Titel, Einleitung, Eckdaten und einem Verweis in die Seite; mobil stehen die Eckdaten unter der Einleitung, statt zu fehlen. Die 404-Seite zeigt nur noch Hinweis und Rückweg, zentriert.
 - **Logo:** Neues Symbol zeigt die Sonne als Anteilsring, dessen gelber Bogen für die Eigenversorgung steht; Kopfzeile, Favicon, App-Symbol und Vorschaubild verwenden es.
 - **Site-Dateien:** `robots.txt` lässt KI-Such- und Antwortdienste die Seiten lesen und zitieren; Crawler, die nur Trainingsdaten sammeln, bleiben ausgeschlossen.
 - **Anbieter-Modelle:** Die Einordnung ist kürzer und in Karten gegliedert; Vereinfachungen und Quellen stehen aufklappbar am Ende.

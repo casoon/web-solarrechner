@@ -1,5 +1,6 @@
 ---
 import { FAQSchema, SoftwareAppSchema } from '@casoon/astro-structured-data/components';
+import PageIntro from '@/components/PageIntro.astro';
 import SolarLayout from '@/layouts/SolarLayout.astro';
 import SolarCalculator from './SolarCalculator.svelte';
 
@@ -46,7 +47,11 @@ const questions = [
 ];
 ---
 <SolarLayout title="Solarrechner – was rechnet sich für dich?" description="Kostenloser, anbieterneutraler Solarrechner für Photovoltaik, Balkonkraftwerk und Speicher: stündlich gerechnet, Rechenweg offen, ohne Anmeldung und Paywall.">
-  <div class="page-intro"><div><h1>Dein Strom. Deine Rechnung.</h1><p>Wie viel Sonne passt zu deinem Alltag? Vergleiche Photovoltaik und Speicher – mit Annahmen, die du selbst verändern kannst.</p></div><ul class="intro-facts"><li><strong>Jede Stunde des Jahres</strong><span>Sonnendaten von PVGIS für deinen Ort</span></li><li><strong>Keine Anfrage, kein Rückruf</strong><span>Rechnet lokal, Verbrauch und Kosten gehen nirgends hin</span></li><li><strong>Unabhängig und kostenlos</strong><span>Kein Anbieter dahinter, keine Anmeldung, keine Paywall</span></li><li><a href="/de/rechenweg/">So rechnet der Solarrechner</a></li></ul></div>
+  <PageIntro
+    title="Dein Strom. Deine Rechnung."
+    facts={[{ title: 'Jede Stunde des Jahres', text: 'Sonnendaten von PVGIS für deinen Ort' }, { title: 'Keine Anfrage, kein Rückruf', text: 'Rechnet lokal, Verbrauch und Kosten gehen nirgends hin' }, { title: 'Unabhängig und kostenlos', text: 'Kein Anbieter dahinter, keine Anmeldung, keine Paywall' }]}
+    link={{ href: '/de/rechenweg/', label: 'So rechnet der Solarrechner' }}
+  >Wie viel Sonne passt zu deinem Alltag? Vergleiche Photovoltaik und Speicher – mit Annahmen, die du selbst verändern kannst.</PageIntro>
   <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. <a href="/de/about/">Datenquellen und Methodik</a> sind auch ohne JavaScript lesbar.</p></noscript>
   <div class="mobile-jump"><a href="#ergebnis">Direkt zum Ergebnis</a></div>
   <SolarCalculator client:load />
