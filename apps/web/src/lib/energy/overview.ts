@@ -140,6 +140,9 @@ export function lullSpec() {
       time: start + h * 3600,
       value: round1(keys.reduce((s, k) => s + lull[k][h], 0) / 1000),
     }));
+  const calm = longestCalm(lull, data.lull.hours);
+  // Day-ahead peak on 6 Nov 2024, 17–18 h (BNetzA/Bundeskartellamt, Dunkelflauten 2024).
+  const priceSpike = new Date('2024-11-06T16:00:00Z').getTime() / 1000;
   return {
     schemaVersion: 1,
     type: 'time',
@@ -155,12 +158,9 @@ export function lullSpec() {
         valueAxis: { title: 'GW' },
         stack: 'normal',
         layers: [
-          ...chartGroups.map((g) => ({
-            mark: 'area',
-            name: g.label,
-            color: g.color,
-            points: points(g.keys),
-          })),
+          // Areas take the palette tokens; explicit colors would need a style block the CSP blocks.
+          ...chartGroups.map((g) => ({ mark: 'area', name: g.label, points: points(g.keys) })),
+          // A fifth layer must bring a color; solar.css repeats it for production.
           {
             mark: 'line',
             name: 'Netzlast',
@@ -168,10 +168,39 @@ export function lullSpec() {
             stroke: 'medium',
             points: points(['load']),
           },
+          {
+            mark: 'band',
+            label: 'Wind und Sonne unter 10 % der Last',
+            from: start + calm.from * 3600,
+            to: start + calm.to * 3600,
+          },
+          {
+            mark: 'annotation',
+            label: 'Börsenpreis 820 €/MWh',
+            time: priceSpike,
+            value: round1(lull.load[(priceSpike - start) / 3600] / 1000),
+            shape: 'triangle-down',
+          },
         ],
       },
     ],
   };
+}
+
+/** Longest run of hours in which wind and solar cover less than a tenth of the load. */
+function longestCalm(lull: Record<string, number[]>, hours: number) {
+  let best = { from: 0, to: 0 };
+  let runStart = -1;
+  for (let h = 0; h <= hours; h++) {
+    const calm =
+      h < hours && lull.windOnshore[h] + lull.windOffshore[h] + lull.solar[h] < lull.load[h] * 0.1;
+    if (calm && runStart < 0) runStart = h;
+    if (!calm && runStart >= 0) {
+      if (h - runStart > best.to - best.from) best = { from: runStart, to: h };
+      runStart = -1;
+    }
+  }
+  return best;
 }
 
 /** Weekly figures of the windless week: demand, wind and solar, and the gap others filled. */

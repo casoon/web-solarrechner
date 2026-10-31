@@ -33,10 +33,12 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 - **Anbieter-Modelle:** Die Einordnung ist kürzer und in Karten gegliedert; Vereinfachungen und Quellen stehen aufklappbar am Ende.
 - **Anbieter-Modelle:** Die Seite beschreibt Konzepte ohne Firmen- oder Markennamen; Quellen, die einzelne Anbieter betreffen, sind entfernt.
 - **Anbieter-Modelle:** Das Verbrauchsfeld heißt „Strombedarf im Haushalt“ und ist klar vom Ertrag der Anlage getrennt; ein Hinweis zur Anlagengröße erklärt, warum keine Anlage den ganzen Bedarf deckt.
+- **Stromversorgung:** Der Netz-Abschnitt erklärt Redispatch, Entschädigungen, Bundeszuschuss und Preiszonen ausführlicher, die Kennzahlen stehen als 2 × 2. Das Gedankenexperiment ist durch Abstand, Linie und „Zum Ausprobieren“ vom Leseteil abgesetzt.
 - **Contributors:** Biome und fallow lassen die synchronisierten Dateien in `apps/web/public/vendor` aus.
 
 ### Fixed
 
+- **Stromversorgung:** Die Dunkelflaute-Woche zeigt ihre Farben auch unter der Content Security Policy, markiert die Stunden mit Wind und Sonne unter 10 % der Last und die Preisspitze vom 6. November 2024.
 - **SEO:** Titel und Beschreibungen der Hintergrund-Seiten passen in die Suchergebnisse; `security.txt` nennt eine Policy, die doppelte, nie ausgelieferte Sitemap-Route ist entfernt.
 - **Seiten:** Erklärseiten wie Rechenweg und Anbieter-Modelle laufen nicht mehr über die volle Fensterbreite, sondern in einer lesbaren Spalte; die Navigation bricht auf schmalen Bildschirmen um, statt seitlich überzustehen.
 - **Seiten:** Cloudflare fügt kein Skript zur Bot-Erkennung mehr in die Seiten ein, das die Content Security Policy blockierte und als Fehler in der Browser-Konsole stand. Der Worker liefert die HTML-Seiten dafür selbst komprimiert und als unveränderlich gekennzeichnet aus.

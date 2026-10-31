@@ -577,6 +577,20 @@
   max-width: 100%;
   height: auto;
 }
+/* Dunkelflaute week: the CSP drops Chartlet's style block for the fifth layer's own color. */
+#energy-lull .chartlet-style-4 {
+  stroke: #183b32;
+}
+#energy-lull .chartlet-style-4-swatch {
+  fill: #183b32;
+}
+#energy-lull .chartlet-area {
+  fill-opacity: 0.75;
+}
+#energy-lull .chartlet-zone {
+  fill: #d03a0f;
+  fill-opacity: 0.1;
+}
 .chart-status {
   padding: 60px 20px;
   color: var(--muted);
@@ -1411,6 +1425,9 @@ label.text-button:focus-within {
   padding: 0;
   list-style: none;
 }
+.cards.pairs {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
 .cards > li {
   padding: 16px 18px;
   border: 1px solid var(--line);
@@ -1457,7 +1474,20 @@ label.text-button:focus-within {
 /* Intro of a calculator below an explanatory page: aligned with the calculator's left edge. */
 .method-page.calc-intro {
   max-width: 1440px;
+  margin-top: 72px;
   padding-top: 0;
+}
+/* A rule and a label set the interactive part apart from the reading column above. */
+.calc-intro .section-kicker {
+  max-width: none;
+  margin: 0 0 18px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 @media (max-width: 760px) {
   .site-header nav {
