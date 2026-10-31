@@ -35,7 +35,7 @@ export default defineConfig({
     }),
     siteFiles({
       sitemap: { audit: { warnOnEmpty: true, errorOnDuplicates: true } },
-      robots: { preset: 'seoOnly', disallow: ['/api/'] },
+      robots: { preset: 'citationFriendly', disallow: ['/api/'] },
       llms: {
         title: 'Solarrechner',
         description:
@@ -79,6 +79,7 @@ export default defineConfig({
       },
       security: {
         contact: 'mailto:security@casoon.de',
+        policy: 'https://www.casoon.de/kontakt/',
         expires: '2027-10-29T00:00:00.000Z',
         preferredLanguages: ['de', 'en'],
         canonical: new URL('/.well-known/security.txt', env.PUBLIC_SITE_URL).href,
