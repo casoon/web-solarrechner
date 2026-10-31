@@ -1,0 +1,5 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "entry": ["apps/web/scripts/sync-energy-data.mjs"],
+  "ignorePatterns": ["apps/web/public/vendor/**"]
+}

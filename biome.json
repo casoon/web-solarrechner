@@ -17,6 +17,7 @@
       "**/*.svelte",
       "**/*.css",
       "!apps/web/public/data",
+      "!apps/web/public/vendor",
       "!apps/web/src/lib/energy/data",
       "!apps/web/src/lib/solar/reference.json"
     ]
