@@ -412,6 +412,7 @@ export function weekSpec(r: SystemResult, year: number) {
   return {
     schemaVersion: 1,
     showTitle: false,
+    showValues: false,
     type: 'bar',
     stack: 'normal',
     tokens,

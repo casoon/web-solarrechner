@@ -39,6 +39,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Fixed
 
+- **Stromsystem 2045:** Die schwierigste Woche zeigt keine überlappenden Zahlen mehr über den Balken; die Werte stehen im Tooltip.
 - **Stromversorgung:** Die Dunkelflaute-Woche zeigt ihre Farben auch unter der Content Security Policy, markiert die Stunden mit Wind und Sonne unter 10 % der Last und die Preisspitze vom 6. November 2024.
 - **SEO:** Titel und Beschreibungen der Hintergrund-Seiten passen in die Suchergebnisse; `security.txt` nennt eine Policy, die doppelte, nie ausgelieferte Sitemap-Route ist entfernt.
 - **Seiten:** Erklärseiten wie Rechenweg und Anbieter-Modelle laufen nicht mehr über die volle Fensterbreite, sondern in einer lesbaren Spalte; die Navigation bricht auf schmalen Bildschirmen um, statt seitlich überzustehen.
