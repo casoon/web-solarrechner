@@ -8,10 +8,27 @@ async function pickPreset(page: Page, id: string) {
   await expect(page.locator(`input[name="preset"][value="${id}"]`)).toBeChecked();
 }
 
+/** Steps start closed except the first; most tests work across all of them. */
+async function openAllSteps(page: Page) {
+  for (const step of await page.locator('.step-toggle').all()) {
+    if ((await step.getAttribute('aria-expanded')) === 'false') await step.click();
+  }
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.solar-chart svg')).toHaveCount(7);
   await expect(page.locator('opengrid-table').first().locator('tbody tr')).toHaveCount(12);
+  await openAllSteps(page);
+});
+test('steps open and close and summarise their values', async ({ page }) => {
+  const storage = page.getByRole('button', { name: /Speicher im Vergleich/ });
+  await expect(storage).toHaveAttribute('aria-expanded', 'true');
+  await page.getByLabel('Nutzbare Speicherkapazität', { exact: true }).fill('0');
+  await storage.click();
+  await expect(storage).toHaveAttribute('aria-expanded', 'false');
+  await expect(storage).toContainText('ohne Speicher');
+  await expect(page.getByLabel('Nutzbare Speicherkapazität', { exact: true })).toBeHidden();
 });
 test('production integrations update locally and retain complete monthly tables', async ({
   page,

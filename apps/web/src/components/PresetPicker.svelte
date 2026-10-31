@@ -1,7 +1,5 @@
 <script lang="ts">
-import { defaults } from '@/lib/solar/model';
-import { type Preset, presets } from '@/lib/solar/presets';
-import PresetIcon from './PresetIcon.svelte';
+import { presets } from '@/lib/solar/presets';
 
 interface Props {
   selected: string;
@@ -10,29 +8,15 @@ interface Props {
 let { selected, onselect }: Props = $props();
 
 const description = $derived(presets.find((p) => p.id === selected)?.description);
-
-/** Size, storage and demand of a template in one line. */
-function facts(preset: Preset) {
-  const values = { ...defaults, ...preset.values };
-  const number = (value: number) => value.toLocaleString('de-DE');
-  return [
-    `${number(values.kwp)} kWp`,
-    values.battery ? `${number(values.battery)} kWh Speicher` : 'ohne Speicher',
-    `${number(values.household)} kWh/Jahr`,
-  ].join(' · ');
-}
 </script>
 
 <section class="preset-picker" aria-labelledby="preset-heading">
-  <div>
+  <div class="preset-heading">
     <h2 id="preset-heading">Mit einer Vorlage starten</h2>
-    <p>
-      Zwölf unterschiedliche Ausgangssituationen. Wähle, was zu deinem Alltag passt, und passe die
-      Werte danach an.
-    </p>
+    <p>{presets.length} Ausgangssituationen · Werte danach anpassbar</p>
   </div>
   <fieldset class="preset-choice">
-    <legend>Deine Ausgangssituation</legend>
+    <legend class="visually-hidden">Deine Ausgangssituation</legend>
     <div class="preset-list">
       {#each presets as preset}
         {@const [place, situation] = preset.title.split(' · ')}
@@ -44,12 +28,8 @@ function facts(preset: Preset) {
             checked={selected === preset.id}
             onchange={() => onselect(preset.id)}
           />
-          <PresetIcon {preset} />
-          <span class="preset-text">
-            <strong>{place}</strong>
-            <span>{situation}</span>
-            <span class="preset-facts">{facts(preset)}</span>
-          </span>
+          <strong>{place}</strong>
+          <span>{situation}</span>
         </label>
       {/each}
     </div>

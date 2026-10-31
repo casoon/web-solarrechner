@@ -214,6 +214,20 @@ const current = $derived(selectedBattery && applied.battery > 0 ? result.with : 
 const autonomy = $derived(
   Math.max(0, ((current.energy.load - current.energy.grid) / current.energy.load) * 100)
 );
+/** Steps open and close independently; the first one starts open. */
+let openSteps = $state([true, false, false, false, false, false]);
+const summaries = $derived([
+  `${input.mode === 'roof' ? 'Dach' : 'Balkonkraftwerk'} · ${number(input.kwp + secondKwp, 1)} kWp · ${aspects.find((a) => a.value === aspect)?.label ?? `${aspect}°`}`,
+  selected.name,
+  [
+    `${number(input.household)} kWh/Jahr`,
+    ['kein E-Auto', 'ein E-Auto', 'zwei E-Autos'][input.cars],
+    ...(input.heat ? ['Wärmepumpe'] : []),
+  ].join(' · '),
+  `${number(input.price * 100)} ct/kWh · ${percent(input.priceChange)} pro Jahr`,
+  input.battery > 0 ? `${number(input.battery, 1)} kWh Speicher` : 'ohne Speicher',
+  `${currency((applied.battery > 0 ? result.with : result.without).investment)} · ${input.loanPercent > 0 ? `${number(input.loanPercent)} % Kredit` : 'Eigenkapital'}`,
+]);
 const peakOptions = Object.entries(peakProfiles) as [
   PeakProfile,
   (typeof peakProfiles)[PeakProfile],
@@ -506,18 +520,32 @@ function download() {
 }
 </script>
 
+{#snippet stepHead(n: number, title: string, summary: string)}
+  <legend>
+    <button
+      type="button"
+      class="step-toggle"
+      aria-expanded={openSteps[n - 1]}
+      aria-controls={`step-${n}`}
+      onclick={() => (openSteps[n - 1] = !openSteps[n - 1])}
+    >
+      <span class="step">{n}</span>
+      <span class="step-title">{title}<span class="step-summary">{summary}</span></span>
+      <span class="step-sign" aria-hidden="true">{openSteps[n - 1] ? '−' : '+'}</span>
+    </button>
+  </legend>
+{/snippet}
+
 <PresetPicker selected={presetId} onselect={applyPreset} />
 <div class="calculator-layout">
   <form
-    class="controls"
+    class="controls steps"
     onsubmit={(e) => e.preventDefault()}
     aria-label="Annahmen der Solarrechnung"
   >
     <fieldset class="input-section">
-      <legend>
-        <span class="step">1</span>
-         Deine Anlage
-      </legend>
+      {@render stepHead(1, 'Deine Anlage', summaries[0])}
+      <div class="step-body" id="step-1" hidden={!openSteps[0]}>
       <div class="segmented" role="group" aria-label="Anlagentyp">
         <button
           type="button"
@@ -666,12 +694,11 @@ function download() {
             Speicherkompatibilität separat prüfen.
           </p>{/if}
       </details>
+      </div>
     </fieldset>
     <fieldset class="input-section">
-      <legend>
-        <span class="step">2</span>
-         Standort
-      </legend>
+      {@render stepHead(2, 'Standort', summaries[1])}
+      <div class="step-body" id="step-2" hidden={!openSteps[1]}>
       <label for="place">PLZ oder Ort</label>
       <input
         id="place"
@@ -732,12 +759,11 @@ function download() {
           step={0.001}
         />
       </details>
+      </div>
     </fieldset>
     <fieldset class="input-section">
-      <legend>
-        <span class="step">3</span>
-         Dein Stromverbrauch
-      </legend>
+      {@render stepHead(3, 'Dein Stromverbrauch', summaries[2])}
+      <div class="step-body" id="step-3" hidden={!openSteps[2]}>
       <NumberField
         label="Haushalt ohne Autos und Wärmepumpe"
         bind:value={input.household}
@@ -878,12 +904,11 @@ function download() {
           hint="0 bedeutet: nur das gewählte Tagesprofil verwenden. Grundlast wird nicht doppelt addiert."
         />
       </details>
+      </div>
     </fieldset>
     <fieldset class="input-section">
-      <legend>
-        <span class="step">4</span>
-         Strompreis & Inbetriebnahme
-      </legend>
+      {@render stepHead(4, 'Strompreis und Inbetriebnahme', summaries[3])}
+      <div class="step-body" id="step-4" hidden={!openSteps[3]}>
       <NumberField
         label="Dein Strom-Arbeitspreis"
         bind:value={input.price}
@@ -918,12 +943,11 @@ function download() {
           hint="Nur der Wert des selbst genutzten Stroms wird verändert; Erlösphasen, Technik- und Vermarktungskosten bleiben gleich."
         />
       </details>
+      </div>
     </fieldset>
     <fieldset class="input-section">
-      <legend>
-        <span class="step">5</span>
-         Speicher im Vergleich
-      </legend>
+      {@render stepHead(5, 'Speicher im Vergleich', summaries[4])}
+      <div class="step-body" id="step-5" hidden={!openSteps[4]}>
       <NumberField
         label="Nutzbare Speicherkapazität"
         bind:value={input.battery}
@@ -973,12 +997,11 @@ function download() {
           AC-gekoppeltes Modell: keine Rückgewinnung bereits am Wechselrichter abgeregelter Energie.
         </p>
       </details>
+      </div>
     </fieldset>
     <fieldset class="input-section">
-      <legend>
-        <span class="step">6</span>
-         Kosten & Finanzierung
-      </legend>
+      {@render stepHead(6, 'Kosten und Finanzierung', summaries[5])}
+      <div class="step-body" id="step-6" hidden={!openSteps[5]}>
       <CostConfigurator
         bind:input
         bind:work
@@ -1068,6 +1091,7 @@ function download() {
             Finanzierungsangebot.
           </p>
         </details>{/if}
+      </div>
     </fieldset>
     <button
       type="button"

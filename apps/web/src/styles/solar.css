@@ -188,30 +188,72 @@
 }
 .calculator-layout {
   display: grid;
-  grid-template-columns: 350px minmax(0, 1fr);
-  gap: 48px;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: 24px;
   align-items: start;
 }
-.controls {
-  border-top: 2px solid var(--ink);
+.steps {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
 }
 .input-section {
-  padding: 24px 0;
   margin: 0;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
   min-width: 0;
+}
+.input-section + .input-section {
+  border-top: 1px solid #eef0ea;
 }
 .input-section legend {
   float: left;
   width: 100%;
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  letter-spacing: -0.025em;
+  padding: 0;
 }
 .input-section legend + * {
   clear: both;
+}
+.solar-site .step-toggle {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 16px 18px;
+  border: 0;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.solar-site .step-toggle[aria-expanded="true"] {
+  background: #fbfaf5;
+}
+.step-title {
+  display: grid;
+  gap: 1px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.step-summary {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.step-sign {
+  font-size: 18px;
+  color: var(--muted);
+}
+.step-body {
+  padding: 4px 18px 20px;
+}
+.solar-site .steps > .text-button {
+  width: 100%;
+  padding: 12px 18px;
+  border-top: 1px solid #eef0ea;
 }
 .solar-site input:not([type="range"], [type="checkbox"], [type="radio"]),
 .solar-site select {
@@ -639,7 +681,6 @@ label.text-button:focus-within {
 @media (max-width: 1000px) {
   .calculator-layout {
     grid-template-columns: 300px minmax(0, 1fr);
-    gap: 28px;
   }
   .site-header,
   .site-footer,
@@ -700,18 +741,6 @@ label.text-button:focus-within {
   .results {
     width: 100%;
   }
-  .controls {
-    display: contents;
-  }
-  .controls .input-section {
-    width: 100%;
-  }
-  .controls .text-button {
-    width: 100%;
-  }
-  .results {
-    order: 1;
-  }
   .key-results {
     gap: 24px 12px;
   }
@@ -771,22 +800,25 @@ label.text-button:focus-within {
 
 .preset-picker {
   max-width: 1440px;
-  margin: 0 auto 34px;
-  padding: 24px 40px;
-  display: grid;
-  grid-template-columns: minmax(230px, 0.65fr) minmax(0, 1.35fr);
-  gap: 40px;
-  border-block: 1px solid var(--line);
+  margin: 0 auto 24px;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--line);
 }
-.preset-picker h2 {
-  font-size: 24px;
-  margin-bottom: 10px;
+.preset-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 12px;
 }
-.preset-picker p {
-  max-width: 65ch;
+.solar-site .preset-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0;
 }
-.preset-picker > div:first-child p {
-  font-size: 14px;
+.preset-heading p {
+  margin: 0;
+  font-size: 13px;
   color: var(--muted);
 }
 .preset-choice {
@@ -795,41 +827,42 @@ label.text-button:focus-within {
   border: 0;
   min-width: 0;
 }
-.preset-choice legend {
-  padding: 0;
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 600;
-}
 .preset-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .solar-site .preset-option {
   position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2px;
   margin: 0;
-  font-weight: 400;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 10px 12px;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
+  font-weight: 400;
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    background-color 0.15s;
+    border-color 0.2s,
+    background-color 0.2s;
+}
+.preset-option strong {
+  font-size: 13px;
+}
+.preset-option span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
 }
 .solar-site .preset-option:hover {
   border-color: #9fb0a6;
 }
 .solar-site .preset-option:has(input:checked) {
-  background: #fdf8e4;
-  border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+  background: #f6ecc9;
+  border-color: var(--accent);
 }
 .solar-site .preset-option:has(input:focus-visible) {
   outline: 3px solid #a16a00;
@@ -841,33 +874,17 @@ label.text-button:focus-within {
   height: 1px;
   opacity: 0;
 }
-.preset-icon {
-  flex: none;
-  width: 84px;
-  height: auto;
-  color: var(--ink);
-}
-.preset-text {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  font-size: 13px;
-  line-height: 1.35;
-}
-.preset-text strong {
-  font-size: 14px;
-}
-.preset-text span {
-  color: var(--muted);
-}
-.preset-text .preset-facts {
-  margin-top: 3px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
 .preset-description {
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .cost-guide h3 {
   margin: 0 0 10px;
@@ -900,38 +917,46 @@ label.text-button:focus-within {
 .cost-subtotal strong {
   white-space: nowrap;
 }
+@media (max-width: 1000px) {
+  .preset-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 @media (max-width: 760px) {
   .preset-picker {
-    display: block;
-    padding: 22px 18px;
-    margin-bottom: 26px;
+    padding: 18px;
   }
-  .preset-picker h2 {
-    font-size: 22px;
+  .preset-heading p {
+    display: none;
   }
-  .preset-picker > div:first-child {
-    margin-bottom: 18px;
+  /* Templates as one swipeable row. */
+  .preset-list {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
   }
   .solar-site .preset-option {
-    padding: 8px 10px;
-    gap: 10px;
-  }
-  .preset-icon {
-    width: 68px;
+    flex: 0 0 150px;
+    scroll-snap-align: start;
   }
 }
 
-.input-section legend .step {
-  display: inline-grid;
+.step {
+  display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-right: 6px;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid #c9d2c8;
   border-radius: 50%;
-  background: var(--ink);
-  color: #fffcef;
+  color: var(--muted);
   font-size: 12px;
-  vertical-align: 2px;
+  font-weight: 700;
+}
+.step-toggle[aria-expanded="true"] .step {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
 }
 .solar-site .field-label {
   font-size: 13px;
