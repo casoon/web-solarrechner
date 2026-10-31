@@ -61,20 +61,26 @@ const segments = [
   ['grid', energyColors.grid, 'Netz'],
 ] as const;
 
-const sun = {
+const mark = {
   type: 'svg',
   props: {
     width: 40,
     height: 40,
-    viewBox: '0 0 32 32',
+    viewBox: '0 0 40 40',
     children: [
-      { type: 'circle', props: { cx: 16, cy: 16, r: 6, fill: '#e6b734' } },
+      { type: 'rect', props: { width: 40, height: 40, rx: 9, fill: ink } },
+      {
+        type: 'circle',
+        props: { cx: 20, cy: 20, r: 10, fill: 'none', stroke: '#3d5d53', strokeWidth: 5 },
+      },
       {
         type: 'path',
         props: {
-          d: 'M16 1v5m0 20v5M1 16h5m20 0h5M5.4 5.4 9 9m14 14 3.6 3.6M5.4 26.6 9 23m14-14 3.6-3.6',
-          stroke: ink,
-          strokeWidth: 2,
+          d: 'M20 10A10 10 0 1 1 10 20',
+          fill: 'none',
+          stroke: '#e6b734',
+          strokeWidth: 5,
+          strokeLinecap: 'round',
         },
       },
     ],
@@ -147,7 +153,7 @@ const tree = h(
     h(
       'div',
       { alignItems: 'center', gap: 14, fontSize: 26, fontWeight: 700 },
-      sun,
+      mark,
       'Solarrechner',
       h('span', { fontSize: 18, fontWeight: 400, color: muted }, 'von CASOON')
     ),
