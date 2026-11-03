@@ -78,17 +78,20 @@ const scenarios = $derived(priceScenarios(current.cashflows, applied));
       ? `, also ${currency(bill.without - bill.with)} weniger`
       : ''}.
   </p>
-  <SolarChart id="bill" spec={billSpec(bill, applied.price)} />
+  <SolarChart id="bill" spec={billSpec(bill, applied.price, applied.basePrice)} />
   <p class="field-hint">
-    Grün senkt deine Kosten, Rot erhöht sie. Links steht, was du ohne Anlage für Netzstrom zahlst,
-    rechts, was mit Anlage übrig bleibt. Ein negativer Endwert bedeutet einen Überschuss.
+    Grün senkt deine Kosten, Rot erhöht sie. Links steht, was du ohne Anlage für Strom zahlst,
+    rechts, was mit Anlage übrig bleibt: Netzstrom, Grundpreis und der laufende Betrieb der Anlage,
+    abzüglich Einspeiseerlös. Der Grundpreis von {currency(applied.basePrice)} im Jahr fällt in beiden
+    Fällen an; er macht die Rechnung vollständig, ändert aber nicht, was die Anlage spart. Ein negativer
+    Endwert bedeutet einen Überschuss.
   </p>
   <p class="field-hint">
     <strong>Erstes Betriebsjahr</strong>
      heißt: die ersten zwölf Monate ab Inbetriebnahme, nicht das Kalenderjahr. Es ist ein volles Jahr
     mit Sommer und Winter, bevor Alterung, Preisänderungen und spätere Erlösphasen wirken. Wie es danach
-    weitergeht, zeigt „Der Weg zur Amortisation“. Nicht enthalten sind Grundpreis, Anschaffung, Kredit
-    und Ersatzgeräte.
+    weitergeht, zeigt „Der Weg zur Amortisation“. Nicht enthalten sind Anschaffung, Kredit und
+    Ersatzgeräte.
   </p>
 </section>
 

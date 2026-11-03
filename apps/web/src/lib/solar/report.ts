@@ -1,8 +1,15 @@
 import type { Document, Element } from '@casoon/lightweight-pdf';
 import { energyColors } from './energy-display';
-import { type calculate, type Inputs, peakProfiles, type SolarProfile } from './model';
+import {
+  type calculate,
+  type Inputs,
+  peakProfiles,
+  type SolarProfile,
+  surplusCharging,
+} from './model';
 import type { PolicyPlan } from './policy';
 import { cabinetPrice, type PriceLevel, type WorkOptions, workItems, workPrice } from './presets';
+import { billBreakdown } from './result-display';
 
 export interface ReportSnapshot {
   input: Inputs;
@@ -20,6 +27,10 @@ export interface ReportSnapshot {
   created: string;
   /** Second roof surface; `input.kwp` is then the total of both surfaces. */
   second?: { kwp: number; angle: number; aspect: number };
+  /** Other system sizes in the selected view, when the calculator has computed them. */
+  sizes?: { input: Inputs; result: Result }[];
+  /** Charging habits without and with storage, when the household has cars. */
+  charging?: { label: string; input: Inputs; without: Result; with: Result }[];
 }
 const num = (n: number, digits = 0) => n.toLocaleString('de-DE', { maximumFractionDigits: digits });
 const eur = (n: number) => `${num(n)} EUR`;
@@ -116,6 +127,9 @@ const tile = (title: string, value: string, note: string, color: Rgb): Element =
   ],
 });
 const percent = (part: number, whole: number) => `${num(whole > 0 ? (part / whole) * 100 : 0)} %`;
+const autarky = (e: Result['energy']) => percent(Math.max(0, e.load - e.grid), e.load);
+/** Share of the solar yield used in the house: the usual "Eigenverbrauchsquote". */
+const solarUse = (e: Result['energy']) => percent(e.direct + e.charge, e.pv);
 
 type Result = ReturnType<typeof calculate>['with'];
 
@@ -283,15 +297,19 @@ function summary(s: ReportSnapshot, current: Result, pages: number): Element[] {
         tile('Investition', eur(current.investment), view, colors.neutral),
         tile('Nettovorteil', eur(current.benefit), 'im ersten Jahr', colors.solar),
         tile(
-          'Eigenversorgung',
-          percent(Math.max(0, e.load - e.grid), e.load),
-          'netto, aus Stundenbilanz',
+          'Autarkiegrad',
+          autarky(e),
+          `Verbrauch gedeckt · ${solarUse(e)} des Solarstroms selbst genutzt`,
           colors.storage
         ),
         tile(
           'Amortisation',
           current.payback ? `Jahr ${current.payback}` : 'offen',
-          current.payback ? 'Projektsaldo danach positiv' : `nicht in ${i.years} Jahren`,
+          i.loanPercent > 0
+            ? `ohne Kredit gerechnet · mit Kredit nach ${i.years} Jahren ${eur(current.equityBalance)}`
+            : current.payback
+              ? 'Projektsaldo danach positiv'
+              : `nicht in ${i.years} Jahren`,
           colors.grid
         ),
       ],
@@ -387,20 +405,130 @@ function summary(s: ReportSnapshot, current: Result, pages: number): Element[] {
   ];
 }
 
+type InputKey = [keyof Inputs, string, string?];
+const inputRows = (i: Inputs, keys: InputKey[]) =>
+  keys.map(([key, label, unit]) => [
+    label,
+    typeof i[key] === 'number'
+      ? `${num(i[key] as number, 4)}${unit ? ` ${unit}` : ''}`
+      : String(i[key]),
+  ]);
+/** Rows of the system and consumption assumptions; switched-off appliances show no values. */
+function systemRows(i: Inputs): string[][] {
+  const rows = (keys: InputKey[]) => inputRows(i, keys);
+  const cars: InputKey[] = [
+    ['km', 'Fahrleistung je Auto', 'km/Jahr'],
+    ['carUse', 'Fahrverbrauch je Auto', 'kWh/100 km'],
+    ['homeCharge', 'Zu Hause geladen', '%'],
+    ['chargeLoss', 'Ladeverluste', '%'],
+    ['chargePower', 'Gemeinsame Ladeleistung', 'kW'],
+    ...(i.chargeTime === 'day'
+      ? ([
+          ['carDaysHome', 'Tage pro Woche mit Auto tagsüber zu Hause'],
+          ['carBuffer', 'Puffer im Autoakku', 'kWh'],
+        ] as InputKey[])
+      : []),
+  ];
+  return [
+    ...rows([
+      ['kwp', 'Modulleistung', 'kWp'],
+      ['ac', 'AC-Wechselrichterleistung', 'kW'],
+      ['shade', 'Ertragsabschlag Schatten', '%'],
+      ['weather', 'Sonnenjahr gegenüber Mittel', '%'],
+      ['household', 'Haushalt ohne Auto / Wärmepumpe', 'kWh/Jahr'],
+    ]),
+    ...(i.mode === 'roof'
+      ? [
+          [
+            'Einspeisegrenze (Anteil der Modulleistung)',
+            `${num(i.exportLimit)} % = ${num((i.kwp * i.exportLimit) / 100, 1)} kW`,
+          ],
+        ]
+      : []),
+    [
+      'Zusätzliche konstante Grundlast',
+      i.baseWatts ? `${num(i.baseWatts)} W, im Haushalt enthalten` : 'keine, nur Tagesprofil',
+    ],
+    [
+      'Haushaltsprofil',
+      { evening: 'Morgens / abends', day: 'Auch tagsüber', flat: 'Gleichmäßig' }[i.pattern],
+    ],
+    ['Lastspitzen', peakProfiles[i.peaks].label],
+    ['Elektroautos', i.cars ? num(i.cars) : 'keine'],
+    ...(i.cars > 0
+      ? [
+          ...rows(cars),
+          [
+            'Laden zu Hause',
+            i.chargeTime === 'day' ? 'PV-Überschuss 9-17 Uhr, Rest ab 17 Uhr' : '18-24 Uhr',
+          ],
+        ]
+      : []),
+    ['Wärmepumpe', i.heat ? 'einbezogen' : 'keine'],
+    ...(i.heat
+      ? rows([
+          ['heatDemand', 'Nutzwärme inkl. Warmwasser', 'kWh/Jahr'],
+          ['jaz', 'Jahresarbeitszahl'],
+        ])
+      : []),
+    ...rows([
+      ['battery', 'Nutzbarer Speicher', 'kWh'],
+      ['batteryPower', 'Speicherleistung', 'kW'],
+      ['efficiency', 'Gesamtwirkungsgrad Speicher', '%'],
+      ['standby', 'Speicher-Standby', 'W'],
+      ['degradation', 'PV-Alterung pro Jahr', '%'],
+      ['batteryDegradation', 'Speicheralterung pro Jahr', '%'],
+    ]),
+  ];
+}
+
+/** Yearly cash flows; credit columns only when part of the investment is financed. */
+function financeSection(i: Inputs, current: Result): Element[] {
+  const loan = i.loanPercent > 0;
+  return [
+    text(
+      `Gewählte Ergebnisansicht, in EUR. Strompreisänderung ${num(i.priceChange, 1)} %/Jahr. Überschuss im Jahr: Ersparnis und Erlöse abzüglich laufender Kosten, Ersatzgeräten und Technik. Saldo ohne Kredit: alle Überschüsse aufsummiert ab der Investition.${loan ? ' Saldo mit Kredit: was nach Kreditraten aus eigener Tasche bleibt, aufsummiert.' : ''}`
+    ),
+    gap(),
+    table(
+      [
+        'Jahr',
+        'Überschuss im Jahr',
+        'davon Ersatzgeräte',
+        'Saldo ohne Kredit',
+        ...(loan ? ['Saldo mit Kredit', 'Restschuld'] : []),
+      ],
+      current.cashflows.map((v) => [
+        String(v.year),
+        num(v.cash),
+        v.replacement ? `-${num(v.replacement)}` : '',
+        num(v.balance),
+        ...(loan ? [num(v.equity), num(v.debt)] : []),
+      ])
+    ),
+    gap(),
+    text(
+      `${loan ? `Saldo mit Kredit nach Abzug der Restschuld am Ende: ${eur(current.equityBalance)}. ` : ''}Amortisation bedeutet rechnerische Kostendeckung ohne Kredit; ein Kredit kann dann noch laufen. Kein Restwert der Anlage nach ${i.years} Jahren. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
+      9
+    ),
+  ];
+}
+
 /** Builds a document from the exact applied calculation, independent of later UI changes. */
 export function reportDocument(s: ReportSnapshot): Document {
   const i = s.input;
   const policy = s.result.policy;
-  const pages = policy ? 7 : 6;
+  const pages = policy ? 8 : 7;
   const r = s.result;
   const current = s.selectedBattery && i.battery > 0 ? r.with : r.without;
-  const page = (title: string, index: number): Element[] => [
+  let index = 1;
+  const page = (title: string): Element[] => [
     { type: 'page_break' },
     {
       type: 'row',
       children: [
         { ...text('CASOON / SOLARRECHNER', 8, true, colors.muted), common: { flex: 1 } } as Element,
-        text(`${index} / ${pages}`, 8, true, colors.muted),
+        text(`${++index} / ${pages}`, 8, true, colors.muted),
       ],
     },
     gap(4),
@@ -411,6 +539,10 @@ export function reportDocument(s: ReportSnapshot): Document {
   ];
   const comparison: [string, (v: typeof current) => string][] = [
     ['Vollständige Investition', (v) => eur(v.investment)],
+    [
+      `Stromkosten im ersten Jahr (ohne Anlage ${eur(billBreakdown(r.without, i, false).without)})`,
+      (v) => eur(billBreakdown(v, i, v === r.with).with),
+    ],
     ['Nettovorteil im ersten Jahr', (v) => `${eur(v.benefit)} / Jahr`],
     [
       'Dauerhaft positiver Projektsaldo',
@@ -422,12 +554,14 @@ export function reportDocument(s: ReportSnapshot): Document {
       (v) => (v.irr === null ? 'nicht bestimmbar' : `${num(v.irr, 1)} %`),
     ],
     [`Projektsaldo nach ${i.years} Jahren`, (v) => eur(v.balance)],
-    [
-      'Eigenversorgung, netto',
-      (v) => `${num(Math.max(0, ((v.energy.load - v.energy.grid) / v.energy.load) * 100), 1)} %`,
-    ],
-    ['Monatliche Kreditrate', (v) => eur(v.rate)],
-    ['Restschuld am Ende', (v) => eur(v.debt)],
+    ['Autarkiegrad (Verbrauch gedeckt)', (v) => autarky(v.energy)],
+    ['Eigenverbrauchsquote (Solarstrom selbst genutzt)', (v) => solarUse(v.energy)],
+    ...(i.loanPercent > 0
+      ? ([
+          ['Monatliche Kreditrate', (v) => eur(v.rate)],
+          [`Saldo mit Kredit nach ${i.years} Jahren`, (v) => eur(v.equityBalance)],
+        ] as [string, (v: typeof current) => string][])
+      : []),
   ];
   const costRows = [
     ['Module / Wechselrichter', eur(s.base.equipment)],
@@ -448,16 +582,13 @@ export function reportDocument(s: ReportSnapshot): Document {
         ? 'vorhanden / 0 EUR'
         : eur(s.work.overrides.cabinet ?? cabinetPrice(s.work.cabinet, s.priceLevel)),
     ],
+    ...(surplusCharging(i)
+      ? [['Aufpreis Solar-Überschussladen (Wallbox)', eur(i.wallboxCost)]]
+      : []),
     ['Zusätzliche Mess-/Steuertechnik (Start)', eur(policy?.setupCost ?? 0)],
     ['Speicheraufpreis (Vergleich)', eur(i.batteryCost)],
   ];
-  const rows = (keys: [keyof Inputs, string, string?][]) =>
-    keys.map(([key, label, unit]) => [
-      label,
-      typeof i[key] === 'number'
-        ? `${num(i[key] as number, 4)}${unit ? ` ${unit}` : ''}`
-        : String(i[key]),
-    ]);
+  const rows = (keys: InputKey[]) => inputRows(i, keys);
   return {
     page_format: 'A4',
     lang: 'de-DE',
@@ -470,8 +601,10 @@ export function reportDocument(s: ReportSnapshot): Document {
     },
     children: [
       ...summary(s, current, pages),
-      ...page('Ergebnis im Vergleich', 2),
-      text(`Ausgangsvorlage (danach anpassbar): ${s.preset}`),
+      ...page('Ergebnis im Vergleich'),
+      text(
+        `Startpunkt war die Vorlage „${s.preset}“. Gerechnet wird mit den Werten auf den Annahmen-Seiten.`
+      ),
       gap(),
       table(
         ['Ergebnis', 'Ohne Speicher', `Mit ${num(i.battery, 1)} kWh`],
@@ -492,13 +625,23 @@ export function reportDocument(s: ReportSnapshot): Document {
         'Grobe Schätzung für den Einstieg, eigene Pläne und das Verständnis von Angeboten; kein Angebotsrechner. Sonne, Wetter und Verbrauch schwanken. Keine Genauigkeit auf den Cent oder die Kilowattstunde und keine Ertragszusage.',
         9
       ),
-      ...page('Energiebilanz im ersten Jahr', 3),
+      ...variantsPage(s, page),
+      ...page('Energiebilanz im ersten Jahr'),
       text(
-        'Monatswerte aus stündlichem Abgleich, in kWh. PV vor Leistungsbegrenzung; Bedarf inklusive Speicher-Standby.'
+        'Monatswerte in kWh aus der Stundenbilanz. Solar: Ertrag vor Begrenzung. Verbrauch: inklusive Speicher-Standby, gedeckt durch direkt genutzten Solarstrom, Abgabe aus dem Speicher und Netzbezug. Eingespeist: ins Netz abgegebener Überschuss. Abgeregelt: wegen Wechselrichter- oder Einspeisegrenze verloren.'
       ),
       gap(),
       table(
-        ['Monat', 'PV', 'Bedarf', 'Direkt', 'Akku', 'Netz', 'Export', 'Abregel.'],
+        [
+          'Monat',
+          'Solar',
+          'Verbrauch',
+          'Direkt genutzt',
+          'Aus Speicher',
+          'Netzbezug',
+          'Eingespeist',
+          'Abgeregelt',
+        ],
         current.energy.monthly.map((m) => [
           m.month,
           ...[
@@ -516,40 +659,24 @@ export function reportDocument(s: ReportSnapshot): Document {
       table(
         ['Jahresbilanz', 'kWh'],
         [
-          ['PV-Potenzial vor Begrenzung', num(current.energy.pv)],
-          ['Bedarf inklusive Standby', num(current.energy.load + current.energy.standby)],
+          ['Solarertrag vor Begrenzung', num(current.energy.pv)],
+          ['Verbrauch inklusive Standby', num(current.energy.load + current.energy.standby)],
           ['Netzbezug', num(current.energy.grid)],
           ['Einspeisung', num(current.energy.export)],
           ['Speicherverluste', num(current.energy.losses)],
           ['Speicher-Standby', num(current.energy.standby)],
-          ['Nicht im Ladefenster ladbare Auto-Energie', num(current.energy.unmetCar)],
+          ...(i.cars > 0
+            ? [['Auto-Energie, die im Ladefenster nicht ladbar war', num(current.energy.unmetCar)]]
+            : []),
         ]
       ),
       gap(),
       text(
-        'Sommerüberschüsse gleichen Winterdefizite nicht aus. Eigenversorgung ist netto nach Netzbezug berechnet. Rundungsdifferenzen sind möglich. Beide Autos verwenden dasselbe Fahr- und Ladeprofil.'
+        `Gerechnet wird Stunde für Stunde: Eingespeister Sommerstrom gleicht Netzbezug im Winter nicht aus. Rundungsdifferenzen sind möglich.${i.cars === 2 ? ' Beide Autos verwenden dasselbe Fahr- und Ladeprofil.' : ''}`
       ),
-      ...page('Wirtschaftlichkeit über die Laufzeit', 4),
-      text(
-        `Gewählte Ergebnisansicht. Strompreisänderung ${num(i.priceChange, 1)} %/Jahr; Diskontsatz ${num(i.discount, 1)} %. Projektsaldo ohne Finanzierung, Eigenkapitalsaldo nach Kreditflüssen.`
-      ),
-      gap(),
-      table(
-        ['Jahr', 'Cashflow EUR', 'Projektsaldo EUR', 'Eigenkapital EUR', 'Restschuld EUR'],
-        current.cashflows.map((v) => [
-          String(v.year),
-          num(v.cash),
-          num(v.balance),
-          num(v.equity),
-          num(v.debt),
-        ])
-      ),
-      gap(),
-      text(
-        `Eigenkapitalsaldo nach Abzug der Restschuld am Ende: ${eur(current.equityBalance)}. Amortisation bedeutet rechnerische Kostendeckung; ein Kredit kann dann noch laufen. Ersatzgeräte und laufende Kosten sind nach den Annahmen berücksichtigt. Kein Restwert. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
-        9
-      ),
-      ...page('Annahmen: Anlage und Verbrauch', 5),
+      ...page('Wirtschaftlichkeit über die Laufzeit'),
+      ...financeSection(i, current),
+      ...page('Annahmen: Anlage und Verbrauch'),
       text(
         `Tatsächlich verwendetes Ertragsprofil: ${s.profile.location}; ${s.profile.lat} / ${s.profile.lon}; ${s.profile.angle}° Neigung; Azimut ${s.profile.aspect}° (0° = Süd).${secondSurface(s)}`
       ),
@@ -563,53 +690,12 @@ export function reportDocument(s: ReportSnapshot): Document {
           ]
         : []),
       gap(),
-      table(
-        ['Annahme', 'Wert'],
-        [
-          ...rows([
-            ['kwp', 'Modulleistung', 'kWp'],
-            ['ac', 'AC-Wechselrichterleistung', 'kW'],
-            ['shade', 'Ertragsabschlag Schatten', '%'],
-            ['weather', 'Sonnenjahr gegenüber Mittel', '%'],
-            ['exportLimit', 'Exportlimit (Dachanlage)', '%'],
-            ['household', 'Haushalt ohne Auto / Wärmepumpe', 'kWh/Jahr'],
-            ['baseWatts', 'Enthaltene Grundlast', 'W'],
-          ]),
-          [
-            'Haushaltsprofil',
-            { evening: 'Morgens / abends', day: 'Auch tagsüber', flat: 'Gleichmäßig' }[i.pattern],
-          ],
-          ['Lastspitzen', peakProfiles[i.peaks].label],
-          ...rows([
-            ['cars', 'Elektroautos'],
-            ['km', 'Fahrleistung je Auto', 'km/Jahr'],
-            ['carUse', 'Fahrverbrauch je Auto', 'kWh/100 km'],
-            ['homeCharge', 'Zu Hause geladen', '%'],
-            ['chargeLoss', 'Ladeverluste', '%'],
-            ['chargePower', 'Gemeinsame Ladeleistung', 'kW'],
-          ]),
-          [
-            'Laden zu Hause',
-            i.chargeTime === 'day' ? 'PV-Überschuss 9-17 Uhr, Rest ab 17 Uhr' : '18-24 Uhr',
-          ],
-          ['Wärmepumpe', i.heat ? 'einbezogen' : 'nicht einbezogen'],
-          ...rows([
-            ['heatDemand', 'Nutzwärme inkl. Warmwasser', 'kWh/Jahr'],
-            ['jaz', 'Jahresarbeitszahl'],
-            ['battery', 'Nutzbarer Speicher', 'kWh'],
-            ['batteryPower', 'Speicherleistung', 'kW'],
-            ['efficiency', 'Gesamtwirkungsgrad Speicher', '%'],
-            ['standby', 'Speicher-Standby', 'W'],
-            ['degradation', 'PV-Alterung pro Jahr', '%'],
-            ['batteryDegradation', 'Speicheralterung pro Jahr', '%'],
-          ]),
-        ]
-      ),
+      table(['Annahme', 'Wert'], systemRows(i)),
       gap(),
       text(
-        'Bei deaktiviertem Auto / Wärmepumpe bleiben deren Startwerte dokumentiert, werden aber nicht als Verbrauch angesetzt. Speicherwerte gelten für die Vergleichsvariante mit Speicher. Vereinfachte AC-Kopplung, ein Zähler, bis zu zwei Dachflächen an einem Wechselrichter; keine Dachplanung.'
+        'Speicherwerte gelten für die Vergleichsvariante mit Speicher. Vereinfachte AC-Kopplung, ein Zähler, bis zu zwei Dachflächen an einem Wechselrichter; keine Dachplanung. Die Einspeisegrenze gilt bis zum Einbau der Steuertechnik oder dauerhaft, je nach Regelszenario; darüber wird abgeregelt.'
       ),
-      ...page('Annahmen, Quellen und Grenzen', 6),
+      ...page('Annahmen, Quellen und Grenzen'),
       table(
         ['Kosten / Finanzierung', 'Wert'],
         [
@@ -621,6 +707,7 @@ export function reportDocument(s: ReportSnapshot): Document {
           ['Tarifgrundlage', s.autoTariff ? s.tariffBasis : 'Eigene Annahme'],
           ...rows([
             ['price', 'Strom-Arbeitspreis', 'EUR/kWh'],
+            ['basePrice', 'Grundpreis (mit und ohne Anlage)', 'EUR/Jahr'],
             ['priceChange', 'Strompreisänderung pro Jahr', '%'],
             ...(!policy
               ? [
@@ -631,7 +718,7 @@ export function reportDocument(s: ReportSnapshot): Document {
                   ],
                 ]
               : []),
-            ['negativeShare', 'Unvergüteter Export (Dachanlage)', '%'],
+            ['negativeShare', 'Einspeisung ohne Vergütung (negative Preise)', '%'],
             ['years', 'Betrachtungszeitraum', 'Jahre'],
             ['discount', 'Diskontsatz', '%'],
             ['running', 'Laufende Kosten ohne Speicher', 'EUR/Jahr'],
@@ -662,14 +749,130 @@ export function reportDocument(s: ReportSnapshot): Document {
       } as Element,
       gap(5),
       text(
-        'Demo mit Chartlet, Open Grid, Astro, Svelte und Lightweight PDF. Der PDF-Export entsteht lokal im Browser. Vor einer Investition Angebote, Gebäudeeignung und Anschlussbedingungen prüfen. Modell: solar-demo-3.',
+        'Der PDF-Bericht entsteht lokal im Browser. Vor einer Investition Angebote, Gebäudeeignung und Anschlussbedingungen prüfen.',
         9
       ),
       ...(policy
-        ? [...page('Regelszenario und Erlösphasen', 7), ...policyDetails(policy, current, i)]
+        ? [...page('Regelszenario und Erlösphasen'), ...policyDetails(policy, current, i)]
         : []),
     ],
   };
+}
+
+const glossary: [string, string][] = [
+  [
+    'Stromkosten im ersten Jahr',
+    'Was du noch für Strom zahlst: Netzstrom und Grundpreis plus Betrieb der Anlage, abzüglich Einspeiseerlös. Der Grundpreis fällt mit und ohne Anlage an.',
+  ],
+  [
+    'Nettovorteil',
+    'Gesparter Strom plus Einspeiseerlös, abzüglich laufender Kosten, in einem Jahr.',
+  ],
+  ['Autarkiegrad', 'Anteil deines Stromverbrauchs, den Anlage und Speicher selbst decken.'],
+  [
+    'Eigenverbrauchsquote',
+    'Anteil des Solarstroms, der im Haus genutzt statt eingespeist wird. Angebote nennen oft diesen Wert.',
+  ],
+  [
+    'Projektsaldo',
+    'Investition und alle Überschüsse aufsummiert, ohne Kredit. Ab der Amortisation bleibt er positiv.',
+  ],
+  [
+    'Kapitalwert',
+    'Alle künftigen Überschüsse abgezinst auf heute, minus Investition. Über null: besser als eine Geldanlage zum Diskontsatz.',
+  ],
+  [
+    'Interner Zinsfuß',
+    'Die Rendite, mit der sich das eingesetzte Geld über den Zeitraum verzinst.',
+  ],
+  [
+    'Einspeisegrenze',
+    'Höchstens so viel Leistung darf ins Netz. Was darüber liegt und nicht genutzt wird, geht verloren (abgeregelt).',
+  ],
+];
+/** Other sizes, charging habits and a short glossary, so the tables can be read without help. */
+function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): Element[] {
+  const i = s.input;
+  const view =
+    s.selectedBattery && i.battery > 0
+      ? `jeweils mit ${num(i.battery, 1)} kWh Speicher`
+      : 'jeweils ohne Speicher';
+  const best = s.sizes?.reduce<(typeof s.sizes)[number] | undefined>(
+    (a, b) => (!a || b.result.npv > a.result.npv ? b : a),
+    undefined
+  );
+  return [
+    ...page('Größe, Laden und Begriffe'),
+    ...(s.sizes?.length && best
+      ? [
+          text('Anlagengröße im Vergleich', 11, true),
+          gap(5),
+          table(
+            [
+              'Anlage',
+              'Investition',
+              'Autarkiegrad',
+              'Selbst genutzt',
+              'Stromkosten 1. Jahr',
+              'Vorteil 1. Jahr',
+              'Kapitalwert',
+            ],
+            s.sizes.map(({ input, result }) => [
+              `${num(input.kwp, 1)} kWp${input.kwp === i.kwp ? ' (gewählt)' : ''}`,
+              eur(result.investment),
+              autarky(result.energy),
+              solarUse(result.energy),
+              eur(billBreakdown(result, input, s.selectedBattery && i.battery > 0).with),
+              eur(result.benefit),
+              eur(result.npv),
+            ])
+          ),
+          gap(4),
+          text(
+            `Dieselbe Dachausrichtung, ${view}, Regeln je Größe. Den höchsten Kapitalwert hat ${num(best.input.kwp, 1)} kWp. Größere Anlagen nur, wenn das Dach Platz hat.`,
+            9
+          ),
+          gap(14),
+        ]
+      : []),
+    ...(s.charging?.length
+      ? [
+          text('Laden des Autos im Vergleich', 11, true),
+          gap(5),
+          table(
+            [
+              'Laden',
+              'Speicher',
+              'Netzbezug',
+              'Autarkiegrad',
+              'Stromkosten 1. Jahr',
+              'Vorteil 1. Jahr',
+              'Kapitalwert',
+            ],
+            s.charging.flatMap((c) =>
+              [c.without, ...(i.battery > 0 ? [c.with] : [])].map((v, k) => [
+                k === 0 ? c.label : '',
+                k === 0 ? 'ohne' : `${num(i.battery, 1)} kWh`,
+                `${num(v.energy.grid)} kWh`,
+                autarky(v.energy),
+                eur(billBreakdown(v, c.input, k > 0).with),
+                eur(v.benefit),
+                eur(v.npv),
+              ])
+            )
+          ),
+          gap(4),
+          text(
+            `Dieselben Autos und Kilometer. „Immer ein Auto zu Hause“: etwa Homeoffice oder zwei Autos im Wechsel; fehlende Ladung darf bis zu 30 kWh auf den nächsten sonnigen Tag warten. Beim Laden tagsüber enthält die Investition ${eur(i.wallboxCost)} für eine Wallbox mit Solarsteuerung. Kosten eines zweiten Autos sind nicht enthalten.`,
+            9
+          ),
+          gap(14),
+        ]
+      : []),
+    text('Begriffe', 11, true),
+    gap(5),
+    ...glossary.flatMap(([term, meaning]) => [text(term, 9, true), text(meaning, 9), gap(4)]),
+  ];
 }
 
 function policyDetails(
@@ -677,8 +880,17 @@ function policyDetails(
   current: ReturnType<typeof calculate>['with'],
   i: Inputs
 ): Element[] {
+  const revenue = current.firstYear.exportRevenue + current.firstYear.bonusRevenue;
   return [
-    text(`${policy.name} | Prüfstand ${policy.checked}`, 11, true),
+    text(
+      revenue > 0
+        ? `Kurz gesagt: Für eingespeisten Strom rechnet dieses Szenario im ersten Jahr mit ${eur(revenue)} Erlös, Anfangssatz ${num(policy.rate * 100, 2)} ct/kWh.`
+        : 'Kurz gesagt: Für eingespeisten Strom bekommst du in diesem Szenario im ersten Jahr nichts. Jede Kilowattstunde lohnt sich dann nur, wenn du sie selbst nutzt.',
+      11,
+      true
+    ),
+    gap(),
+    text(`${policy.name} | Prüfstand ${policy.checked}`, 10, true),
     gap(),
     table(
       ['Annahme / Regel', 'Wert'],

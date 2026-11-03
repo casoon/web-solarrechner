@@ -38,6 +38,10 @@ export interface Inputs {
   chargeLoss: number;
   chargeTime: 'day' | 'evening';
   chargePower: number;
+  /** Days per week a car is parked at home during the day, weekend days counted first. */
+  carDaysHome: number;
+  /** Energy the car may still lack at night, kWh: it waits for the next sunny day instead of the grid. */
+  carBuffer: number;
   heat: boolean;
   heatDemand: number;
   jaz: number;
@@ -54,6 +58,10 @@ export interface Inputs {
   batteryRunning: number;
   /** Extra yearly grid base charge for households with their own generation, if one is introduced. */
   prosumerFee: number;
+  /** Yearly base charge of the electricity contract. Paid with and without the system alike. */
+  basePrice: number;
+  /** One-off extra for charging the car from solar surplus: wallbox with solar control or energy manager. */
+  wallboxCost: number;
   inverterReplacement: number;
   inverterYear: number;
   batteryReplacement: number;
@@ -92,6 +100,8 @@ export const defaults: Inputs = {
   chargeLoss: 10,
   chargeTime: 'evening',
   chargePower: 7.4,
+  carDaysHome: 7,
+  carBuffer: 0,
   heat: false,
   heatDemand: 15000,
   jaz: 3.5,
@@ -107,6 +117,8 @@ export const defaults: Inputs = {
   running: 100,
   batteryRunning: 15,
   prosumerFee: 0,
+  basePrice: 150,
+  wallboxCost: 800,
   inverterReplacement: 1200,
   inverterYear: 12,
   batteryReplacement: 2200,
@@ -262,15 +274,27 @@ export function combineSurfaces(surfaces: { kwp: number; profile: SolarProfile }
   ]);
   return { ...first.profile, hours };
 }
-/** Home charging in one hour, given the energy still pending for the day. */
-function carCharge(input: Inputs, h: number, pending: number, surplus: number) {
+/** Weekday order in which a car counts as at home during the day: weekend first. */
+const homeDayOrder = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+/**
+ * Home charging in one hour, given the energy still pending. `buffer` is the part the car may
+ * still lack overnight; evening charging only tops up what lies above it.
+ */
+function carCharge(
+  input: Inputs,
+  h: number,
+  pending: number,
+  surplus: number,
+  home: boolean,
+  buffer: number
+) {
   if (input.chargeTime === 'day' && h >= 9 && h < 17) {
     // PV-surplus charging: only when at least 1.4 kW (one phase, 6 A) are left over.
-    return surplus >= minSurplusCharge ? Math.min(pending, input.chargePower, surplus) : 0;
+    return home && surplus >= minSurplusCharge ? Math.min(pending, input.chargePower, surplus) : 0;
   }
   if (h >= (input.chargeTime === 'day' ? 17 : 18) && h < 24) {
     // Evening charging, or the rest the sun did not cover so the car is ready next morning.
-    return Math.min(pending, input.chargePower);
+    return Math.min(Math.max(0, pending - buffer), input.chargePower);
   }
   return 0;
 }
@@ -285,6 +309,7 @@ export function demands(profile: SolarProfile, input: Inputs) {
       h: Number(p.hour) + 0.5,
       month: Number(p.month) - 1,
       weekend: p.weekday === 'Sat' || p.weekday === 'Sun',
+      carHome: homeDayOrder.indexOf(p.weekday) < input.carDaysHome,
     };
   });
   const gaussian = (h: number, mean: number, sigma: number) =>
@@ -322,15 +347,18 @@ export function demands(profile: SolarProfile, input: Inputs) {
     (times.length / 24);
   let pending = 0;
   let unmetCar = 0;
-  const load = times.map(({ h }, i) => {
+  const last = times.length - 24;
+  const load = times.map(({ h, carHome }, i) => {
     if (i % 24 === 0) pending += carDaily;
+    // The buffer only applies to day charging and not on the last day, so the year stays complete.
+    const buffer = input.chargeTime === 'day' && i < last ? input.carBuffer : 0;
     const surplus = Math.min(Number(profile.hours[i][1]) * pvScale, limit) - home[i];
-    const charged = carCharge(input, h, pending, surplus);
+    const charged = carCharge(input, h, pending, surplus, carHome, buffer);
     pending -= charged;
-    // Daily budget expires at the end of each UTC day; unmet home charging is reported separately.
+    // Each UTC day ends with at most the buffer pending; unmet home charging is reported separately.
     if (i % 24 === 23) {
-      unmetCar += pending;
-      pending = 0;
+      unmetCar += Math.max(0, pending - buffer);
+      pending = Math.min(pending, buffer);
     }
     return home[i] + charged;
   });
@@ -543,6 +571,39 @@ export function compareStorage(
     };
   });
 }
+export interface Variant {
+  input: Inputs;
+  policy?: PolicyPlan;
+  /** Usable storage capacity of this case, kWh; 0 for the system without storage. */
+  capacity: number;
+}
+/** Whole cases with their own inputs, for example other system sizes or charging habits. */
+export function compareVariants(profile: SolarProfile, variants: Variant[]) {
+  return variants.map(({ input, policy, capacity }) =>
+    evaluate(profile, input, policy, demands(profile, input), capacity)
+  );
+}
+/**
+ * Charging habits for the same cars: in the evening, during the day only at the weekend, and with
+ * a car always at home (for example two cars taking turns) that may wait for sun with a buffer.
+ */
+export function chargingCases(input: Inputs): { label: string; input: Inputs }[] {
+  return [
+    { label: 'Abends laden', input: { ...input, chargeTime: 'evening' } },
+    {
+      label: 'Tagsüber laden, Auto nur am Wochenende da',
+      input: { ...input, chargeTime: 'day', carDaysHome: 2, carBuffer: 0 },
+    },
+    {
+      label: 'Immer ein Auto zu Hause, 30 kWh Puffer',
+      input: { ...input, chargeTime: 'day', carDaysHome: 7, carBuffer: 30 },
+    },
+  ];
+}
+/** Surplus charging needs a wallbox that follows the solar power; only then is its extra cost counted. */
+export function surplusCharging(input: Inputs): boolean {
+  return input.mode === 'roof' && input.cars > 0 && input.chargeTime === 'day';
+}
 /** Export revenue at the user's own flat tariff, used when no policy plan applies. */
 function ownTariffYear(input: Inputs, e: Energy, year: number) {
   return {
@@ -609,6 +670,7 @@ function evaluate(
     input.installation +
     input.electrics +
     input.extras +
+    (surplusCharging(input) ? input.wallboxCost : 0) +
     (policy?.setupCost ?? 0);
   const investment = pvCost + (capacity ? input.batteryCost : 0);
   const principal = (investment * input.loanPercent) / 100;
@@ -625,6 +687,7 @@ function evaluate(
       equity: equityBalance,
       debt: remaining,
       saved: 0,
+      replacement: 0,
       exportRevenue: 0,
       bonusRevenue: 0,
       marketingCost: 0,
@@ -651,7 +714,8 @@ function evaluate(
       benefit = income;
       batteryYear = replacementYear(input, capacity, e);
     }
-    const cash = income - replacementCost(yearInput, year, capacity) - revenue.technologyInvestment;
+    const replacement = replacementCost(yearInput, year, capacity);
+    const cash = income - replacement - revenue.technologyInvestment;
     const loan = loanYear(remaining, rate, input.interest);
     const payments = loan.payments;
     remaining = loan.remaining;
@@ -665,6 +729,7 @@ function evaluate(
       equity: equityBalance,
       debt: remaining,
       saved: e.load - e.grid,
+      replacement,
       ...revenue,
     });
   }
@@ -820,6 +885,15 @@ const rules: [fails: (input: Inputs) => boolean, message: string][] = [
     'Laufzeiten und Ersatzjahre bitte als ganze positive Jahre eingeben.',
   ],
   [(input) => ![0, 1, 2].includes(input.cars), 'Es sind null, ein oder zwei Autos vorgesehen.'],
+  [
+    (input) => input.basePrice > 1000 || input.wallboxCost > 10000,
+    'Grundpreis bitte bis 1.000 € im Jahr, Wallbox-Aufpreis bis 10.000 € angeben.',
+  ],
+  [
+    (input) =>
+      !Number.isInteger(input.carDaysHome) || input.carDaysHome > 7 || input.carBuffer > 200,
+    'Tage mit Auto zu Hause bitte als ganze Zahl von 0 bis 7, Puffer im Autoakku bis 200 kWh.',
+  ],
   [
     (input) => !(input.batteryCycles >= 500 && input.batteryCycles <= 20000),
     'Vollzyklen des Speichers bitte zwischen 500 und 20.000 angeben.',

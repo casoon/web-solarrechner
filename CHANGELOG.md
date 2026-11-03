@@ -8,6 +8,11 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Rechner:** Ein Grundpreis (vorbelegt 150 € im Jahr) macht die Stromrechnung mit und ohne Anlage vollständig; Größen- und Ladevergleich zeigen die Stromkosten im ersten Jahr je Variante, mit kurzer Lesehilfe für die Spalten.
+- **Rechner:** Beim Laden mit Solarüberschuss zählt ein einmaliger Aufpreis für Wallbox mit Solarsteuerung oder Energiemanager (vorbelegt 800 €) zur Investition, auch in den Ladevarianten des Vergleichs.
+- **Rechner:** Neuer Abschnitt „Passt die Anlagengröße?“ vergleicht fünf Modulleistungen derselben Dachausrichtung mit Kosten, Regeln und Einspeiseerlösen je Größe; bei wenig Einspeisevergütung zeigt er, ob eine kleinere Anlage reicht.
+- **Rechner:** Für Haushalte mit E-Auto vergleicht „Auto oder Speicher als Puffer?“ Abendladen, Tagesladen nur am Wochenende und ein immer zu Hause stehendes Auto, jeweils ohne und mit Speicher, und nennt den Monatsbetrag, den ein tagsüber ladendes Auto rechnerisch einbringt, etwa als Spielraum für eine Leasingrate.
+- **Rechner:** Beim Laden tagsüber lassen sich die Tage pro Woche mit Auto zu Hause und ein Puffer im Autoakku einstellen, der fehlende Ladung auf den nächsten sonnigen Tag warten lässt.
 - **Anbieter-Modelle:** Neue Seite vergleicht Kauf beim Fachbetrieb und beim Komplettanbieter, Miete, Dachpacht und Contracting mit Festpreis oder dynamischem Stromtarif, mit eigenen Eingaben und unabhängig von der Anlage im Rechner. Sie zeigt Kosten über die Jahre, den Zins, dem eine Miete entspricht, und ordnet die Konzepte mit Vor- und Nachteilen, Kritik und Quellen ein.
 - **SEO:** Strukturierte Daten als ein verknüpfter `@graph` je Seite (Website und Seite) mit daraus erzeugten Open-Graph- und Twitter-Tags; die Projektseite verweist per hreflang auf ihre deutsche und englische Fassung, die 404-Seite ist `noindex`.
 - **Site-Dateien:** `/.well-known/security.txt` und `humans.txt`; `llms.txt` nennt jetzt auch Rechenweg, englische Projektseite und Quellcode.
@@ -24,6 +29,8 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Export:** Das PDF erklärt sich selbst: neue Seite mit Größen- und Ladevergleich und kurzen Begriffserklärungen, ausgeschriebene Spalten in der Monatsbilanz, Autarkiegrad und Eigenverbrauchsquote nebeneinander, Ersatzgeräte je Jahr und Saldo mit Kredit statt „Eigenkapital“, Klartext zum Einspeiseerlös auf der Regelseite. Nicht gewählte Autos und Wärmepumpen erscheinen nicht mehr mit Werten.
+- **Rechner:** Die Kennzahl heißt „Autarkiegrad (Eigenversorgung)“ und nennt zusätzlich die Eigenverbrauchsquote; mit Kredit zeigt das Ergebnis den Saldo nach Kreditraten.
 - **Export:** Das PDF beginnt mit einer Zusammenfassung: Kennzahlen als Kacheln, Strom im Jahresverlauf, Jahresbilanz als Anteilsbalken, Projektsaldo über die Laufzeit und Speichervergleich als Diagramme in den Farben der Rechner-Diagramme; Tabellen und Seitenköpfe sind ruhiger gestaltet.
 - **Navigation:** Rechner, Rechenweg, Stromversorgung, Stromsystem 2045, Strompreis, Anbieter und Über stehen ohne Untermenü in einer Reihe; die aktuelle Seite ist gelb unterstrichen.
 - **Rechner:** Vorlagen als kompakte Leiste, mobil als wischbare Reihe; die sechs Schritte klappen auf und zu und zeigen geschlossen ihre wichtigsten Werte. Das Ergebnis nennt Ort, Anlagengröße und Zeitraum, zeigt die Kennzahlen im Raster 3 × 2 und jeden Abschnitt als eigene Karte.
@@ -43,6 +50,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Fixed
 
+- **Export:** Der Hinweis „Beide Autos verwenden dasselbe Fahr- und Ladeprofil“ erscheint nur noch bei zwei Autos.
 - **Stromsystem 2045:** Die schwierigste Woche zeigt keine überlappenden Zahlen mehr über den Balken; die Werte stehen im Tooltip.
 - **Stromversorgung:** Die Dunkelflaute-Woche zeigt ihre Farben auch unter der Content Security Policy, markiert die Stunden mit Wind und Sonne unter 10 % der Last und die Preisspitze vom 6. November 2024.
 - **SEO:** Titel und Beschreibungen der Hintergrund-Seiten passen in die Suchergebnisse; `security.txt` nennt eine Policy, die doppelte, nie ausgelieferte Sitemap-Route ist entfernt.

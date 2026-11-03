@@ -105,13 +105,29 @@ test('second roof surface adds module power; storage sizes are compared', async 
     page.getByRole('button', { name: 'Sonnendaten für Ort und Ausrichtung laden' })
   ).toHaveCount(0);
   await expect(page.getByTestId('annual-benefit')).not.toHaveText(benefit ?? '');
-  const rows = page.locator('.storage-table tbody tr');
+  const rows = page.getByTestId('storage-table').locator('tbody tr');
   await expect(rows).toHaveCount(5);
-  await expect(page.locator('.storage-table tr.current th')).toHaveText('5 kWh');
+  await expect(page.getByTestId('storage-table').locator('tr.current th')).toHaveText('5 kWh');
   await pickPreset(page, 'commuter');
   await expect(page.getByText('Modulleistung Fläche 1')).toHaveCount(0);
 });
 
+test('system sizes and charging habits are compared; a car at home shows its monthly room', async ({
+  page,
+}) => {
+  const sizes = page.getByTestId('size-table');
+  await expect(sizes.locator('tbody tr')).toHaveCount(5);
+  await expect(sizes.locator('tr.current th')).toHaveText('8 kWp');
+  await expect(page.getByTestId('charging-table')).toHaveCount(0);
+  await pickPreset(page, 'commuter');
+  await expect(sizes.locator('tr.current th')).toHaveText('10 kWp');
+  await expect(page.getByTestId('charging-table').locator('tbody tr')).toHaveCount(6);
+  await expect(page.getByTestId('car-at-home')).toContainText('km zusätzlich im Jahr');
+  const days = page.getByLabel('Tage pro Woche mit Auto tagsüber zu Hause', { exact: true });
+  await expect(days).toHaveCount(0);
+  await page.locator('#charge').selectOption('day');
+  await expect(days).toBeVisible();
+});
 test('settings travel by share link and JSON file and recalculate on load', async ({ page }) => {
   await expect(page.getByTestId('irr')).toHaveText(/%|nicht bestimmbar/);
   await expect(page.getByTestId('battery-cycles')).toContainText('Vollzyklen im Jahr');

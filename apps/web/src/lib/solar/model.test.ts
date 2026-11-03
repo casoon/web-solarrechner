@@ -6,6 +6,7 @@ import {
   calculate,
   combineSurfaces,
   compareStorage,
+  compareVariants,
   defaults,
   demands,
   irr,
@@ -15,7 +16,9 @@ import {
   tariffFor,
   validate,
 } from './model';
+import { presetSetup, resolveCosts, sizeOptions } from './presets';
 import profile from './reference.json';
+import { billBreakdown } from './result-display';
 
 const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-5, `${a} != ${b}`);
 test('hourly PV, demand and battery balances conserve energy', () => {
@@ -78,6 +81,51 @@ test('PV-surplus charging needs the same energy as evening charging', () => {
   const e = simulate(profile, day, 0);
   assert.ok(e.unmetCar < 1);
 });
+test('fewer home days lower PV car charging; a car buffer wins part of it back at equal energy', () => {
+  const total = (input: typeof defaults) => demands(profile, input).load.reduce((a, b) => a + b);
+  const day = { ...defaults, cars: 1, chargeTime: 'day' as const };
+  const weekend = { ...day, carDaysHome: 2 };
+  const buffered = { ...weekend, carBuffer: 30 };
+  const evening = simulate(profile, { ...day, chargeTime: 'evening' }, 0).direct;
+  const [all, two, withBuffer] = [day, weekend, buffered].map((i) => simulate(profile, i, 0));
+  assert.ok(
+    all.direct > withBuffer.direct && withBuffer.direct > two.direct && two.direct > evening
+  );
+  near(total(weekend), total(day));
+  near(total(buffered), total(day));
+  assert.ok(withBuffer.unmetCar < 1);
+});
+test('size options contain the chosen system unchanged; smaller systems cost less and produce less', () => {
+  const { input, work } = presetSetup('family-house');
+  const chosen = resolveCosts(input, work, 'orientation');
+  const options = sizeOptions(input, work, true, 'orientation');
+  const same = options.find((o) => o.kwp === input.kwp);
+  assert.deepEqual(same, chosen);
+  const results = compareVariants(
+    profile,
+    options.map((o) => ({ input: o, capacity: o.battery }))
+  );
+  near(results[options.indexOf(same as typeof chosen)].npv, calculate(profile, chosen).with.npv);
+  for (let i = 1; i < results.length; i++) {
+    assert.ok(results[i].investment > results[i - 1].investment);
+    assert.ok(results[i].energy.pv > results[i - 1].energy.pv);
+  }
+});
+test('base price completes the bill without changing the saving; wallbox only with surplus charging', () => {
+  const evening = { ...defaults, cars: 1 };
+  const day = { ...evening, chargeTime: 'day' as const };
+  const r = calculate(profile, evening);
+  const bill = billBreakdown(r.with, evening, true);
+  const cheaper = billBreakdown(r.with, { ...evening, basePrice: 0 }, true);
+  assert.equal(bill.without - cheaper.without, defaults.basePrice);
+  assert.equal(bill.without - bill.with, cheaper.without - cheaper.with);
+  assert.ok(Math.abs(bill.without - bill.with - r.with.benefit) < 5);
+  near(calculate(profile, day).with.investment - r.with.investment, defaults.wallboxCost);
+  near(
+    calculate(profile, { ...day, cars: 0 }).with.investment,
+    calculate(profile, { ...evening, cars: 0 }).with.investment
+  );
+});
 test('zero-interest loans have the hand-calculated monthly payment', () =>
   near(annuity(12000, 0, 10), 100));
 test('loan payment affects equity without duplicating the project investment', () => {
@@ -124,9 +172,9 @@ test('BKW combined PV and battery delivery cannot exceed 800 VA in a deficit hou
     shaped: [0, 1, 0],
     unmetCar: 0,
     times: [
-      { h: 10, month: 5, weekend: false },
-      { h: 11, month: 5, weekend: false },
-      { h: 12, month: 5, weekend: false },
+      { h: 10, month: 5, weekend: false, carHome: true },
+      { h: 11, month: 5, weekend: false, carHome: true },
+      { h: 12, month: 5, weekend: false, carHome: true },
     ],
   };
   const e = simulate(tiny, input, 2, 1, load);

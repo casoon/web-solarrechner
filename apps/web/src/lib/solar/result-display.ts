@@ -79,19 +79,20 @@ export function billBreakdown(current: Case, applied: Inputs, withBattery: boole
       value: Math.round(applied.mode === 'roof' ? applied.prosumerFee : 0),
     },
   ].filter((step) => step.value !== 0);
-  const without = Math.round(e.load * applied.price);
+  // The base charge is paid with and without the system, so it lowers nothing but completes the bill.
+  const without = Math.round(e.load * applied.price + applied.basePrice);
   return { steps, without, with: without + steps.reduce((sum, step) => sum + step.value, 0) };
 }
 
 /** Savings go down in green, extra costs up in red; totals stay neutral. */
-export function billSpec(bill: ReturnType<typeof billBreakdown>, price: number) {
+export function billSpec(bill: ReturnType<typeof billBreakdown>, price: number, base: number) {
   return {
     schemaVersion: 1,
     showTitle: false,
     type: 'waterfall',
     tokens: { 'color-1': '#b4533c', 'color-2': energyColors.storage, 'color-3': '#4a5a66' },
     title: 'Stromkosten im ersten Betriebsjahr, in EUR',
-    source: `Arbeitspreis ${number(price * 100, 1)} ct/kWh · ohne Grundpreis`,
+    source: `Arbeitspreis ${number(price * 100, 1)} ct/kWh · Grundpreis ${number(base)} € im Jahr`,
     waterfall: {
       steps: [
         { label: 'Ohne Anlage', value: bill.without, kind: 'start' },

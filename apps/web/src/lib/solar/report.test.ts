@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getDefaultRenderer } from '@casoon/lightweight-pdf';
-import { calculate } from './model';
-import { presetSetup, presets, resolveCosts } from './presets';
+import { calculate, chargingCases, compareVariants } from './model';
+import { presetSetup, presets, resolveCosts, sizeOptions } from './presets';
 import reference from './reference.json';
 import { reportDocument } from './report';
 
-test('all presets render six PDF pages without clipping, including 25-year and stale-profile cases', async () => {
+test('all presets render seven PDF pages without clipping, including 25-year and stale-profile cases', async () => {
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
     const { input: base, work } = presetSetup(preset.id);
@@ -34,7 +34,7 @@ test('all presets render six PDF pages without clipping, including 25-year and s
     try {
       assert.deepEqual(rendered.warnings, [], preset.id);
       const pdf = new TextDecoder().decode(rendered.bytes);
-      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 6, preset.id);
+      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 7, preset.id);
       assert.ok(pdf.startsWith('%PDF-'));
       assert.ok(JSON.stringify(doc).includes('noch nicht übernommen'));
       assert.ok(JSON.stringify(doc).includes(preset.title));
@@ -44,16 +44,42 @@ test('all presets render six PDF pages without clipping, including 25-year and s
   }
 });
 
-test('rule profiles and all templates render seven-page PDFs with policy dates and budgets', async () => {
+test('rule profiles, sizes, charging habits and credit render eight-page PDFs for all templates', async () => {
   const { createPolicy, policyDefaults } = await import('./policy');
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
     const { input: base, work } = presetSetup(preset.id);
     base.years = 25;
+    base.loanPercent = 100;
+    if (base.mode === 'roof') base.cars = Math.max(1, base.cars);
     const input = resolveCosts(base, work, 'orientation');
     const policy = createPolicy(input, '2027-01-15', policyDefaults);
     const result = calculate(reference, input, policy);
+    const roof = input.mode === 'roof';
+    const sizes = roof ? sizeOptions(base, work, true, 'orientation') : [];
+    const sized = compareVariants(
+      reference,
+      sizes.map((o) => ({
+        input: o,
+        policy: createPolicy(o, policy.commission, policyDefaults),
+        capacity: o.battery,
+      }))
+    );
+    const cases = roof ? chargingCases(input) : [];
+    const charged = compareVariants(
+      reference,
+      cases.flatMap((c) =>
+        [0, c.input.battery].map((capacity) => ({ input: c.input, policy, capacity }))
+      )
+    );
     const doc = reportDocument({
+      sizes: sizes.map((o, k) => ({ input: o, result: sized[k] })),
+      charging: cases.map((c, k) => ({
+        label: c.label,
+        input: c.input,
+        without: charged[2 * k],
+        with: charged[2 * k + 1],
+      })),
       input,
       base,
       work,
@@ -75,7 +101,7 @@ test('rule profiles and all templates render seven-page PDFs with policy dates a
       assert.deepEqual(rendered.warnings, [], preset.id);
       assert.equal(
         (new TextDecoder().decode(rendered.bytes).match(/\/Type \/Page\b/g) ?? []).length,
-        7,
+        8,
         preset.id
       );
       if (policy.market) assert.ok(JSON.stringify(doc).includes('2030-02-01'));

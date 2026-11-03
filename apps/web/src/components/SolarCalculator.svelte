@@ -2,9 +2,12 @@
 import { onMount, tick } from 'svelte';
 import { currency, number, percent, rate } from '@/lib/solar/format';
 import {
+  annuity,
   calculate,
+  chargingCases,
   combineSurfaces,
   compareStorage,
+  compareVariants,
   type Inputs,
   type PeakProfile,
   peakProfiles,
@@ -26,11 +29,13 @@ import {
   presetSetup,
   presets,
   resolveCosts,
+  sizeOptions,
   storageOptions,
   type WorkOptions,
 } from '@/lib/solar/presets';
 import reference from '@/lib/solar/reference.json';
 import type { ReportSnapshot } from '@/lib/solar/report';
+import { billBreakdown } from '@/lib/solar/result-display';
 import {
   decodeShare,
   encodeShare,
@@ -211,6 +216,75 @@ const bestStorage = $derived(
   )
 );
 const current = $derived(selectedBattery && applied.battery > 0 ? result.with : result.without);
+type Case = ReturnType<typeof compareVariants>[number];
+let sizeRows = $state<{ input: Inputs; result: Case }[]>([]);
+let chargingRows = $state<{ label: string; input: Inputs; without: Case; with: Case }[]>([]);
+/** Other sizes and charging habits for the latest inputs: whole yearly runs, so not on every keystroke. */
+function computeVariants() {
+  const latest = $state.snapshot(resolvedInput);
+  if (validation || latest.mode !== 'roof') {
+    sizeRows = [];
+    chargingRows = [];
+    return;
+  }
+  const date = commission;
+  const settings = $state.snapshot(policySettings);
+  const plan = createPolicy(latest, date, settings);
+  const options = sizeOptions(
+    $state.snapshot(systemInput),
+    $state.snapshot(work),
+    automaticCosts,
+    priceLevel
+  );
+  const capacity = selectedBattery ? latest.battery : 0;
+  const sized = compareVariants(
+    modelProfile,
+    options.map((o) => ({ input: o, policy: createPolicy(o, date, settings), capacity }))
+  );
+  sizeRows = options.map((o, i) => ({ input: o, result: sized[i] }));
+  const cases = latest.cars > 0 ? chargingCases(latest) : [];
+  const runs = compareVariants(
+    modelProfile,
+    cases.flatMap((c) => [
+      { input: c.input, policy: plan, capacity: 0 },
+      { input: c.input, policy: plan, capacity: c.input.battery },
+    ])
+  );
+  chargingRows = cases.map((c, i) => ({ ...c, without: runs[2 * i], with: runs[2 * i + 1] }));
+}
+$effect(() => {
+  // Dependencies of computeVariants, read here so the delayed run follows every change.
+  $state.snapshot([resolvedInput, systemInput, work, policySettings]);
+  [modelProfile, commission, automaticCosts, priceLevel, selectedBattery, validation];
+  const timer = setTimeout(computeVariants, 700);
+  return () => clearTimeout(timer);
+});
+/** Storage of the size comparison: the result view chosen above. */
+const sizeCapacity = $derived(selectedBattery ? applied.battery : 0);
+const bestSize = $derived(
+  sizeRows.reduce<(typeof sizeRows)[number] | null>(
+    (best, row) => (!best || row.result.npv > best.result.npv ? row : best),
+    null
+  )
+);
+const selfUse = (e: Case['energy']) => ((e.load - e.grid) / e.load) * 100;
+/** Share of the solar yield used in the house, the usual "Eigenverbrauchsquote". */
+const solarUse = (e: Case['energy']) => ((e.direct + e.charge) / Math.max(1, e.pv)) * 100;
+/** A car always at home, without storage, against the result shown above. */
+const carAtHome = $derived.by(() => {
+  const always = chargingRows.at(-1)?.without;
+  if (!always) return null;
+  const npv = always.npv - current.npv;
+  const unused = always.energy.export + always.energy.curtailed - always.energy.clipped;
+  return {
+    benefit: always.benefit - current.benefit,
+    npv,
+    monthly: npv > 0 ? annuity(npv, applied.discount, applied.years) : 0,
+    investment: current.investment - always.investment,
+    km: (unused * (1 - applied.chargeLoss / 100) * 100) / applied.carUse,
+  };
+});
+
 const autonomy = $derived(
   Math.max(0, ((current.energy.load - current.energy.grid) / current.energy.load) * 100)
 );
@@ -339,6 +413,7 @@ function applyPreset(id: string) {
     efficiency: input.efficiency,
     standby: input.standby,
     prosumerFee: input.prosumerFee,
+    basePrice: input.basePrice,
   };
   work = next.work;
   automaticCosts = true;
@@ -385,6 +460,7 @@ function flush() {
 }
 async function downloadPdf() {
   flush();
+  computeVariants();
   pdfBusy = true;
   pdfError = '';
   const snapshot: ReportSnapshot = $state.snapshot({
@@ -401,6 +477,8 @@ async function downloadPdf() {
     tariffBasis: result.policy?.name ?? 'Eigene Annahme',
     stale: stale || secondStale,
     second: secondKwp ? { kwp: secondKwp, angle: second.angle, aspect: second.aspect } : undefined,
+    sizes: sizeRows,
+    charging: chargingRows,
     created: `${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })} (Europe/Berlin)`,
   });
   try {
@@ -799,12 +877,36 @@ function download() {
           <option value="evening">Abends, 18–24 Uhr</option>
           <option value="day">Tagsüber mit PV-Überschuss, Rest abends</option>
         </select>
+        {#if input.chargeTime === 'day'}<NumberField
+            label="Tage pro Woche mit Auto tagsüber zu Hause"
+            bind:value={input.carDaysHome}
+            unit="Tage"
+            max={7}
+            slider
+            hint="Das Wochenende zählt zuerst. 7 heißt: Es steht immer ein Auto da, etwa im Homeoffice oder bei zwei Autos im Wechsel."
+          /><NumberField
+            label="Aufpreis für Solar-Überschussladen"
+            bind:value={input.wallboxCost}
+            unit="€"
+            max={10000}
+            step={50}
+            hint="Einmalig, Teil der Investition: eine Wallbox mit Solarsteuerung oder ein Energiemanager, der das Auto nur mit übrigem Sonnenstrom lädt. Ohne diese Steuerung lädt eine Wallbox sofort mit voller Leistung, auch aus dem Netz. Vorbelegt 800 €; ist die Wallbox schon da und braucht nur die Steuerung, eher weniger."
+          />{/if}
         <details>
           <summary>Genauer: Verbrauch und Ladetechnik</summary>
           {#if input.chargeTime === 'day'}<p class="field-hint">
-              Die Wallbox lädt zwischen 9 und 17 Uhr, sobald mindestens 1,4 kW Sonnenstrom übrig
-              sind. Was bis dahin fehlt, lädt sie ab 17 Uhr aus dem Netz oder dem Speicher nach.
-            </p>{/if}
+              Die Wallbox lädt an diesen Tagen zwischen 9 und 17 Uhr, sobald mindestens 1,4 kW
+              Sonnenstrom übrig sind. Was fehlt, lädt sie ab 17 Uhr aus dem Netz oder dem Speicher
+              nach, bis auf den Puffer.
+            </p>
+            <NumberField
+              label="Puffer im Autoakku"
+              bind:value={input.carBuffer}
+              unit="kWh"
+              max={200}
+              step={5}
+              hint="So viel Ladung darf dem Auto abends fehlen; sie wartet auf den nächsten sonnigen Tag. 0 = jeden Abend voll. Etwa 20 bis 30 kWh sind realistisch, wenn das Auto selten weit fährt."
+            />{/if}
           <NumberField
             label="Fahrverbrauch je Auto (Batterie)"
             bind:value={input.carUse}
@@ -833,8 +935,8 @@ function download() {
             step={0.1}
           />
           <p class="field-hint">
-            Beide Autos verwenden hier dasselbe Fahr- und Ladeprofil. Nicht ladbare Energie wird
-            separat ausgewiesen.
+            {input.cars === 2 ? 'Beide Autos verwenden hier dasselbe Fahr- und Ladeprofil. ' : ''}Nicht
+            ladbare Energie wird separat ausgewiesen.
           </p>
         </details>
       {/if}
@@ -918,6 +1020,14 @@ function download() {
         step={0.01}
         slider
         hint="Steht auf der Stromrechnung, ohne Grundpreis. Vorbelegt 35 ct: Der BDEW nennt für 2026 im Schnitt 37 ct inklusive anteiligem Grundpreis."
+      />
+      <NumberField
+        label="Grundpreis deines Stromvertrags"
+        bind:value={input.basePrice}
+        unit="€/Jahr"
+        max={1000}
+        step={10}
+        hint="Die feste Gebühr pro Jahr, egal wie viel Strom du nutzt; oft als Euro pro Monat angegeben (×12). Vorbelegt 150 €, eine eher vorsichtige Schätzung. Du zahlst ihn mit und ohne Anlage, er macht die Stromrechnung nur vollständig."
       />
       <label for="commission">Geplante Inbetriebnahme</label>
       <input id="commission" type="date" bind:value={commission} />
@@ -1155,8 +1265,12 @@ function download() {
             {current.payback ? `ab Jahr ${current.payback}` : `nicht in ${applied.years} Jahren`}
           </dd>
         </div>
+        {#if applied.loanPercent > 0}<div>
+            <dt>Saldo mit Kredit nach {applied.years} Jahren</dt>
+            <dd data-testid="equity-balance">{currency(current.equityBalance)}</dd>
+          </div>{/if}
         <div>
-          <dt>Eigenversorgung, netto</dt>
+          <dt>Autarkiegrad (Eigenversorgung)</dt>
           <dd>{number(autonomy)} %</dd>
         </div>
         <div>
@@ -1169,8 +1283,10 @@ function download() {
         </div>
       </dl>
       <p>
-        Ersparnis und Exporterlös abzüglich laufender Kosten. Eigenversorgung nach Abzug des
-        Speicher-Standby. Amortisation inklusive Alterung und Ersatzgeräten, vor Finanzierung: Die
+        Ersparnis und Exporterlös abzüglich laufender Kosten. Autarkiegrad: Anteil deines Verbrauchs,
+        den Anlage und Speicher decken, nach Abzug des Speicher-Standby; selbst genutzt werden {number(
+          solarUse(current.energy),
+        )} % des Solarstroms (Eigenverbrauchsquote). Amortisation inklusive Alterung und Ersatzgeräten, vor Finanzierung: Die
         Anlage hat ihre Kosten rechnerisch erwirtschaftet. Ein Kredit kann dann noch laufen. Die Rendite
         ist der Zins, zu dem sich das eingesetzte Geld über den Zeitraum verzinst; der Kapitalwert
         vergleicht mit einer Geldanlage zum Diskontsatz aus Schritt 4.
@@ -1233,12 +1349,12 @@ function download() {
       {#if storageRows.length}
         <h3>Andere Speichergrößen im Vergleich</h3>
         <div class="table-scroll">
-          <table class="storage-table">
+          <table class="storage-table" data-testid="storage-table">
             <thead>
               <tr>
                 <th scope="col">Speicher</th>
                 <th scope="col">Aufpreis</th>
-                <th scope="col">Eigen&shy;versorgung</th>
+                <th scope="col">Autarkie&shy;grad</th>
                 <th scope="col">Mehr pro Jahr</th>
                 <th scope="col">Kapitalwert</th>
               </tr>
@@ -1269,6 +1385,130 @@ function download() {
         </p>
       {/if}
     </section>
+    {#if sizeRows.length}
+      <section class="comparison" aria-labelledby="size-title">
+        <h2 id="size-title">Passt die Anlagengröße?</h2>
+        <div class="table-scroll">
+          <table class="storage-table" data-testid="size-table">
+            <thead>
+              <tr>
+                <th scope="col">Anlage</th>
+                <th scope="col">Investition</th>
+                <th scope="col">Autarkie&shy;grad</th>
+                <th scope="col">Solarstrom selbst genutzt</th>
+                <th scope="col">Stromkosten im 1. Jahr</th>
+                <th scope="col">Vorteil im 1. Jahr</th>
+                <th scope="col">Kapitalwert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each sizeRows as row}{@const e = row.result.energy}
+                <tr class:current={row.input.kwp === applied.kwp}>
+                  <th scope="row">{number(row.input.kwp, 1)} kWp</th>
+                  <td>{currency(row.result.investment)}</td>
+                  <td>{number(selfUse(e))} %</td>
+                  <td>{number(solarUse(e))} %</td>
+                  <td>{currency(billBreakdown(row.result, row.input, sizeCapacity > 0).with)}</td>
+                  <td>{currency(row.result.benefit)}</td>
+                  <td>{currency(row.result.npv)}</td>
+                </tr>{/each}
+            </tbody>
+          </table>
+        </div>
+        <p class="field-hint">
+          Dieselbe Dachausrichtung, {selectedBattery && applied.battery > 0
+            ? `jeweils mit ${number(applied.battery, 1)} kWh Speicher`
+            : 'jeweils ohne Speicher'}, Wechselrichter im selben Verhältnis. {automaticCosts
+            ? 'Kosten nach derselben Orientierung.'
+            : 'Deine Modul- und Montagepreise je kWp hochgerechnet, Elektroanschluss gleich.'}
+          Regeln und Einspeiseerlöse gelten je Größe. Größere Anlagen nur, wenn das Dach Platz hat.
+          {bestSize
+            ? `Den höchsten Kapitalwert hat hier ${number(bestSize.input.kwp, 1)} kWp.`
+            : ''}
+          Autarkiegrad: Anteil deines Verbrauchs, den die Anlage deckt. Solarstrom selbst genutzt
+          (Eigenverbrauchsquote): Anteil des Solarstroms, der im Haus bleibt statt eingespeist zu
+          werden. Bei wenig Einspeiseerlös lohnt sich jede zusätzliche kWp vor allem über den
+          zweiten Wert.
+        </p>
+        <p class="field-hint">
+          So liest du die Spalten: <strong>Stromkosten</strong> sind, was du im ersten Jahr noch für
+          Strom zahlst, mit Grundpreis und Betrieb der Anlage, abzüglich Einspeiseerlös.
+          <strong>Vorteil</strong> ist, wie viel weniger das ist als ohne Anlage.
+          <strong>Kapitalwert</strong> zieht über die ganze Laufzeit alle Vorteile zusammen und die
+          Investition ab; über null heißt: besser als das Geld zu {number(applied.discount, 1)} % anzulegen.
+        </p>
+      </section>
+    {/if}
+    {#if chargingRows.length && carAtHome}
+      <section class="comparison" aria-labelledby="charging-title">
+        <h2 id="charging-title">Auto oder Speicher als Puffer?</h2>
+        <div class="table-scroll">
+          <table class="storage-table" data-testid="charging-table">
+            <thead>
+              <tr>
+                <th scope="col">Laden</th>
+                <th scope="col">Speicher</th>
+                <th scope="col">Netzbezug</th>
+                <th scope="col">Autarkie&shy;grad</th>
+                <th scope="col">Stromkosten im 1. Jahr</th>
+                <th scope="col">Vorteil im 1. Jahr</th>
+                <th scope="col">Kapitalwert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each chargingRows as row}
+                {#each [row.without, ...(applied.battery > 0 ? [row.with] : [])] as c, k}
+                  <tr>
+                    {#if k === 0}<th scope="row" rowspan={applied.battery > 0 ? 2 : 1}>
+                        {row.label}
+                      </th>{/if}
+                    <td>{k === 0 ? 'ohne' : `${number(applied.battery, 1)} kWh`}</td>
+                    <td>{number(c.energy.grid)} kWh</td>
+                    <td>{number(selfUse(c.energy))} %</td>
+                    <td>{currency(billBreakdown(c, row.input, k > 0).with)}</td>
+                    <td>{currency(c.benefit)}</td>
+                    <td>{currency(c.npv)}</td>
+                  </tr>{/each}{/each}
+            </tbody>
+          </table>
+        </div>
+        <p data-testid="car-at-home">
+          {#if carAtHome.npv > 0}
+            Steht immer ein Auto zum Laden zu Hause, rechnet sich das ohne Speicher um
+            <strong>{currency(carAtHome.npv)}</strong>
+            Kapitalwert besser als deine Einstellung oben, im ersten Jahr {currency(carAtHome.benefit)}
+            mehr Vorteil{carAtHome.investment > 0
+              ? ` und ${currency(carAtHome.investment)} weniger Investition`
+              : ''}. Über {applied.years} Jahre entspricht das etwa
+            <strong>{currency(carAtHome.monthly)} im Monat</strong>: so viel Spielraum lässt der
+            Strom allein für ein Auto, das tagsüber steht, zum Beispiel einen Teil einer
+            Leasingrate.
+          {:else}
+            Ein Auto, das immer zu Hause lädt, bringt gegenüber deiner Einstellung oben keinen
+            zusätzlichen Kapitalwert.
+          {/if}
+          Der danach noch übrige Solarstrom reicht rechnerisch für etwa {number(
+            Math.round(carAtHome.km / 500) * 500,
+          )} km zusätzlich im Jahr, fast nur an sonnigen Tagen im Sommerhalbjahr.
+        </p>
+        <p class="field-hint">
+          Dieselben Autos, dieselben Kilometer, dieselbe Anlage. „Immer ein Auto zu Hause“ heißt zum
+          Beispiel Homeoffice oder zwei Autos im Wechsel: Eines fährt, das andere lädt. Der Puffer
+          lässt fehlende Ladung bis zu 30 kWh auf den nächsten sonnigen Tag warten. Nicht enthalten:
+          Leasingrate, Versicherung, Steuer und Wartung eines zweiten Autos, eingesparter Kraftstoff
+          eines ersetzten Verbrenners, Rückspeisen aus dem Auto ins Haus. Beim Laden tagsüber ist der
+          Aufpreis von {currency(applied.wallboxCost)} für Solar-Überschussladen in der Investition
+          enthalten.
+        </p>
+        <p class="field-hint">
+          So liest du die Spalten: <strong>Stromkosten</strong> sind, was du im ersten Jahr noch für
+          Strom zahlst, mit Grundpreis und Betrieb der Anlage, abzüglich Einspeiseerlös.
+          <strong>Vorteil</strong> ist, wie viel weniger das ist als ohne Anlage.
+          <strong>Kapitalwert</strong> zieht über die ganze Laufzeit alle Vorteile zusammen und die
+          Investition ab; über null heißt: besser als das Geld zu {number(applied.discount, 1)} % anzulegen.
+        </p>
+      </section>
+    {/if}
     <ResultCharts {result} {applied} withBattery={selectedBattery && applied.battery > 0} />
     <section class="method-note">
       <h2>Ein Überschlag, den du nachvollziehen kannst.</h2>

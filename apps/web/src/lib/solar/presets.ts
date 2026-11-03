@@ -407,3 +407,40 @@ export function storageOptions(
       return { battery, batteryCost, batteryReplacement: Math.round(batteryCost * replaceShare) };
     });
 }
+/**
+ * Other module powers on the same roof, resolved like the chosen system: costs from the same
+ * orientation, or own base prices scaled per kWp with the electrical connection unchanged. The
+ * inverter keeps its ratio to the module power. The chosen size is always included.
+ */
+export function sizeOptions(
+  base: Inputs,
+  work: WorkOptions,
+  automatic: boolean,
+  level: PriceLevel
+): Inputs[] {
+  const sizes = [0.5, 0.7, 0.85, 1, 1.2].map((f) =>
+    f === 1 ? base.kwp : Math.min(30, Math.max(1, Math.round(base.kwp * f * 2) / 2))
+  );
+  return [...new Set(sizes)]
+    .sort((a, b) => a - b)
+    .map((kwp) => {
+      const ratio = kwp / base.kwp;
+      const estimate = estimateCosts({ ...base, kwp }, level);
+      const sized: Inputs = {
+        ...base,
+        kwp,
+        ac: Math.round(base.ac * ratio * 10) / 10,
+        ...(automatic
+          ? {
+              equipment: estimate.equipment,
+              installation: estimate.installation,
+              electrics: estimate.electrics,
+            }
+          : {
+              equipment: Math.round(base.equipment * ratio),
+              installation: Math.round(base.installation * ratio),
+            }),
+      };
+      return resolveCosts(sized, work, level);
+    });
+}
