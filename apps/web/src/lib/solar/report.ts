@@ -61,6 +61,12 @@ const text = (content: string, size = 10, bold = false, color?: Rgb): Element =>
   content,
   style: { size, font: bold ? 'sans-bold' : 'sans-regular', line_height: 1.3, color },
 });
+/** Running text: more line height than labels and table cells, so paragraphs read loosely. */
+const para = (content: string, size = 10, bold = false, color?: Rgb): Element => ({
+  type: 'text',
+  content,
+  style: { size, font: bold ? 'sans-bold' : 'sans-regular', line_height: 1.5, color },
+});
 const gap = (size = 10): Element => ({ type: 'spacer', size });
 const heading = (content: string): Element =>
   ({
@@ -751,7 +757,7 @@ export function reportDocument(s: ReportSnapshot): Document {
       ...burdenPage(s, current, page),
       ...variantsPage(s, page),
       ...page('Energiebilanz im ersten Jahr'),
-      text(
+      para(
         'Monatswerte in kWh aus der Stundenbilanz. Solar: Ertrag vor Begrenzung. Verbrauch: inklusive Speicher-Standby, gedeckt durch direkt genutzten Solarstrom, Abgabe aus dem Speicher und Netzbezug. Eingespeist: ins Netz abgegebener Überschuss. Abgeregelt: wegen Wechselrichter- oder Einspeisegrenze verloren.'
       ),
       gap(),
@@ -795,18 +801,18 @@ export function reportDocument(s: ReportSnapshot): Document {
         ]
       ),
       gap(),
-      text(
+      para(
         `Gerechnet wird Stunde für Stunde: Eingespeister Sommerstrom gleicht Netzbezug im Winter nicht aus. Rundungsdifferenzen sind möglich.${i.cars === 2 ? ' Beide Autos verwenden dasselbe Fahr- und Ladeprofil.' : ''}`
       ),
       ...page('Wirtschaftlichkeit über die Laufzeit'),
       ...financeSection(i, current),
       ...page('Annahmen: Anlage und Verbrauch'),
-      text(
+      para(
         `Tatsächlich verwendetes Ertragsprofil: ${s.profile.location}; ${s.profile.lat} / ${s.profile.lon}; ${s.profile.angle}° Neigung; Azimut ${s.profile.aspect}° (0° = Süd).${secondSurface(s)}`
       ),
       ...(s.stale
         ? [
-            text(
+            para(
               'Hinweis: Geänderte Standort-/Dachwerte wurden noch nicht übernommen. Dieser Bericht verwendet das zuletzt geladene Profil.',
               10,
               true
@@ -816,7 +822,7 @@ export function reportDocument(s: ReportSnapshot): Document {
       gap(),
       table(['Annahme', 'Wert'], systemRows(i)),
       gap(),
-      text(
+      para(
         'Speicherwerte gelten für die Vergleichsvariante mit Speicher. Vereinfachte AC-Kopplung, ein Zähler, bis zu zwei Dachflächen an einem Wechselrichter; keine Dachplanung. Die Einspeisegrenze gilt bis zum Einbau der Steuertechnik oder dauerhaft, je nach Regelszenario; darüber wird abgeregelt.'
       ),
       ...page('Annahmen, Quellen und Grenzen'),
@@ -861,8 +867,9 @@ export function reportDocument(s: ReportSnapshot): Document {
         ]
       ),
       gap(),
-      text(`PVGIS: ${s.profile.period}. Abruf: ${s.profile.retrieved}. ${s.profile.source}`, 9),
-      text(
+      para(`PVGIS: ${s.profile.period}. Abruf: ${s.profile.retrieved}. ${s.profile.source}`, 9),
+      gap(6),
+      para(
         'Eigene synthetische Lastprofile. Preisorientierung: Verbraucherzentrale NRW, Angebotsauswertung Stand 28.08.2026; keine aktuellen Marktmittel. Kostenaufteilung, Preisstufen und Zusatzbudgets sind eigene veränderbare Schätzungen. GeoNames-Ortsdaten: CC BY 4.0.',
         9
       ),
@@ -872,7 +879,7 @@ export function reportDocument(s: ReportSnapshot): Document {
         url: 'https://solarrechner.casoon.de/de/about/',
       } as Element,
       gap(5),
-      text(
+      para(
         'Der PDF-Bericht entsteht lokal im Browser. Vor einer Investition Angebote, Gebäudeeignung und Anschlussbedingungen prüfen.',
         9
       ),
@@ -923,8 +930,8 @@ function leaseIdea(s: ReportSnapshot): Element[] {
   const perMonth = (v: number) => `${eur(v)} / Monat`;
   return [
     text('Idee: geleastes Zweitauto statt Speicher', 11, true),
-    gap(3),
-    text(
+    gap(6),
+    para(
       `Statt ${num(i.battery, 1)} kWh Speicher ein zweites E-Auto leasen. Ihr fahrt abwechselnd, die Kilometer bleiben gleich, eines steht immer zu Hause und lädt mit Sonnenstrom. Der Speicher fällt ganz weg: kein Kaufpreis, kein Ersatz, keine laufenden Kosten.`,
       9
     ),
@@ -945,8 +952,8 @@ function leaseIdea(s: ReportSnapshot): Element[] {
         ['Bleibt aus eigener Tasche', perMonth(l.remaining)],
       ]
     ),
-    gap(4),
-    text(
+    gap(8),
+    para(
       'Nur ein Anstoß zum Weiterdenken. Das Auto nimmt Sonnenstrom nur für die eigenen Kilometer auf und gibt abends nichts ans Haus zurück. Nicht gerechnet: ein ersetzter Verbrenner und dessen Sprit.',
       9
     ),
@@ -990,8 +997,8 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
               eur(result.npv),
             ])
           ),
-          gap(4),
-          text(
+          gap(8),
+          para(
             `Dieselbe Dachausrichtung, ${view}, Regeln je Größe. Den höchsten Kapitalwert hat ${num(best.input.kwp, 1)} kWp. Größere Anlagen nur, wenn das Dach Platz hat.`,
             9
           ),
@@ -1024,8 +1031,8 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
               ])
             )
           ),
-          gap(4),
-          text(
+          gap(8),
+          para(
             `Dieselben Autos und Kilometer. „Immer ein Auto zu Hause“: etwa Homeoffice oder zwei Autos im Wechsel; fehlende Ladung darf bis zu 30 kWh auf den nächsten sonnigen Tag warten. Beim Laden tagsüber enthält die Investition ${eur(i.wallboxCost)} für eine Wallbox mit Solarsteuerung. Kosten eines zweiten Autos sind nicht enthalten.`,
             9
           ),
@@ -1034,9 +1041,13 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
       : []),
     ...page(s.input.battery > 0 && s.charging?.length ? 'Gedankenspiel und Begriffe' : 'Begriffe'),
     ...leaseIdea(s),
-    text('Begriffe', 11, true),
-    gap(5),
-    ...glossary.flatMap(([term, meaning]) => [text(term, 9, true), text(meaning, 9), gap(4)]),
+    ...(s.input.battery > 0 && s.charging?.length ? [text('Begriffe', 11, true), gap(8)] : []),
+    ...glossary.flatMap(([term, meaning]) => [
+      { ...text(term, 10, true), common: { keep_with_next: true } } as Element,
+      gap(2),
+      para(meaning, 10),
+      gap(12),
+    ]),
   ];
 }
 
@@ -1047,7 +1058,7 @@ function policyDetails(
 ): Element[] {
   const revenue = current.firstYear.exportRevenue + current.firstYear.bonusRevenue;
   return [
-    text(
+    para(
       revenue > 0
         ? `Kurz gesagt: Für eingespeisten Strom rechnet dieses Szenario im ersten Jahr mit ${eur(revenue)} Erlös, Anfangssatz ${num(policy.rate * 100, 2)} ct/kWh.`
         : 'Kurz gesagt: Für eingespeisten Strom bekommst du in diesem Szenario im ersten Jahr nichts. Jede Kilowattstunde lohnt sich dann nur, wenn du sie selbst nutzt.',
@@ -1106,14 +1117,14 @@ function policyDetails(
       ]
     ),
     gap(),
-    text(
+    para(
       '2027-Regeln sind ein nicht beschlossener Entwurf. Übergangszahlung endet am Ende des 36. Folgemonats, Bonus am Ende des 48. Folgemonats der ersten Direktvermarktung. Bei späterer Technik kann nach dem Übergang eine unbezahlte Phase entstehen. Ab 25 kW ist die Marktprämie über einen angenommenen jährlichen Marktwert vereinfacht; keine garantierte Verkaufspreisuntergrenze.',
       9
     ),
     gap(),
-    text(policy.limitation, 9),
+    para(policy.limitation, 9),
     gap(),
-    text(
+    para(
       'Markt- und Kostenbudgets sind frei veränderbare Annahmen. Sie werden nur in passenden Phasen angesetzt. Bei Steckersolar und im Nullerlös-Szenario fallen keine Vermarktungsentgelte an. Zusätzliche Technik außerhalb des Betrachtungszeitraums wird nicht berechnet.',
       9
     ),
