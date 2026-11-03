@@ -59,6 +59,8 @@ test('BKW, charging, heat pump and financing are usable', async ({ page }) => {
   await page.getByLabel('Wärmepumpe einbeziehen').check();
   await page.getByLabel('Anteil kreditfinanziert', { exact: true }).fill('100');
   await expect(page.getByRole('heading', { name: 'Deine Finanzierung' })).toBeVisible();
+  await expect(page.getByTestId('own-funds')).toHaveText(/^0\s€$/);
+  await expect(page.getByTestId('loan-cost')).not.toHaveText(/^0\s€$/);
   await expect(page.locator('opengrid-table').first().locator('tbody tr')).toHaveCount(12);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Als JSON speichern' }).click();
@@ -133,6 +135,20 @@ test('system sizes and charging habits are compared; a car at home shows its mon
   await page.locator('#charge').selectOption('day');
   await expect(days).toBeVisible();
 });
+test('storage quality sets lifetime; without replacement the system runs on alone', async ({
+  page,
+}) => {
+  const cycles = page.getByTestId('battery-cycles');
+  await expect(cycles).toContainText('hält 12 Jahre');
+  await expect(cycles).toContainText('Ersatz im Jahr 13');
+  await expect(cycles).toContainText('Restwert');
+  await page.getByRole('button', { name: 'Hochwertig', exact: true }).click();
+  await expect(cycles).toContainText('hält 17 Jahre');
+  await expect(page.getByLabel('Gesamtwirkungsgrad', { exact: true })).toHaveValue('92');
+  await page.getByLabel('Speicher am Lebensende ersetzen').uncheck();
+  await expect(cycles).toContainText('ohne Speicher weiter');
+});
+
 test('settings travel by share link and JSON file and recalculate on load', async ({ page }) => {
   await expect(page.getByTestId('irr')).toHaveText(/%|nicht bestimmbar/);
   await expect(page.getByTestId('battery-cycles')).toContainText('Vollzyklen im Jahr');
@@ -202,7 +218,10 @@ test('cost levels, own labour and bundled protection update totals without doubl
 }) => {
   await pickPreset(page, 'family-house');
   await page.getByText('Basispreise selbst eintragen').click();
-  await page.getByRole('button', { name: 'Günstig', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Preisorientierung' })
+    .getByRole('button', { name: 'Günstig', exact: true })
+    .click();
   const low = Number(
     await page.getByLabel('Module und Wechselrichter', { exact: true }).inputValue()
   );

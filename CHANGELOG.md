@@ -8,6 +8,8 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Rechner:** Speicherqualität günstig, Standard oder hochwertig setzt Preis, Wirkungsgrad, Standby, Alterung und Lebensdauer gemeinsam; jeder Wert bleibt einzeln änderbar. Wahlweise läuft die Anlage nach dem Lebensende ohne Speicher weiter, statt ihn zu ersetzen.
+- **Rechner:** Mit Kredit zeigt das Ergebnis, was heute aus eigener Tasche kommt und was der Kredit über die ganze Laufzeit an Zinsen und Gebühren kostet; die Investition bleibt der Kaufpreis. Das PDF nennt beides auf der Seite zur Wirtschaftlichkeit.
 - **Rechner:** Gedankenspiel „Geleastes Zweitauto statt Speicher“ rechnet den Speicher ganz heraus und stellt Leasingrate und Nebenkosten (vorbelegt 200 € und 50 € im Monat) dem gegenüber, was der Verzicht auf den Speicher und das immer zu Hause ladende Auto pro Monat einbringen; auch im PDF.
 - **Rechner:** Ein Grundpreis (vorbelegt 150 € im Jahr) macht die Stromrechnung mit und ohne Anlage vollständig; Größen- und Ladevergleich zeigen die Stromkosten im ersten Jahr je Variante, mit kurzer Lesehilfe für die Spalten.
 - **Rechner:** Beim Laden mit Solarüberschuss zählt ein einmaliger Aufpreis für Wallbox mit Solarsteuerung oder Energiemanager (vorbelegt 800 €) zur Investition, auch in den Ladevarianten des Vergleichs.
@@ -30,6 +32,8 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Rechner:** Der Speicher wird nach seiner Lebensdauer wiederholt ersetzt, nicht nur einmal; der zuletzt gekaufte Ersatzspeicher zählt am Ende mit seinem Restwert. Ergebnis und PDF nennen Ersatzjahre und Restwert.
+- **Rechner:** Kennzahlen in Alltagssprache: „Mehr als Geld zu 3 % anlegen“ statt Kapitalwert und „Verzinsung deines Geldes“ statt interner Zinsfuß, mit kurzer Erklärung; Saldo mit Kredit und Kapitalwert tragen ein Vorzeichen. Das PDF übernimmt Namen und Vorzeichen.
 - **Rechner:** Die Berechnungen laufen im Hintergrund, sodass Eingaben auch bei Speicher-, Größen- und Ladevergleich nicht mehr stocken; dauert es spürbar, zeigt ein kleiner Fortschrittsbalken den Stand. Die Vergleichstabellen lassen sich per Tastatur scrollen.
 - **Export:** Das PDF erklärt sich selbst: neue Seite mit Größen- und Ladevergleich und kurzen Begriffserklärungen, ausgeschriebene Spalten in der Monatsbilanz, Autarkiegrad und Eigenverbrauchsquote nebeneinander, Ersatzgeräte je Jahr und Saldo mit Kredit statt „Eigenkapital“, Klartext zum Einspeiseerlös auf der Regelseite. Nicht gewählte Autos und Wärmepumpen erscheinen nicht mehr mit Werten.
 - **Rechner:** Die Kennzahl heißt „Autarkiegrad (Eigenversorgung)“ und nennt zusätzlich die Eigenverbrauchsquote; mit Kredit zeigt das Ergebnis den Saldo nach Kreditraten.

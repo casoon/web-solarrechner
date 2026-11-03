@@ -69,7 +69,11 @@ export interface Inputs {
   inverterReplacement: number;
   inverterYear: number;
   batteryReplacement: number;
-  /** Latest operating year for the storage replacement; reaching the cycle life brings it forward. */
+  /** Quality line of the storage; sets the price and, through `storageGrades`, its technical values. */
+  batteryGrade: StorageGrade;
+  /** Replace the storage at the end of its life; otherwise the system runs on without storage. */
+  batteryReplace: boolean;
+  /** Operating year of the first storage replacement; reaching the cycle life brings it forward. Repeats with the same life. */
   batteryYear: number;
   /** Full cycles until the storage is replaced. */
   batteryCycles: number;
@@ -128,6 +132,8 @@ export const defaults: Inputs = {
   inverterReplacement: 1200,
   inverterYear: 12,
   batteryReplacement: 2200,
+  batteryGrade: 'standard',
+  batteryReplace: true,
   batteryYear: 13,
   batteryCycles: 6000,
   price: 0.35,
@@ -163,6 +169,44 @@ export const storageTechs = [
   { key: 'typical', label: 'Typisch', efficiency: 88, standby: 10 },
   { key: 'lossy', label: 'Verlustreich', efficiency: 82, standby: 35 },
 ] as const;
+export type StorageGrade = 'basic' | 'standard' | 'premium';
+/**
+ * Storage quality lines. Lifetime: calendar years until replacement and full cycles; typical
+ * LFP home storage carries a 10-year warranty to 60-80 % capacity at 6,000-10,000 cycles, first
+ * suppliers give 15 years; guides expect 10-15 (cautious) to 15-20 years. `price` scales the
+ * storage cost estimate; efficiency and standby follow `storageTechs`.
+ */
+export const storageGrades: Record<
+  StorageGrade,
+  {
+    label: string;
+    price: number;
+    efficiency: number;
+    standby: number;
+    degradation: number;
+    year: number;
+    cycles: number;
+  }
+> = {
+  basic: { label: 'Günstig', price: 0.8, ...tech(2), degradation: 3, year: 11, cycles: 4000 },
+  standard: { label: 'Standard', price: 1, ...tech(1), degradation: 2, year: 13, cycles: 6000 },
+  premium: {
+    label: 'Hochwertig',
+    price: 1.25,
+    ...tech(0),
+    degradation: 1.5,
+    year: 18,
+    cycles: 10000,
+  },
+};
+function tech(index: number) {
+  return { efficiency: storageTechs[index].efficiency, standby: storageTechs[index].standby };
+}
+/** Years one storage runs before the next replacement is due in year `1 + life`. */
+const storageLife = (batteryYear: number) => Math.max(1, batteryYear - 1);
+/** Replacement purchases fall every storage life, starting in `batteryYear`. */
+export const replacementDue = (year: number, batteryYear: number) =>
+  year > 1 && (year - 1) % storageLife(batteryYear) === 0;
 export type PeakProfile = 'smooth' | 'typical' | 'cautious';
 /**
  * Short appliance peaks (cooker, kettle, washing machine) inside an hour. A share of the
@@ -471,7 +515,7 @@ export function simulate(
   demand = demands(profile, input)
 ): Energy {
   const eta = Math.sqrt(input.efficiency / 100);
-  const batteryAge = year >= input.batteryYear ? year - input.batteryYear : year - 1;
+  const batteryAge = (year - 1) % storageLife(input.batteryYear);
   const cap = capacity * (1 - input.batteryDegradation / 100) ** batteryAge;
   const scale =
     input.kwp *
@@ -671,8 +715,20 @@ function yearIncome(
 function replacementCost(input: Inputs, year: number, capacity: number) {
   return (
     (year === input.inverterYear ? input.inverterReplacement : 0) +
-    (capacity && year === input.batteryYear ? input.batteryReplacement : 0)
+    (capacity && input.batteryReplace && replacementDue(year, input.batteryYear)
+      ? input.batteryReplacement
+      : 0)
   );
+}
+/**
+ * Value left in the last replacement storage at the end of the period, linear over its life.
+ * Only bought replacements count; the first storage is part of the system like the modules.
+ */
+function storageResidual(input: Inputs, capacity: number, batteryYear: number) {
+  if (!capacity || !input.batteryReplace || batteryYear > input.years) return 0;
+  const life = storageLife(batteryYear);
+  const last = input.years - ((input.years - 1) % life);
+  return input.batteryReplacement * Math.max(0, 1 - (input.years - last + 1) / life);
 }
 /** Twelve monthly annuity payments, fewer once the loan is repaid. */
 function loanYear(remaining: number, rate: number, interestRate: number) {
@@ -685,6 +741,18 @@ function loanYear(remaining: number, rate: number, interestRate: number) {
     payments += payment;
   }
   return { payments, remaining: left };
+}
+/** Interest over the whole loan term plus one-off fees, also beyond the calculation period. */
+function loanCost(principal: number, rate: number, input: Inputs) {
+  if (!principal) return 0;
+  let paid = 0;
+  let left = principal;
+  for (let year = 0; year < input.loanYears; year++) {
+    const loan = loanYear(left, rate, input.interest);
+    paid += loan.payments;
+    left = loan.remaining;
+  }
+  return paid - principal + input.fees;
 }
 /** One case of the comparison: the same PV system with the given usable storage capacity. */
 function evaluate(
@@ -717,6 +785,7 @@ function evaluate(
       debt: remaining,
       saved: 0,
       replacement: 0,
+      residual: 0,
       exportRevenue: 0,
       bonusRevenue: 0,
       marketingCost: 0,
@@ -735,16 +804,19 @@ function evaluate(
       batteryYear,
       exportLimit: policy ? policyExportLimit(policy, input, year) : input.exportLimit,
     };
-    const e = simulate(profile, yearInput, capacity, year, demand);
+    // Without replacement the system runs on without storage once its life is over.
+    const live = input.batteryReplace || year < batteryYear ? capacity : 0;
+    const e = simulate(profile, yearInput, live, year, demand);
     const revenue = policy ? policyYear(policy, input, e, year) : ownTariffYear(input, e, year);
-    const income = yearIncome(input, e, revenue, year, capacity);
+    const income = yearIncome(input, e, revenue, year, live);
     if (year === 1) {
       energy = e;
       benefit = income;
       batteryYear = replacementYear(input, capacity, e);
     }
     const replacement = replacementCost(yearInput, year, capacity);
-    const cash = income - replacement - revenue.technologyInvestment;
+    const residual = year === input.years ? storageResidual(input, capacity, batteryYear) : 0;
+    const cash = income - replacement + residual - revenue.technologyInvestment;
     const loan = loanYear(remaining, rate, input.interest);
     const payments = loan.payments;
     remaining = loan.remaining;
@@ -759,6 +831,7 @@ function evaluate(
       debt: remaining,
       saved: e.load - e.grid,
       replacement,
+      residual,
       ...revenue,
     });
   }
@@ -773,6 +846,9 @@ function evaluate(
     batteryYear,
     rate,
     principal,
+    /** Paid from own pocket at the start: the investment not financed, plus loan fees. */
+    ownFunds: investment - principal + (principal ? input.fees : 0),
+    loanCost: loanCost(principal, rate, input),
     balance,
     equityBalance: equityBalance - remaining,
     debt: remaining,

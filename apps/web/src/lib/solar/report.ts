@@ -6,6 +6,7 @@ import {
   leasedCar,
   peakProfiles,
   type SolarProfile,
+  storageGrades,
   surplusCharging,
 } from './model';
 import type { PolicyPlan } from './policy';
@@ -35,6 +36,7 @@ export interface ReportSnapshot {
 }
 const num = (n: number, digits = 0) => n.toLocaleString('de-DE', { maximumFractionDigits: digits });
 const eur = (n: number) => `${num(n)} EUR`;
+const signedEur = (n: number) => `${Math.round(n) > 0 ? '+' : ''}${eur(n)}`;
 function secondSurface({ second, input }: ReportSnapshot) {
   if (!second) return '';
   return ` Zweite Dachfläche: ${num(second.kwp, 1)} kWp, ${second.angle}° Neigung, Azimut ${second.aspect}°. Die Modulleistung ist die Summe beider Flächen: ${num(input.kwp - second.kwp, 1)} + ${num(second.kwp, 1)} kWp.`;
@@ -307,7 +309,7 @@ function summary(s: ReportSnapshot, current: Result, pages: number): Element[] {
           'Amortisation',
           current.payback ? `Jahr ${current.payback}` : 'offen',
           i.loanPercent > 0
-            ? `ohne Kredit gerechnet · mit Kredit nach ${i.years} Jahren ${eur(current.equityBalance)}`
+            ? `ohne Kredit gerechnet · mit Kredit nach ${i.years} Jahren ${signedEur(current.equityBalance)}`
             : current.payback
               ? 'Projektsaldo danach positiv'
               : `nicht in ${i.years} Jahren`,
@@ -472,11 +474,13 @@ function systemRows(i: Inputs): string[][] {
           ['jaz', 'Jahresarbeitszahl'],
         ])
       : []),
+    [
+      'Speicherqualität, Wirkungsgrad, Standby',
+      `${storageGrades[i.batteryGrade].label} · ${num(i.efficiency)} % · ${num(i.standby)} W`,
+    ],
     ...rows([
       ['battery', 'Nutzbarer Speicher', 'kWh'],
       ['batteryPower', 'Speicherleistung', 'kW'],
-      ['efficiency', 'Gesamtwirkungsgrad Speicher', '%'],
-      ['standby', 'Speicher-Standby', 'W'],
       ['degradation', 'PV-Alterung pro Jahr', '%'],
       ['batteryDegradation', 'Speicheralterung pro Jahr', '%'],
     ]),
@@ -484,6 +488,7 @@ function systemRows(i: Inputs): string[][] {
 }
 
 /** Yearly cash flows; credit columns only when part of the investment is financed. */
+const residual = (v: Result) => v.cashflows.at(-1)?.residual ?? 0;
 function financeSection(i: Inputs, current: Result): Element[] {
   const loan = i.loanPercent > 0;
   return [
@@ -509,7 +514,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
     ),
     gap(),
     text(
-      `${loan ? `Saldo mit Kredit nach Abzug der Restschuld am Ende: ${eur(current.equityBalance)}. ` : ''}Amortisation bedeutet rechnerische Kostendeckung ohne Kredit; ein Kredit kann dann noch laufen. Kein Restwert der Anlage nach ${i.years} Jahren. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
+      `${loan ? `Die Investition von ${eur(current.investment)} ist der Kaufpreis, egal wie du zahlst. Aus eigener Tasche zu Beginn: ${eur(current.ownFunds)}. Kreditkosten über die ganze Laufzeit (Zinsen und Gebühren): ${eur(current.loanCost)}. Saldo mit Kredit nach Abzug der Restschuld am Ende: ${signedEur(current.equityBalance)}; ein Plus heißt Gewinn. ` : ''}Amortisation bedeutet rechnerische Kostendeckung ohne Kredit; ein Kredit kann dann noch laufen. ${i.batteryReplace ? '' : 'Der Speicher wird am Lebensende nicht ersetzt; danach läuft die Anlage ohne Speicher. '}Kein Restwert der Anlage nach ${i.years} Jahren${residual(current) > 0 ? `; nur der zuletzt gekaufte Ersatzspeicher zählt im letzten Jahr mit ${eur(residual(current))} Restwert` : ''}. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
       9
     ),
   ];
@@ -549,9 +554,9 @@ export function reportDocument(s: ReportSnapshot): Document {
       'Dauerhaft positiver Projektsaldo',
       (v) => (v.payback ? `ab Jahr ${v.payback}` : `nicht in ${i.years} Jahren`),
     ],
-    ['Kapitalwert (ohne Finanzierung)', (v) => eur(v.npv)],
+    [`Mehr als ${num(i.discount, 1)} % Geldanlage (Kapitalwert)`, (v) => signedEur(v.npv)],
     [
-      'Interner Zinsfuß (Rendite)',
+      'Verzinsung des Geldes (Rendite)',
       (v) => (v.irr === null ? 'nicht bestimmbar' : `${num(v.irr, 1)} %`),
     ],
     [`Projektsaldo nach ${i.years} Jahren`, (v) => eur(v.balance)],
@@ -560,7 +565,7 @@ export function reportDocument(s: ReportSnapshot): Document {
     ...(i.loanPercent > 0
       ? ([
           ['Monatliche Kreditrate', (v) => eur(v.rate)],
-          [`Saldo mit Kredit nach ${i.years} Jahren`, (v) => eur(v.equityBalance)],
+          [`Saldo mit Kredit nach ${i.years} Jahren`, (v) => signedEur(v.equityBalance)],
         ] as [string, (v: typeof current) => string][])
       : []),
   ];
@@ -728,7 +733,7 @@ export function reportDocument(s: ReportSnapshot): Document {
             ['inverterReplacement', 'Wechselrichterersatz', 'EUR'],
             ['inverterYear', 'Wechselrichterersatz im Jahr'],
             ['batteryReplacement', 'Speicherersatz', 'EUR'],
-            ['batteryYear', 'Speicherersatz spätestens im Jahr'],
+            ['batteryYear', 'Erster Speicherersatz im Jahr'],
             ['batteryCycles', 'Vollzyklen bis zum Speicherersatz'],
             ['loanPercent', 'Kreditfinanzierter Anteil', '%'],
             ['interest', 'Sollzins', '%/Jahr'],

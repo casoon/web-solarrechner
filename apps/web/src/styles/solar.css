@@ -523,7 +523,6 @@
   line-height: 1.55;
   color: #d0dfd1;
   margin-bottom: 0;
-  max-width: 75ch;
 }
 /* Every result block below the summary is a card of its own. */
 .comparison,

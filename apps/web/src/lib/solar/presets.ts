@@ -1,4 +1,4 @@
-import { defaults, type Inputs, type StorageOption } from './model';
+import { defaults, type Inputs, type StorageOption, storageGrades } from './model';
 
 export type PriceLevel = 'low' | 'orientation' | 'high';
 const priceLevels = { low: 0.8, orientation: 1, high: 1.3 } as const;
@@ -248,7 +248,10 @@ function interpolate(value: number, anchors: readonly (readonly [number, number]
   }
   return anchors[anchors.length - 1][1];
 }
-export function estimateCosts(input: Pick<Inputs, 'mode' | 'kwp' | 'battery'>, level: PriceLevel) {
+export function estimateCosts(
+  input: Pick<Inputs, 'mode' | 'kwp' | 'battery' | 'batteryGrade'>,
+  level: PriceLevel
+) {
   const factor = priceLevels[level];
   const quote =
     input.mode === 'balcony'
@@ -284,7 +287,7 @@ export function estimateCosts(input: Pick<Inputs, 'mode' | 'kwp' | 'battery'>, l
     installation: round(quote * 0.12 * factor),
     electrics: round(quote * 0.1 * factor),
     roofMount: round(quote * 0.18 * factor),
-    batteryCost: round(batteryQuote * factor),
+    batteryCost: round(batteryQuote * factor * storageGrades[input.batteryGrade].price),
   };
 }
 export const workItems = [

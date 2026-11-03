@@ -1,4 +1,12 @@
-import { defaults, demands, type Inputs, type SolarProfile, simulate, storageTechs } from './model';
+import {
+  defaults,
+  demands,
+  type Inputs,
+  type SolarProfile,
+  type StorageGrade,
+  simulate,
+  storageGrades,
+} from './model';
 
 /**
  * Component quality and what it is worth: modules, inverter and storage in three grades,
@@ -44,13 +52,12 @@ export const inverterGrades: Record<Grade, { loss: [number, number, number] }> =
   basic: { loss: [0.004, 0.027, 0.018] },
 };
 
-/** Storage grades: the HTW bands of the calculator plus capacity loss per year. */
-export const storageGrades: Record<Grade, { efficiency: number; standby: number; ageing: number }> =
-  {
-    high: { efficiency: storageTechs[0].efficiency, standby: storageTechs[0].standby, ageing: 1.5 },
-    mid: { efficiency: storageTechs[1].efficiency, standby: storageTechs[1].standby, ageing: 2 },
-    basic: { efficiency: storageTechs[2].efficiency, standby: storageTechs[2].standby, ageing: 3 },
-  };
+/** Storage grades are the calculator's quality lines. */
+const storageGrade: Record<Grade, StorageGrade> = {
+  high: 'premium',
+  mid: 'standard',
+  basic: 'basic',
+};
 
 export function inverterEfficiency(grade: Grade, load: number) {
   const [constant, linear, quadratic] = inverterGrades[grade].loss;
@@ -155,7 +162,7 @@ export type QualityYear = {
 
 /** Every operating year of one variant on the hourly balance; values in nominal EUR. */
 export function runVariant(profile: SolarProfile, input: QualityInputs, v: Variant): QualityYear[] {
-  const s = storageGrades[v.storage];
+  const s = storageGrades[storageGrade[v.storage]];
   const energy: Inputs = {
     ...defaults,
     household: input.household,
@@ -165,7 +172,7 @@ export function runVariant(profile: SolarProfile, input: QualityInputs, v: Varia
     batteryPower: Math.max(2.5, input.battery / 2),
     efficiency: s.efficiency,
     standby: s.standby,
-    batteryDegradation: s.ageing,
+    batteryDegradation: s.degradation,
     // No storage replacement inside the period: ageing runs from year 1.
     batteryYear: input.years + 1,
     degradation: moduleGrades[v.module].annual,

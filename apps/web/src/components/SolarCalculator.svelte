@@ -2,7 +2,7 @@
 import { onMount, tick } from 'svelte';
 import { run, type Status, Superseded, watchProgress } from '@/lib/solar/calc-client';
 import type { JobResult, Scenario } from '@/lib/solar/calc-jobs';
-import { currency, number, percent, rate } from '@/lib/solar/format';
+import { currency, number, percent, rate, signedCurrency } from '@/lib/solar/format';
 import {
   calculate,
   combineSurfaces,
@@ -10,8 +10,10 @@ import {
   leasedCar,
   type PeakProfile,
   peakProfiles,
+  replacementDue,
   type SolarProfile,
-  storageTechs,
+  type StorageGrade,
+  storageGrades,
   validate,
   weatherYears,
 } from '@/lib/solar/model';
@@ -179,6 +181,21 @@ $effect(() => {
   )
     loadProfiles(true);
 });
+/** When the storage is replaced in the period, what that costs and what is left at the end. */
+const storageLife = $derived.by(() => {
+  const due = result.with.cashflows
+    .filter((c) => c.year > 0 && replacementDue(c.year, result.with.batteryYear))
+    .map((c) => c.year);
+  if (!due.length) return 'Ein Ersatz fällt in den Betrachtungszeitraum nicht.';
+  if (!applied.batteryReplace)
+    return `Ab Jahr ${due[0]} läuft die Anlage ohne Speicher weiter; ein Ersatz wird nicht gekauft.`;
+  const residual = result.with.cashflows.at(-1)?.residual ?? 0;
+  return `Ersatz im Jahr ${due.join(' und ')} für je ${currency(applied.batteryReplacement)}.${
+    residual > 0
+      ? ` Am Ende hat der letzte Ersatzspeicher noch etwa ${currency(residual)} Restwert, der als Gutschrift zählt.`
+      : ''
+  }`;
+});
 /** The latest inputs as plain data, ready to send to a calculation worker. */
 function scenario(): Scenario {
   return {
@@ -338,9 +355,10 @@ const batteryFields: Field[] = [
   { key: 'batteryReplacement', label: 'Ersatzspeicher', unit: '€' },
   {
     key: 'batteryYear',
-    label: 'Speicherersatz spätestens im Betriebsjahr',
+    label: 'Erster Speicherersatz im Betriebsjahr',
     unit: 'Jahr',
     max: 30,
+    hint: 'Danach wieder nach derselben Zahl von Jahren.',
   },
   {
     key: 'batteryCycles',
@@ -351,6 +369,20 @@ const batteryFields: Field[] = [
     hint: 'Hersteller geben für Lithium-Eisenphosphat meist 6.000 bis 10.000 Zyklen an. Wird die Zahl vor dem Ersatzjahr erreicht, rechnet der Rechner den Ersatz früher.',
   },
 ];
+/** A quality line sets price, efficiency, standby, ageing and lifetime together; each stays editable. */
+function chooseGrade(grade: StorageGrade) {
+  const g = storageGrades[grade];
+  input.batteryGrade = grade;
+  input.efficiency = g.efficiency;
+  input.standby = g.standby;
+  input.batteryDegradation = g.degradation;
+  input.batteryYear = g.year;
+  input.batteryCycles = g.cycles;
+  if (automaticCosts)
+    input.batteryReplacement = Math.round(
+      estimateCosts({ ...input, kwp: input.kwp + secondKwp }, priceLevel).batteryCost * 0.75
+    );
+}
 async function loadPlaces() {
   if (placesLoaded) return;
   try {
@@ -1081,6 +1113,35 @@ function download() {
         slider
         hint="Verglichen wird immer dieselbe PV-Anlage ohne und mit diesem Speicher."
       />
+      <p class="field-label" id="storage-grade-label">Speicherqualität</p>
+      <div class="segmented" role="group" aria-labelledby="storage-grade-label">
+        {#each Object.entries(storageGrades) as [key, g]}<button
+            type="button"
+            class:active={input.batteryGrade === key}
+            aria-pressed={input.batteryGrade === key}
+            onclick={() => chooseGrade(key as StorageGrade)}
+          >
+            {g.label}
+          </button>{/each}
+      </div>
+      <p class="field-hint">
+        Günstig spart heute, muss aber früher ersetzt werden; hochwertig kostet mehr und hält länger.
+        {storageGrades[input.batteryGrade].label}: etwa {number(storageGrades[input.batteryGrade].price * 100)} %
+        des Standardpreises, Ersatz nach {number(storageGrades[input.batteryGrade].year - 1)} Jahren oder
+        {number(storageGrades[input.batteryGrade].cycles)} Vollzyklen, {number(
+          storageGrades[input.batteryGrade].degradation,
+          1,
+        )} % Kapazitätsverlust im Jahr. Übliche Garantien: 10 Jahre bis 60 bis 80 % Restkapazität bei
+        6.000 bis 10.000 Zyklen, erste Anbieter geben 15 Jahre.
+      </p>
+      <label class="check">
+        <input type="checkbox" bind:checked={input.batteryReplace} />
+        Speicher am Lebensende ersetzen
+      </label>
+      <p class="field-hint">
+        Ohne Ersatz läuft die Anlage danach ohne Speicher weiter. Ein ersetzter Speicher, der am Ende
+        des Zeitraums noch Jahre vor sich hat, zählt mit seinem Restwert.
+      </p>
       <details>
         <summary>Genauer: Speicherpreis {currency(input.batteryCost)}, Technik, Ersatz</summary>
         <NumberField
@@ -1096,22 +1157,9 @@ function download() {
           max={20000}
           step={100}
         />
-        <p class="field-label" id="storage-tech-label">Wirkungsgrad und Standby</p>
-        <div class="segmented" role="group" aria-labelledby="storage-tech-label">
-          {#each storageTechs as t}<button
-              type="button"
-              class:active={input.efficiency === t.efficiency && input.standby === t.standby}
-              aria-pressed={input.efficiency === t.efficiency && input.standby === t.standby}
-              onclick={() => {
-                input.efficiency = t.efficiency;
-                input.standby = t.standby;
-              }}
-            >
-              {t.label}
-            </button>{/each}
-        </div>
         <p class="field-hint">
-          Effizient 92 % und 3 W, typisch 88 % und 10 W, verlustreich 82 % und 35 W. Labormessungen
+          Die Speicherqualität setzt Wirkungsgrad und Standby: hochwertig 92 % und 3 W, Standard 88 %
+          und 10 W, günstig 82 % und 35 W. Labormessungen
           an Heimspeichern ergaben im Bereitschaftsbetrieb 2 bis 64 W (HTW Berlin,
           Stromspeicher-Inspektion 2025). Große Hybrid-Wechselrichter mit Notstromfunktion brauchen
           teils noch mehr; dann den Wert unten selbst eintragen.
@@ -1285,19 +1333,27 @@ function download() {
           </dd>
         </div>
         {#if applied.loanPercent > 0}<div>
+            <dt>Davon aus eigener Tasche heute</dt>
+            <dd data-testid="own-funds">{currency(current.ownFunds)}</dd>
+          </div>
+          <div>
+            <dt>Kreditkosten (Zinsen und Gebühren)</dt>
+            <dd data-testid="loan-cost">{currency(current.loanCost)}</dd>
+          </div>
+          <div>
             <dt>Saldo mit Kredit nach {applied.years} Jahren</dt>
-            <dd data-testid="equity-balance">{currency(current.equityBalance)}</dd>
+            <dd data-testid="equity-balance">{signedCurrency(current.equityBalance)}</dd>
           </div>{/if}
         <div>
           <dt>Autarkiegrad (Eigenversorgung)</dt>
           <dd>{number(autonomy)} %</dd>
         </div>
         <div>
-          <dt>Kapitalwert bei {number(applied.discount, 1)} %</dt>
-          <dd>{currency(current.npv)}</dd>
+          <dt>Mehr als Geld zu {number(applied.discount, 1)} % anlegen</dt>
+          <dd>{signedCurrency(current.npv)}</dd>
         </div>
         <div>
-          <dt>Rendite (interner Zinsfuß)</dt>
+          <dt>Verzinsung deines Geldes</dt>
           <dd data-testid="irr">{rate(current.irr)}</dd>
         </div>
       </dl>
@@ -1306,9 +1362,13 @@ function download() {
         den Anlage und Speicher decken, nach Abzug des Speicher-Standby; selbst genutzt werden {number(
           solarUse(current.energy),
         )} % des Solarstroms (Eigenverbrauchsquote). Amortisation inklusive Alterung und Ersatzgeräten, vor Finanzierung: Die
-        Anlage hat ihre Kosten rechnerisch erwirtschaftet. Ein Kredit kann dann noch laufen. Die Rendite
-        ist der Zins, zu dem sich das eingesetzte Geld über den Zeitraum verzinst; der Kapitalwert
-        vergleicht mit einer Geldanlage zum Diskontsatz aus Schritt 4.
+        Anlage hat ihre Kosten rechnerisch erwirtschaftet. Ein Kredit kann dann noch laufen. {applied.loanPercent > 0
+          ? `Die Investition ist der Kaufpreis, egal wie du zahlst; der Kredit verteilt ihn über ${number(applied.loanYears)} Jahre und kostet zusätzlich die Kreditkosten über die ganze Laufzeit. `
+          : ''}Saldo mit Kredit: was nach
+        allen Raten und der Restschuld bei dir bleibt; ein Plus heißt Gewinn. Verzinsung (Rendite, interner
+        Zinsfuß): wie ein Sparbuch, das jedes Jahr diesen Zins bringt. „Mehr als Geld anlegen“
+        (Kapitalwert): so viel besser steht die Anlage heute da als dasselbe Geld zum Zins aus Schritt 4
+        angelegt; ein Minus heißt, die Geldanlage wäre besser.
       </p>
       <p>
         <strong>Eine grobe Schätzung für den Einstieg.</strong>
@@ -1358,11 +1418,9 @@ function download() {
         <p data-testid="battery-cycles">
           Etwa {number(result.with.energy.battery / applied.battery)} Vollzyklen im Jahr. {result.with
             .batteryYear < applied.batteryYear
-            ? `Die ${number(applied.batteryCycles)} Zyklen sind vor Jahr ${applied.batteryYear} erreicht, deshalb wird der Speicher schon im Jahr ${result.with.batteryYear} ersetzt.`
-            : `Ersatz im Jahr ${applied.batteryYear}, die ${number(applied.batteryCycles)} Zyklen sind bis dahin nicht erreicht.`}
-          {result.with.batteryYear > applied.years
-            ? 'Das liegt nach dem Betrachtungszeitraum und kostet in dieser Rechnung nichts.'
-            : ''}
+            ? `Die ${number(applied.batteryCycles)} Zyklen sind vor Jahr ${applied.batteryYear} erreicht, deshalb hält der Speicher nur ${number(result.with.batteryYear - 1)} Jahre.`
+            : `Der Speicher hält ${number(applied.batteryYear - 1)} Jahre, die ${number(applied.batteryCycles)} Zyklen sind bis dahin nicht erreicht.`}
+          {storageLife}
         </p>
       {/if}
       {#if storageRows.length}

@@ -2,6 +2,10 @@
 export const currency = (n: number) =>
   n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
+/** Amount with an explicit sign, "+1.200 €" or "−300 €", for balances that can go either way. */
+export const signedCurrency = (n: number) =>
+  `${Math.round(n) > 0 ? '+' : Math.round(n) < 0 ? '−' : ''}${currency(Math.abs(n))}`;
+
 export const number = (n: number, decimals = 0) =>
   n.toLocaleString('de-DE', { maximumFractionDigits: decimals });
 

@@ -12,12 +12,13 @@ import {
   irr,
   leasedCar,
   priceScenario,
+  replacementDue,
   replacementYear,
   simulate,
   tariffFor,
   validate,
 } from './model';
-import { presetSetup, resolveCosts, sizeOptions } from './presets';
+import { estimateCosts, presetSetup, resolveCosts, sizeOptions } from './presets';
 import profile from './reference.json';
 import { billBreakdown } from './result-display';
 
@@ -155,6 +156,57 @@ test('loan payment affects equity without duplicating the project investment', (
     r.without.cashflows[2].equity,
     r.without.cashflows.slice(1).reduce((s, c) => s + c.cash, 0) - r.without.investment * 0.2
   );
+});
+test('storage is replaced every life and the last replacement keeps its residual value', () => {
+  assert.deepEqual(
+    Array.from({ length: 25 }, (_, i) => i + 1).filter((y) => replacementDue(y, 11)),
+    [11, 21]
+  );
+  const input = { ...defaults, years: 20, batteryYear: 13, batteryCycles: 20000 };
+  const r = calculate(profile, input).with;
+  assert.equal(r.batteryYear, 13);
+  near(r.cashflows[13].replacement, input.batteryReplacement);
+  // Replaced at the start of year 13, used 8 of its 12 years by the end of year 20.
+  near(r.cashflows[20].residual, (input.batteryReplacement * 4) / 12);
+  near(calculate(profile, { ...input, years: 12 }).with.cashflows[12].residual, 0);
+});
+test('without replacement the system runs on without storage after its life', () => {
+  const input = {
+    ...defaults,
+    years: 20,
+    batteryYear: 11,
+    batteryCycles: 20000,
+    batteryReplace: false,
+  };
+  const r = calculate(profile, input);
+  const year = (n: number) => r.with.cashflows[n];
+  assert.equal(year(11).replacement, input.inverterYear === 11 ? input.inverterReplacement : 0);
+  near(year(20).residual, 0);
+  // From year 11 on both cases earn the same: same system, no storage, no storage running costs.
+  near(year(15).cash, r.without.cashflows[15].cash);
+});
+test('storage quality changes the estimated price', () => {
+  const base = { mode: 'roof' as const, kwp: 10, battery: 10 };
+  const cost = (grade: 'basic' | 'standard' | 'premium') =>
+    estimateCosts({ ...base, batteryGrade: grade }, 'orientation').batteryCost;
+  assert.ok(cost('basic') < cost('standard') && cost('standard') < cost('premium'));
+});
+test('a fully financed system needs no own funds; the loan costs interest and fees', () => {
+  const free = calculate(profile, { ...defaults, battery: 0, loanPercent: 100, interest: 0 });
+  near(free.without.ownFunds, 0);
+  near(free.without.loanCost, 0);
+  const paid = calculate(profile, {
+    ...defaults,
+    battery: 0,
+    loanPercent: 100,
+    interest: 4,
+    loanYears: 10,
+    fees: 300,
+  }).without;
+  near(paid.ownFunds, 300);
+  // Annuity over 120 months, minus the principal, plus fees.
+  near(paid.loanCost, paid.rate * 120 - paid.principal + 300);
+  near(calculate(profile, { ...defaults, battery: 0 }).without.ownFunds, paid.investment);
 });
 test('empty, out-of-range and impossible base-load inputs are rejected', () => {
   assert.ok(validate({ ...defaults, kwp: Number.NaN }));
