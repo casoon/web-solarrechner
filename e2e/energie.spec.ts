@@ -52,3 +52,25 @@ test('scenario game can be lost and won', async ({ page }) => {
   await expect(page.locator('.solar-chart svg')).toHaveCount(3);
   await axeAndPhone(page);
 });
+
+test('price page shows the history and recalculates the scenario', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/de/strompreis/');
+  await page.locator('#rechnen').scrollIntoViewIfNeeded();
+  const total = page.getByTestId('outlook-total');
+  const value = page.getByTestId('value-own');
+  await expect(total).not.toBeEmpty();
+  const before = (await total.textContent()) ?? '';
+  const valueBefore = (await value.textContent()) ?? '';
+  await page.getByLabel('Inflation', { exact: true }).fill('4');
+  await expect(total).not.toHaveText(before);
+  await expect(value).not.toHaveText(valueBefore);
+  await page.getByLabel('Szenario laden').selectOption({ index: 2 });
+  await expect(page.getByLabel('Preisschock wie 2022 einrechnen')).toBeChecked();
+  for (const chart of await page.locator('.solar-chart').all())
+    await chart.scrollIntoViewIfNeeded();
+  await expect(page.locator('.solar-chart svg')).toHaveCount(5);
+  expect(errors).toEqual([]);
+  await axeAndPhone(page);
+});

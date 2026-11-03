@@ -1,0 +1,203 @@
+---
+import PageIntro from '@/components/PageIntro.astro';
+import PriceOutlook from '@/components/PriceOutlook.svelte';
+import ReadingLayout from '@/components/ReadingLayout.astro';
+import SolarChart from '@/components/SolarChart.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import { history, real, today } from '@/lib/energy/prices';
+import {
+  halfName,
+  historySpec,
+  realSpec,
+  startYearRows,
+  todaySpec,
+} from '@/lib/energy/prices-display';
+import { number, percent } from '@/lib/solar/format';
+
+const halves = history.halfYears;
+const first = halves[0];
+const latest = halves[halves.length - 1];
+const fetched = new Date(history.fetched).toLocaleDateString('de-DE');
+const total =
+  (today.procurement + today.gridFee + today.concession + today.levies + today.electricityTax) *
+  (1 + today.vatRate);
+const ct = (n: number) => `${number(n, 1)} ct/kWh`;
+const pct = (n: number) => percent(Math.round(n * 10) / 10);
+const rows = startYearRows();
+const sources = [
+  [
+    'BDEW-Strompreisanalyse, Datenstand 10/2026',
+    'https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/',
+  ],
+  [
+    'Eurostat: Strompreise für Haushalte, nrg_pc_204 (CC BY 4.0)',
+    'https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204/default/table',
+  ],
+  [
+    'Eurostat: Harmonisierter Verbraucherpreisindex, prc_hicp_minr (CC BY 4.0)',
+    'https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table',
+  ],
+  ['Netztransparenz: Umlagen und Aufschläge 2027', 'https://www.netztransparenz.de/de-de/Umlagen'],
+  [
+    'echo24/ASEW: Umlagen 2027 steigen um 23 Prozent (28.10.2026)',
+    'https://www.echo24.de/welt/strompreis-2027-umlagen-steigen-um-23-prozent-das-zahlen-haushalte-zr-94561774.html',
+  ],
+  [
+    'ZDFheute: Koalitionsausschuss zur Stromsteuer',
+    'https://www.zdfheute.de/politik/deutschland/koalitionsausschuss-stromsteuer-muetterrente-entlastung-100.html',
+  ],
+  [
+    'ZfK: Stromsteuer-Senkung, Klingbeil dämpft Hoffnung',
+    'https://www.zfk.de/politik/deutschland/stromsteuer-senkung-klingbeil-daempft-hoffnung',
+  ],
+  [
+    'Bundesnetzagentur: Konsultation zur Reform der Netzentgeltsystematik Strom, AgNes (06.08.2026)',
+    'https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/DE/2026/20260806_Agnes.html',
+  ],
+  [
+    'BDEW/Frontier Economics: Prognose und Analyse der Netzentgeltentwicklung Strom (12/2024)',
+    'https://www.bdew.de/media/documents/Studie_Prognose_und_Analyse_der_Netzentgeltentwicklung_Strom.pdf',
+  ],
+  [
+    'IMK/Hans-Böckler-Stiftung: Study 98, Finanzierung des Netzausbaus (2025)',
+    'https://www.imk-boeckler.de/fpdf/HBS-009039/p_imk_study_98_2025.pdf',
+  ],
+  [
+    'Dezernat Zukunft: Stromnetzfinanzierung (02/2025)',
+    'https://dezernatzukunft.org/20250207_stromnetzfinanzierung-v1-2',
+  ],
+  [
+    'Agora Energiewende: Stromnetzentgelte gut und günstig (10/2025)',
+    'https://www.agora-energiewende.de/fileadmin/Projekte/2025/2025-10_DE_Stromnetzentgelte/A-EW_370_Stromnetzentgelte-gut-und-günstig_WEB.pdf',
+  ],
+  [
+    'Agora Energiewende/Aurora: Ausbau der Erneuerbaren senkt Börsenstrompreise bis 2030',
+    'https://www.agora-energiewende.de/presse/pressemitteilungen/planmaessiger-ausbau-von-erneuerbaren-energien-senkt-boersenstrompreise-bis-2030-um-bis-zu-23-prozent/pdf',
+  ],
+  [
+    'Taylor Wessing: Kraftwerksstrategie, Kapazitätsmarkt und neue Gaskraftwerke (02/2026)',
+    'https://www.taylorwessing.com/de/insights-and-events/insights/2026/02/kraftwerksstrategie-kapazitaetsmarkt-und-neue-gaskraftwerke',
+  ],
+  ['EWI Köln: Großhandelspreise 2022', 'https://www.ewi.uni-koeln.de/en/?p=14769'],
+  [
+    'ZDFheute: Urteil zur Strompreisbremse',
+    'https://www.zdfheute.de/politik/deutschland/strompreisbremse-urteil-bundesverfassungsgericht-100.html',
+  ],
+];
+---
+<SolarLayout title="Strompreis: woraus er besteht und wohin er geht" description="Warum Haushaltsstrom teurer wurde, was davon real ist, was 2027 beschlossen ist und was offen bleibt. Mit eigener Szenariorechnung und dem Wert einer Solaranlage.">
+  <PageIntro
+    title="Strompreis: was man wirklich vorhersagen kann"
+    facts={[{ title: ct(total), text: 'Durchschnitt 2026 für Neukunden laut BDEW' }, { title: `Datenstand ${fetched}`, text: `Zeitreihe bis ${halfName(latest.period)}, Eurostat` }]}
+    link={{ href: '#rechnen', label: 'Selbst durchrechnen' }}
+  >„Rechnen Sie mit steigenden Strompreisen“ ist ein beliebtes Verkaufsargument für Solaranlagen. Diese Seite zeigt, woraus der Preis besteht, wie er sich bisher entwickelt hat, was für die nächsten Jahre beschlossen ist und was offen bleibt. Danach lässt sich ein eigenes Szenario durchrechnen.</PageIntro>
+
+  <ReadingLayout
+    sections={[{ id: 'heute', label: 'Woraus der Preis besteht' }, { id: 'bisher', label: `Entwicklung seit ${first.period.slice(0, 4)}` }, { id: 'startjahr', label: 'Der Startjahr-Effekt' }, { id: 'krise', label: '2022: Gas aus Russland' }, { id: 'zukunft', label: 'Was feststeht, was offen ist' }, { id: 'fazit', label: 'Was sich sagen lässt' }]}
+    class="method-page"
+  >
+    <section aria-labelledby="heute">
+      <h2 id="heute">Woraus der Preis besteht</h2>
+      <p>Von {ct(total)} entfallen nur 15,4 ct auf Einkauf und Vertrieb, also auf das, was der Strom an der Börse kostet, und die Marge des Versorgers. Der Rest sind Netzentgelte, Umlagen und Steuern, die Politik und Regulierung festlegen.</p>
+      <SolarChart client:visible spec={todaySpec()} id="price-today" />
+      <ul class="cards pairs">
+        <li><span class="figure">41 %</span><p><strong>Beschaffung und Vertrieb.</strong> Folgt dem Börsenpreis mit Verzögerung, weil Versorger ein bis drei Jahre im Voraus einkaufen. Hier wirken Gaspreis, CO₂-Preis und der Ausbau von Wind und Sonne.</p></li>
+        <li><span class="figure">25 %</span><p><strong>Netzentgelte.</strong> Bau und Betrieb der Leitungen, Ausgleichsmaßnahmen bei Engpässen. Die Bundesnetzagentur genehmigt sie; je Region zwischen unter 5 und rund 15 ct.</p></li>
+        <li><span class="figure">8 %</span><p><strong>Umlagen.</strong> Netzanbindung der Windparks auf See, Entlastung stromintensiver Betriebe, Kraft-Wärme-Kopplung. Die EEG-Umlage ist seit Juli 2022 null; der Bundeshaushalt bezahlt die Förderung.</p></li>
+        <li><span class="figure">26 %</span><p><strong>Steuern und Abgaben.</strong> Mehrwertsteuer, Stromsteuer (seit 2003 unverändert 2,05 ct) und Konzessionsabgabe an die Gemeinde.</p></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="bisher">
+      <h2 id="bisher">Entwicklung seit {first.period.slice(0, 4)}</h2>
+      <p>Im {halfName(first.period)} kostete Haushaltsstrom {ct(first.total)}, im {halfName(latest.period)} {ct(latest.total)}. Bis 2014 trieb vor allem die EEG-Umlage den Preis, 2022 und 2023 der Einkauf.</p>
+      <SolarChart client:visible spec={historySpec()} id="price-history" scrollable />
+      <p>Rechnet man die allgemeine Teuerung heraus, sieht es anders aus: In heutiger Kaufkraft kostete Strom {first.period.slice(0, 4)} schon {ct(real(first))}. Die Preise von 2013 bis 2021 lagen real über dem heutigen Niveau.</p>
+      <SolarChart client:visible spec={realSpec()} id="price-real" scrollable />
+      <p class="field-hint">Eurostat zählt alle Haushalte mit 2.500 bis 5.000 kWh, auch Bestandsverträge und Grundversorgung. Der BDEW-Wert für Neukunden liegt deshalb etwas höher.</p>
+    </section>
+
+    <section aria-labelledby="startjahr">
+      <h2 id="startjahr">Der Startjahr-Effekt</h2>
+      <p>Wie stark „der Strompreis jedes Jahr steigt“, hängt vor allem davon ab, wo die Rechnung beginnt. Die gleiche Zeitreihe liefert je nach Startpunkt fast alles zwischen kräftigem Anstieg und Rückgang.</p>
+      <div class="table-scroll" role="region" aria-label="Durchschnittliche Änderung je Startjahr, Tabelle" tabindex="0">
+        <table class="storage-table">
+          <caption class="visually-hidden">Durchschnittliche jährliche Änderung bis {halfName(latest.period)}</caption>
+          <thead><tr><th scope="col">Start</th><th scope="col">Damals</th><th scope="col">Pro Jahr nominal</th><th scope="col">Pro Jahr real</th></tr></thead>
+          <tbody>{rows.map((r) => <tr><th scope="row">{r.from}<br /><span class="field-hint">{r.note}</span></th><td>{ct(r.price)}</td><td>{pct(r.nominal)}</td><td>{pct(r.real)}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p>Seit {first.period.slice(0, 4)} stieg der Preis im Schnitt um {pct(rows[0].nominal)} im Jahr, nach Abzug der Inflation um {pct(rows[0].real)}. Wer 5 % im Jahr ansetzt, rechnet mit deutlich mehr, als die letzten zwei Jahrzehnte geliefert haben, eine Energiekrise eingeschlossen.</p>
+    </section>
+
+    <section aria-labelledby="krise">
+      <h2 id="krise">2022: als das Gas aus Russland ausblieb</h2>
+      <p>Der Börsenpreis richtet sich in jeder Stunde nach dem teuersten Kraftwerk, das noch gebraucht wird, oft einem Gaskraftwerk. Als Russland 2022 die Lieferungen drosselte und einstellte, stieg der Gaspreis auf ein Vielfaches und zog den Strompreis mit. Im ersten Halbjahr 2023 kostete Haushaltsstrom im Schnitt {ct(halves.find((h) => h.period === '2023-S1')?.total ?? 0)}, so viel wie nie.</p>
+      <p>Die Strompreisbremse deckelte 2023 den Preis für 80 % des erwarteten Jahresverbrauchs bei 40 ct. Seitdem ist der Einkauf wieder billiger geworden, liegt aber über dem Niveau vor der Krise. Solche Schocks lassen sich nicht vorhersagen, aber eingrenzen: Sie treffen den Einkaufsanteil von rund 40 %, nicht Netz und Steuern, und Versorger mit langfristigem Einkauf geben sie verzögert und gedämpft weiter.</p>
+      <p>Mehr Wind und Sonne machen den Preis weniger abhängig vom Gas, ganz verschwindet die Abhängigkeit nicht: In der Dunkelflaute setzen weiter Gaskraftwerke den Preis. Was dann passiert, zeigt <a href="/de/stromversorgung/#dunkelflaute">Stromversorgung</a>.</p>
+    </section>
+
+    <section aria-labelledby="zukunft">
+      <h2 id="zukunft">Was feststeht, was offen ist</h2>
+      <div class="table-scroll" role="region" aria-label="Bestandteile, Stand und Richtung, Tabelle" tabindex="0">
+        <table class="storage-table">
+          <caption class="visually-hidden">Stand der Entscheidungen je Bestandteil</caption>
+          <thead><tr><th scope="col">Bestandteil</th><th scope="col">Stand</th><th scope="col">Richtung</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Umlagen 2027</th><td>Beschlossen</td><td>+0,68 ct netto: Aufschlag für besondere Netznutzung 2,03 ct, Offshore-Netzumlage 1,14 ct, KWKG 0,45 ct</td></tr>
+            <tr><th scope="row">Bundeszuschuss Übertragungsnetz</th><td>2026 beschlossen, 2027 geplant</td><td>6,5 Mrd. € 2026, für 2027 rund 5,5 Mrd. € im Haushaltsentwurf. Ohne Zuschuss lägen die Netzentgelte laut BDEW rund 1,7 ct höher.</td></tr>
+            <tr><th scope="row">Netzentgelte 2027</th><td>Vorläufig</td><td>Im Mittel etwa +2 % laut Verivox; endgültig erst im Dezember</td></tr>
+            <tr><th scope="row">Stromsteuer</th><td>Für Haushalte nicht beschlossen</td><td>Industrie und Landwirtschaft zahlen das EU-Minimum. Für Haushalte würde es knapp 2 ct netto sparen; Finanzierung von 5,4 Mrd. € strittig.</td></tr>
+            <tr><th scope="row">Neue Gaskraftwerke</th><td>Gesetzentwurf</td><td>Kapazitätsmarkt, Ausschreibungen seit 2026. Umlage frühestens ab etwa 2031, Höhe offen.</td></tr>
+            <tr><th scope="row">Netzentgeltsystem</th><td>Entwurf der Bundesnetzagentur</td><td>Neues System ab 2029 (AgNes). Wie viel davon künftig als Grundpreis fällig wird, ist offen.</td></tr>
+            <tr><th scope="row">Netzausbau bis 2045</th><td>Studien</td><td>Von −10 bis −15 % (BDEW/Frontier: mehr Strom verteilt die Kosten) bis +1,7 bis 3 ct (IMK, je nach Finanzierung)</td></tr>
+            <tr><th scope="row">Börsenpreis</th><td>Studien</td><td>Mehr Erneuerbare senken ihn; Agora/Aurora: bis 2030 bis zu −23 % gegenüber gebremstem Ausbau</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Die Bestandteile laufen gegeneinander: Wind und Sonne machen den Einkauf billiger, Netze, Reservekraftwerke und ihre Umlagen machen die Rechnung teurer. Oft entscheidet nicht die Technik, sondern wer zahlt: Netzausbau über den Strompreis oder aus dem Bundeshaushalt. Was die Steuer finanziert, erscheint nicht auf der Stromrechnung, bezahlt wird es trotzdem.</p>
+      <aside class="energy-note">
+        <h3>Für Solaranlagen besonders wichtig: der Grundpreis</h3>
+        <p>Eigener Solarstrom spart nur den Preis je Kilowattstunde. Verschiebt die Netzentgeltreform einen Teil der Netzkosten in einen festen Grundpreis, wird jede selbst verbrauchte Kilowattstunde weniger wert, auch wenn die Rechnung insgesamt steigt.</p>
+      </aside>
+    </section>
+
+    <section aria-labelledby="fazit">
+      <h2 id="fazit">Was sich sagen lässt</h2>
+      <ul class="bullets">
+        <li><strong>Kurzfristig belegbar:</strong> 2027 steigen Umlagen und Netzentgelte leicht. Ob das ankommt, hängt am Bundeszuschuss und an der Stromsteuer, also am Bundeshaushalt.</li>
+        <li><strong>Nicht belegbar:</strong> eine feste Steigerungsrate über 20 Jahre. Keine der Studien sagt den Haushaltspreis bis 2045 voraus; sie beschreiben Bestandteile und Szenarien.</li>
+        <li><strong>Vertretbar als Mittelwert:</strong> nominal etwa im Takt der Inflation, real also ungefähr gleich. Das entspricht der Entwicklung seit {first.period.slice(0, 4)}.</li>
+        <li><strong>Für die Entscheidung:</strong> Eine Solaranlage sollte sich auch bei real gleichbleibendem Preis rechnen. Steigt er, ist das ein Bonus, keine Begründung.</li>
+      </ul>
+    </section>
+  </ReadingLayout>
+
+  <section id="rechnen" class="method-page calc-intro flush" aria-labelledby="rechnen-title">
+    <p class="section-kicker">Zum Ausprobieren</p>
+    <h2 id="rechnen-title">Selbst durchrechnen: Strompreis bis 2046</h2>
+    <p class="lead">Jeder Bestandteil folgt der eigenen Annahme. Ausgangspunkt ist der BDEW-Preis 2026; fest eingerechnet sind nur die Umlagen 2027.</p>
+    <p>Darunter: was der selbst verbrauchte Solarstrom bei dieser Preiskurve heute wert ist, und damit, wie viel eine Anlage höchstens kosten darf.</p>
+  </section>
+  <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt.</p></noscript>
+  <PriceOutlook client:visible />
+
+  <div class="method-page wide">
+    <details class="more">
+      <summary>So rechnet das Szenario</summary>
+      <ul class="bullets">
+        <li><strong>Ausgangswerte</strong> 2026 laut BDEW für Neukunden mit 3.500 kWh. Alle Annahmen in Kaufkraft von 2026, danach mit der Inflation hochgerechnet.</li>
+        <li><strong>Stromsteuer und Konzessionsabgabe</strong> bleiben in Cent fest, wie im Gesetz. Alles andere wächst mit der Inflation.</li>
+        <li><strong>Beschaffung</strong> gleitet bis 2035 auf den eingestellten Wert und bleibt dann. Ein Preisschock wirkt ein Jahr voll und eines zur Hälfte.</li>
+        <li><strong>Netzentgelt</strong> ändert sich gleichmäßig bis 2046. Die Studienwerte sind auf das heutige Netzentgelt umgerechnet.</li>
+        <li><strong>Wert der Solaranlage:</strong> vermiedene Stromkosten jedes Jahr, mit dem Kalkulationszins auf heute abgezinst. Ohne Einspeisevergütung, Alterung, Anlagen- und Wartungskosten; die stündliche Bilanz und die volle Wirtschaftlichkeit rechnet der <a href="/">Rechner</a>.</li>
+        <li><strong>Keine Prognose:</strong> Die Rechnung zeigt, was aus Annahmen folgt, nicht welche Annahme stimmt.</li>
+      </ul>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <p>Zeitreihe: Eurostat, CC BY 4.0, abgerufen am {fetched}. BDEW-Werte als Zahlen aus der Strompreisanalyse zitiert.</p>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
+  </div>
+</SolarLayout>

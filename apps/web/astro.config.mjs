@@ -66,6 +66,10 @@ export default defineConfig({
                 title: 'Stromsystem 2045: Szenario-Spiel zu Bedarf, Speicher und Klimaziel',
                 url: '/de/stromsystem-2045/',
               },
+              {
+                title: 'Strompreis: woraus er besteht und wohin er geht',
+                url: '/de/strompreis/',
+              },
               { title: 'Datenquellen und Grenzen', url: '/de/about/' },
               { title: 'About this project (English)', url: '/about/' },
             ],

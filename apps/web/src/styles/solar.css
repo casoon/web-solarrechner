@@ -1390,7 +1390,7 @@ label.text-button:focus-within {
 }
 @media (max-width: 1000px) {
   .reading-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     padding-inline: 24px;
   }
