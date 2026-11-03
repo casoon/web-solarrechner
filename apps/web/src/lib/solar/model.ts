@@ -787,6 +787,8 @@ function evaluate(
       equity: equityBalance,
       debt: remaining,
       saved: 0,
+      load: 0,
+      payments: 0,
       replacement: 0,
       residual: 0,
       exportRevenue: 0,
@@ -834,6 +836,10 @@ function evaluate(
       equity: equityBalance,
       debt: remaining,
       saved: e.load - e.grid,
+      /** Demand of the year in kWh, the bill without a system. */
+      load: e.load,
+      /** Loan payments of the year. */
+      payments,
       replacement,
       residual,
       ...revenue,

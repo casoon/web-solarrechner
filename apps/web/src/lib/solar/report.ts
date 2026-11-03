@@ -11,7 +11,7 @@ import {
 } from './model';
 import type { PolicyPlan } from './policy';
 import { cabinetPrice, type PriceLevel, type WorkOptions, workItems, workPrice } from './presets';
-import { billBreakdown, priceScenarios } from './result-display';
+import { billBreakdown, monthlyBurden, priceScenarios } from './result-display';
 
 export interface ReportSnapshot {
   input: Inputs;
@@ -571,6 +571,36 @@ function costsPage(s: ReportSnapshot, current: Result, page: (title: string) => 
       : []),
   ];
 }
+/** With a loan: the monthly money flow over the whole period, as in the calculator. */
+function burdenPage(s: ReportSnapshot, current: Result, page: (title: string) => Element[]) {
+  const i = s.input;
+  if (i.loanPercent <= 0) return [];
+  return [
+    ...page('Monatliche Belastung mit Kredit'),
+    text(
+      `EUR im Monat, Jahr für Jahr mit ${num(i.priceChange, 1)} % Strompreisänderung pro Jahr und ${eur(i.basePrice)} Grundpreis im Jahr. Strom und Betrieb mit Anlage: Netzstrom, Grundpreis und laufende Kosten abzüglich Einspeiseerlös; in Jahren mit Ersatzgeräten steigt der Wert, im letzten Jahr zählt ein Restwert mit. Unterschied: Plus heißt, mit Anlage und Kredit zahlst du weniger als ohne Anlage.`
+    ),
+    gap(),
+    table(
+      [
+        'Jahr',
+        'Strom ohne Anlage',
+        'Strom und Betrieb mit Anlage',
+        'Kreditrate',
+        'Mit Anlage und Kredit',
+        'Unterschied',
+      ],
+      monthlyBurden(current, i).map((row) => [
+        String(row.year),
+        num(row.without),
+        num(row.power),
+        num(row.rate),
+        num(row.total),
+        `${Math.round(row.difference) > 0 ? '+' : ''}${num(row.difference)}`,
+      ])
+    ),
+  ];
+}
 const residual = (v: Result) => v.cashflows.at(-1)?.residual ?? 0;
 function financeSection(i: Inputs, current: Result): Element[] {
   const loan = i.loanPercent > 0;
@@ -607,7 +637,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
 export function reportDocument(s: ReportSnapshot): Document {
   const i = s.input;
   const policy = s.result.policy;
-  const pages = policy ? 10 : 9;
+  const pages = (policy ? 10 : 9) + (i.loanPercent > 0 ? 1 : 0);
   const r = s.result;
   const current = s.selectedBattery && i.battery > 0 ? r.with : r.without;
   let index = 1;
@@ -718,6 +748,7 @@ export function reportDocument(s: ReportSnapshot): Document {
         9
       ),
       ...costsPage(s, current, page),
+      ...burdenPage(s, current, page),
       ...variantsPage(s, page),
       ...page('Energiebilanz im ersten Jahr'),
       text(

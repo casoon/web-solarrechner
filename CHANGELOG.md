@@ -8,6 +8,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Rechner:** Mit Kredit zeigt „Deine Finanzierung“ die monatliche Belastung Jahr für Jahr: Strom ohne Anlage, Strom und Betrieb mit Anlage, Kreditrate, Summe und Unterschied, mit der gewählten Strompreisänderung. Das PDF hat dafür eine eigene Seite.
 - **Export:** Neue PDF-Seite „Stromkosten, Strompreis und Finanzierung“ mit der Stromrechnung mit und ohne Anlage, den Strompreis-Szenarien und, bei Kredit, Rate, Kreditkosten und dem Vergleich mit und ohne Kredit.
 - **Rechner:** Speicherqualität günstig, Standard oder hochwertig setzt Preis, Wirkungsgrad, Standby, Alterung und Lebensdauer gemeinsam; jeder Wert bleibt einzeln änderbar. Wahlweise läuft die Anlage nach dem Lebensende ohne Speicher weiter, statt ihn zu ersetzen.
 - **Rechner:** Mit Kredit zeigt das Ergebnis, was heute aus eigener Tasche kommt und was der Kredit über die ganze Laufzeit an Zinsen und Gebühren kostet; die Investition bleibt der Kaufpreis. Das PDF nennt beides auf der Seite zur Wirtschaftlichkeit.

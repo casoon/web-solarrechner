@@ -84,6 +84,28 @@ export function billBreakdown(current: Case, applied: Inputs, withBattery: boole
   return { steps, without, with: without + steps.reduce((sum, step) => sum + step.value, 0) };
 }
 
+/**
+ * Monthly money flow per operating year with a loan: what electricity would cost without the
+ * system, what electricity and operation cost with it (net of feed-in revenue, replacements and
+ * the residual value counted in that year), and the loan rate on top. Same numbers as the cashflow.
+ */
+export function monthlyBurden(current: Case, applied: Inputs) {
+  return current.cashflows.slice(1).map((c) => {
+    const price = applied.price * (1 + applied.priceChange / 100) ** (c.year - 1);
+    const without = (c.load * price + applied.basePrice) / 12;
+    const power = without - c.cash / 12;
+    const rate = c.payments / 12;
+    return {
+      year: c.year,
+      rate,
+      without,
+      power,
+      total: power + rate,
+      difference: without - power - rate,
+    };
+  });
+}
+
 /** Savings go down in green, extra costs up in red; totals stay neutral. */
 export function billSpec(bill: ReturnType<typeof billBreakdown>, price: number, base: number) {
   return {

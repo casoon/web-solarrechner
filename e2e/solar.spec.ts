@@ -63,6 +63,7 @@ test('BKW, charging, heat pump and financing are usable', async ({ page }) => {
   await expect(page.getByTestId('loan-cost')).not.toHaveText(/^0\s€$/);
   await expect(page.getByTestId('irr-vs-loan')).toContainText('Kreditzins');
   await expect(page.getByTestId('npv')).toContainText('ohne Kredit');
+  await expect(page.getByTestId('burden-table').locator('tbody tr')).toHaveCount(20);
   await expect(page.locator('opengrid-table').first().locator('tbody tr')).toHaveCount(12);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Als JSON speichern' }).click();

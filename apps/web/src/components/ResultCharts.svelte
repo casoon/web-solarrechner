@@ -1,6 +1,6 @@
 <script lang="ts">
 import { energyFlow } from '@/lib/solar/energy-display';
-import { currency, number, percent } from '@/lib/solar/format';
+import { currency, number, percent, signedCurrency } from '@/lib/solar/format';
 import type { calculate, Inputs } from '@/lib/solar/model';
 import {
   balanceSpec,
@@ -10,6 +10,7 @@ import {
   dayMonths,
   daySpec,
   financeRows,
+  monthlyBurden,
   monthlyRows,
   monthlySpec,
   priceScenarios,
@@ -32,6 +33,7 @@ const energy = $derived(current.energy);
 const bill = $derived(billBreakdown(current, applied, withBattery));
 let dayMonth = $state<number>(5);
 const scenarios = $derived(priceScenarios(current.cashflows, applied));
+const burden = $derived(applied.loanPercent > 0 ? monthlyBurden(current, applied) : []);
 </script>
 
 <section class="chart-section">
@@ -199,6 +201,38 @@ const scenarios = $derived(priceScenarios(current.cashflows, applied));
     <p>
       Kumulierter Eigenkapitalsaldo nach {applied.years} Jahren, nach Abzug verbleibender Restschuld:
       {currency(current.equityBalance)}. Restschuld: {currency(current.debt)}.
+    </p>
+    <h3>Deine monatliche Belastung Jahr für Jahr</h3>
+    <div class="table-scroll" role="region" aria-label="Monatliche Belastung, Tabelle" tabindex="0">
+      <table class="storage-table" data-testid="burden-table">
+        <thead>
+          <tr>
+            <th scope="col">Jahr</th>
+            <th scope="col">Strom ohne Anlage</th>
+            <th scope="col">Strom und Betrieb mit Anlage</th>
+            <th scope="col">Kreditrate</th>
+            <th scope="col">Mit Anlage und Kredit</th>
+            <th scope="col">Unterschied</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each burden as row}<tr>
+              <th scope="row">{row.year}</th>
+              <td>{currency(row.without)}</td>
+              <td>{currency(row.power)}</td>
+              <td>{currency(row.rate)}</td>
+              <td>{currency(row.total)}</td>
+              <td>{signedCurrency(row.difference)}</td>
+            </tr>{/each}
+        </tbody>
+      </table>
+    </div>
+    <p class="field-hint">
+      Euro im Monat, Jahr für Jahr mit {percent(applied.priceChange)} Strompreisänderung pro Jahr und
+      dem Grundpreis von {currency(applied.basePrice)} im Jahr. Strom und Betrieb mit Anlage: Netzstrom,
+      Grundpreis und laufende Kosten abzüglich Einspeiseerlös; in Jahren mit Ersatzgeräten steigt der
+      Wert, im letzten Jahr zählt ein Restwert mit. Unterschied: Plus heißt, du zahlst mit Anlage und
+      Kredit weniger als ohne Anlage.
     </p>
   </section>
 {/if}

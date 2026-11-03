@@ -74,3 +74,18 @@ test('price scenarios keep four renderable lines with the own assumption and an 
     );
   }
 });
+
+test('monthly burden adds the loan rate to the electricity bill and matches the cashflow', async () => {
+  const { monthlyBurden } = await import('./result-display');
+  const input = { ...defaults, loanPercent: 100, interest: 0, loanYears: 10, years: 20 };
+  const current = calculate(profile, input).with;
+  const rows = monthlyBurden(current, input);
+  assert.equal(rows.length, 20);
+  const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-6, `${a} != ${b}`);
+  near(rows[0].rate * 12, current.investment / 10);
+  near(rows[10].rate, 0);
+  rows.forEach((row, i) => {
+    near((row.without - row.power) * 12, current.cashflows[i + 1].cash);
+    near(row.difference, row.without - row.total);
+  });
+});
