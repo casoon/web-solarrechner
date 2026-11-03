@@ -2,13 +2,13 @@
 import { onMount, tick } from 'svelte';
 import { currency, number, percent, rate } from '@/lib/solar/format';
 import {
-  annuity,
   calculate,
   chargingCases,
   combineSurfaces,
   compareStorage,
   compareVariants,
   type Inputs,
+  leasedCar,
   type PeakProfile,
   peakProfiles,
   type SolarProfile,
@@ -270,19 +270,17 @@ const bestSize = $derived(
 const selfUse = (e: Case['energy']) => ((e.load - e.grid) / e.load) * 100;
 /** Share of the solar yield used in the house, the usual "Eigenverbrauchsquote". */
 const solarUse = (e: Case['energy']) => ((e.direct + e.charge) / Math.max(1, e.pv)) * 100;
-/** A car always at home, without storage, against the result shown above. */
+/** A car always at home without storage: solar left over for more kilometres. */
 const carAtHome = $derived.by(() => {
   const always = chargingRows.at(-1)?.without;
   if (!always) return null;
-  const npv = always.npv - current.npv;
   const unused = always.energy.export + always.energy.curtailed - always.energy.clipped;
-  return {
-    benefit: always.benefit - current.benefit,
-    npv,
-    monthly: npv > 0 ? annuity(npv, applied.discount, applied.years) : 0,
-    investment: current.investment - always.investment,
-    km: (unused * (1 - applied.chargeLoss / 100) * 100) / applied.carUse,
-  };
+  return { km: (unused * (1 - applied.chargeLoss / 100) * 100) / applied.carUse };
+});
+/** Idea: a leased second car that always charges at home, instead of the chosen storage. */
+const lease = $derived.by(() => {
+  const always = chargingRows.at(-1)?.without;
+  return always && applied.battery > 0 ? leasedCar(result.with, always, applied) : null;
 });
 
 const autonomy = $derived(
@@ -1473,20 +1471,6 @@ function download() {
           </table>
         </div>
         <p data-testid="car-at-home">
-          {#if carAtHome.npv > 0}
-            Steht immer ein Auto zum Laden zu Hause, rechnet sich das ohne Speicher um
-            <strong>{currency(carAtHome.npv)}</strong>
-            Kapitalwert besser als deine Einstellung oben, im ersten Jahr {currency(carAtHome.benefit)}
-            mehr Vorteil{carAtHome.investment > 0
-              ? ` und ${currency(carAtHome.investment)} weniger Investition`
-              : ''}. Über {applied.years} Jahre entspricht das etwa
-            <strong>{currency(carAtHome.monthly)} im Monat</strong>: so viel Spielraum lässt der
-            Strom allein für ein Auto, das tagsüber steht, zum Beispiel einen Teil einer
-            Leasingrate.
-          {:else}
-            Ein Auto, das immer zu Hause lädt, bringt gegenüber deiner Einstellung oben keinen
-            zusätzlichen Kapitalwert.
-          {/if}
           Der danach noch übrige Solarstrom reicht rechnerisch für etwa {number(
             Math.round(carAtHome.km / 500) * 500,
           )} km zusätzlich im Jahr, fast nur an sonnigen Tagen im Sommerhalbjahr.
@@ -1506,6 +1490,68 @@ function download() {
           <strong>Vorteil</strong> ist, wie viel weniger das ist als ohne Anlage.
           <strong>Kapitalwert</strong> zieht über die ganze Laufzeit alle Vorteile zusammen und die
           Investition ab; über null heißt: besser als das Geld zu {number(applied.discount, 1)} % anzulegen.
+        </p>
+      </section>
+    {/if}
+    {#if lease}
+      <section class="comparison" aria-labelledby="lease-title">
+        <h2 id="lease-title">Idee: geleastes Zweitauto statt Speicher</h2>
+        <p>
+          Ein Gedankenspiel: Statt {number(applied.battery, 1)} kWh Speicher zu kaufen, least du ein
+          zweites Elektroauto. Ihr fahrt abwechselnd, die Kilometer bleiben gleich, aber eines steht
+          immer zu Hause und lädt mit Sonnenstrom, eine Art geleaste Batterie. Der Speicher fällt ganz
+          weg: kein Kaufpreis, kein Ersatz, keine laufenden Kosten.
+        </p>
+        <NumberField
+          label="Leasingrate des zweiten Autos"
+          bind:value={input.leaseRate}
+          unit="€/Monat"
+          max={3000}
+          step={10}
+        />
+        <NumberField
+          label="Versicherung, Wartung, Stellplatz"
+          bind:value={input.leaseExtra}
+          unit="€/Monat"
+          max={1000}
+          step={5}
+          hint="Grobe Schätzung, vorbelegt 50 €. Elektroautos sind bis 2030 von der Kfz-Steuer befreit."
+        />
+        <dl class="lease-list" data-testid="lease">
+          <div>
+            <dt>Weniger Investition (ohne Speicher, mit Wallbox)</dt>
+            <dd>
+              {currency(lease.storageSaved)}{lease.months >= 1
+                ? `, das sind ${number(lease.months)} Leasingraten`
+                : ''}
+            </dd>
+          </div>
+          <div>
+            <dt>Vorteil im ersten Jahr gegenüber deinem Speicher</dt>
+            <dd>{currency(lease.yearly)} im Monat</dd>
+          </div>
+          <div>
+            <dt>Alles über {applied.years} Jahre als Monatsbetrag</dt>
+            <dd><strong>{currency(lease.monthly)} im Monat</strong></dd>
+          </div>
+          <div>
+            <dt>Das zweite Auto kostet</dt>
+            <dd>{currency(lease.cost)} im Monat</dd>
+          </div>
+          <div>
+            <dt>Bleibt aus eigener Tasche</dt>
+            <dd><strong>{currency(lease.remaining)} im Monat</strong></dd>
+          </div>
+        </dl>
+        <p class="field-hint">
+          Verglichen wird deine Einstellung mit {number(applied.battery, 1)} kWh Speicher mit „immer
+          ein Auto zu Hause, 30 kWh Puffer, ohne Speicher“ aus der Tabelle oben. Der Monatsbetrag
+          verteilt den Unterschied im Kapitalwert gleichmäßig über {applied.years} Jahre, mit {number(
+            applied.discount,
+            1,
+          )} % Zins. Das Auto nimmt nur Sonnenstrom für die eigenen Kilometer auf; abends gibt es
+          nichts ans Haus zurück, dafür wäre bidirektionales Laden nötig. Nicht gerechnet: ein
+          Verbrenner, den das zweite Auto ersetzen könnte, und dessen Sprit.
         </p>
       </section>
     {/if}

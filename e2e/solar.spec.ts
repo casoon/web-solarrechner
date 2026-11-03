@@ -123,6 +123,11 @@ test('system sizes and charging habits are compared; a car at home shows its mon
   await expect(sizes.locator('tr.current th')).toHaveText('10 kWp');
   await expect(page.getByTestId('charging-table').locator('tbody tr')).toHaveCount(6);
   await expect(page.getByTestId('car-at-home')).toContainText('km zusätzlich im Jahr');
+  const lease = page.getByTestId('lease');
+  await expect(lease).toContainText('Bleibt aus eigener Tasche');
+  const before = await lease.textContent();
+  await page.getByLabel('Leasingrate des zweiten Autos', { exact: true }).fill('300');
+  await expect(lease).not.toHaveText(before ?? '');
   const days = page.getByLabel('Tage pro Woche mit Auto tagsüber zu Hause', { exact: true });
   await expect(days).toHaveCount(0);
   await page.locator('#charge').selectOption('day');

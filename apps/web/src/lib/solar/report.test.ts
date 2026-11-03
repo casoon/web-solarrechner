@@ -6,7 +6,7 @@ import { presetSetup, presets, resolveCosts, sizeOptions } from './presets';
 import reference from './reference.json';
 import { reportDocument } from './report';
 
-test('all presets render seven PDF pages without clipping, including 25-year and stale-profile cases', async () => {
+test('all presets render eight PDF pages without clipping, including 25-year and stale-profile cases', async () => {
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
     const { input: base, work } = presetSetup(preset.id);
@@ -34,7 +34,7 @@ test('all presets render seven PDF pages without clipping, including 25-year and
     try {
       assert.deepEqual(rendered.warnings, [], preset.id);
       const pdf = new TextDecoder().decode(rendered.bytes);
-      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 7, preset.id);
+      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 8, preset.id);
       assert.ok(pdf.startsWith('%PDF-'));
       assert.ok(JSON.stringify(doc).includes('noch nicht übernommen'));
       assert.ok(JSON.stringify(doc).includes(preset.title));
@@ -44,7 +44,7 @@ test('all presets render seven PDF pages without clipping, including 25-year and
   }
 });
 
-test('rule profiles, sizes, charging habits and credit render eight-page PDFs for all templates', async () => {
+test('rule profiles, sizes, charging habits and credit render nine-page PDFs for all templates', async () => {
   const { createPolicy, policyDefaults } = await import('./policy');
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
@@ -101,7 +101,7 @@ test('rule profiles, sizes, charging habits and credit render eight-page PDFs fo
       assert.deepEqual(rendered.warnings, [], preset.id);
       assert.equal(
         (new TextDecoder().decode(rendered.bytes).match(/\/Type \/Page\b/g) ?? []).length,
-        8,
+        9,
         preset.id
       );
       if (policy.market) assert.ok(JSON.stringify(doc).includes('2030-02-01'));

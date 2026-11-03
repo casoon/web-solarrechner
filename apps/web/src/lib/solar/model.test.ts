@@ -10,6 +10,7 @@ import {
   defaults,
   demands,
   irr,
+  leasedCar,
   priceScenario,
   replacementYear,
   simulate,
@@ -125,6 +126,16 @@ test('base price completes the bill without changing the saving; wallbox only wi
     calculate(profile, { ...day, cars: 0 }).with.investment,
     calculate(profile, { ...evening, cars: 0 }).with.investment
   );
+});
+test('a leased second car instead of storage: storage money, monthly share and what is left', () => {
+  const own = calculate(profile, { ...defaults, cars: 1 }).with;
+  const always = { ...defaults, cars: 1, chargeTime: 'day' as const, carBuffer: 30 };
+  const car = calculate(profile, always).without;
+  const lease = leasedCar(own, car, { ...defaults, discount: 0, years: 20 });
+  near(lease.storageSaved, defaults.batteryCost - defaults.wallboxCost);
+  near(lease.months, lease.storageSaved / defaults.leaseRate);
+  near(lease.monthly, lease.npv / 240);
+  near(lease.remaining, defaults.leaseRate + defaults.leaseExtra - lease.monthly);
 });
 test('zero-interest loans have the hand-calculated monthly payment', () =>
   near(annuity(12000, 0, 10), 100));

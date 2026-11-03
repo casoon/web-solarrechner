@@ -8,6 +8,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Rechner:** Gedankenspiel „Geleastes Zweitauto statt Speicher“ rechnet den Speicher ganz heraus und stellt Leasingrate und Nebenkosten (vorbelegt 200 € und 50 € im Monat) dem gegenüber, was der Verzicht auf den Speicher und das immer zu Hause ladende Auto pro Monat einbringen; auch im PDF.
 - **Rechner:** Ein Grundpreis (vorbelegt 150 € im Jahr) macht die Stromrechnung mit und ohne Anlage vollständig; Größen- und Ladevergleich zeigen die Stromkosten im ersten Jahr je Variante, mit kurzer Lesehilfe für die Spalten.
 - **Rechner:** Beim Laden mit Solarüberschuss zählt ein einmaliger Aufpreis für Wallbox mit Solarsteuerung oder Energiemanager (vorbelegt 800 €) zur Investition, auch in den Ladevarianten des Vergleichs.
 - **Rechner:** Neuer Abschnitt „Passt die Anlagengröße?“ vergleicht fünf Modulleistungen derselben Dachausrichtung mit Kosten, Regeln und Einspeiseerlösen je Größe; bei wenig Einspeisevergütung zeigt er, ob eine kleinere Anlage reicht.

@@ -3,6 +3,7 @@ import { energyColors } from './energy-display';
 import {
   type calculate,
   type Inputs,
+  leasedCar,
   peakProfiles,
   type SolarProfile,
   surplusCharging,
@@ -518,7 +519,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
 export function reportDocument(s: ReportSnapshot): Document {
   const i = s.input;
   const policy = s.result.policy;
-  const pages = policy ? 8 : 7;
+  const pages = policy ? 9 : 8;
   const r = s.result;
   const current = s.selectedBattery && i.battery > 0 ? r.with : r.without;
   let index = 1;
@@ -790,7 +791,46 @@ const glossary: [string, string][] = [
     'Höchstens so viel Leistung darf ins Netz. Was darüber liegt und nicht genutzt wird, geht verloren (abgeregelt).',
   ],
 ];
-/** Other sizes, charging habits and a short glossary, so the tables can be read without help. */
+/** Thought experiment: a leased second car that charges at home instead of the storage. */
+function leaseIdea(s: ReportSnapshot): Element[] {
+  const i = s.input;
+  const always = s.charging?.at(-1)?.without;
+  if (!always || i.battery <= 0) return [];
+  const l = leasedCar(s.result.with, always, i);
+  const perMonth = (v: number) => `${eur(v)} / Monat`;
+  return [
+    text('Idee: geleastes Zweitauto statt Speicher', 11, true),
+    gap(3),
+    text(
+      `Statt ${num(i.battery, 1)} kWh Speicher ein zweites E-Auto leasen. Ihr fahrt abwechselnd, die Kilometer bleiben gleich, eines steht immer zu Hause und lädt mit Sonnenstrom. Der Speicher fällt ganz weg: kein Kaufpreis, kein Ersatz, keine laufenden Kosten.`,
+      9
+    ),
+    gap(5),
+    table(
+      ['Gedankenspiel', 'Betrag'],
+      [
+        [
+          'Weniger Investition (ohne Speicher, mit Wallbox)',
+          `${eur(l.storageSaved)}${l.months >= 1 ? ` = ${num(l.months)} Raten` : ''}`,
+        ],
+        ['Vorteil im ersten Jahr gegenüber dem Speicher', perMonth(l.yearly)],
+        [`Alles über ${i.years} Jahre als Monatsbetrag`, perMonth(l.monthly)],
+        [
+          `Zweites Auto: Leasing ${eur(i.leaseRate)} + Nebenkosten ${eur(i.leaseExtra)}`,
+          perMonth(l.cost),
+        ],
+        ['Bleibt aus eigener Tasche', perMonth(l.remaining)],
+      ]
+    ),
+    gap(4),
+    text(
+      'Nur ein Anstoß zum Weiterdenken. Das Auto nimmt Sonnenstrom nur für die eigenen Kilometer auf und gibt abends nichts ans Haus zurück. Nicht gerechnet: ein ersetzter Verbrenner und dessen Sprit.',
+      9
+    ),
+    gap(14),
+  ];
+}
+/** Other sizes and charging habits, then the leasing idea and a short glossary on their own page. */
 function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): Element[] {
   const i = s.input;
   const view =
@@ -802,7 +842,7 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
     undefined
   );
   return [
-    ...page('Größe, Laden und Begriffe'),
+    ...page('Größe und Laden im Vergleich'),
     ...(s.sizes?.length && best
       ? [
           text('Anlagengröße im Vergleich', 11, true),
@@ -869,6 +909,8 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
           gap(14),
         ]
       : []),
+    ...page(s.input.battery > 0 && s.charging?.length ? 'Gedankenspiel und Begriffe' : 'Begriffe'),
+    ...leaseIdea(s),
     text('Begriffe', 11, true),
     gap(5),
     ...glossary.flatMap(([term, meaning]) => [text(term, 9, true), text(meaning, 9), gap(4)]),

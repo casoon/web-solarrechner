@@ -62,6 +62,10 @@ export interface Inputs {
   basePrice: number;
   /** One-off extra for charging the car from solar surplus: wallbox with solar control or energy manager. */
   wallboxCost: number;
+  /** Idea only: monthly lease of a second electric car that stays at home and charges instead of a storage. */
+  leaseRate: number;
+  /** Monthly insurance, maintenance and parking of that second car. */
+  leaseExtra: number;
   inverterReplacement: number;
   inverterYear: number;
   batteryReplacement: number;
@@ -119,6 +123,8 @@ export const defaults: Inputs = {
   prosumerFee: 0,
   basePrice: 150,
   wallboxCost: 800,
+  leaseRate: 200,
+  leaseExtra: 50,
   inverterReplacement: 1200,
   inverterYear: 12,
   batteryReplacement: 2200,
@@ -600,6 +606,29 @@ export function chargingCases(input: Inputs): { label: string; input: Inputs }[]
     },
   ];
 }
+type Case = ReturnType<typeof evaluate>;
+/**
+ * Idea: lease a second electric car instead of buying the storage. Two cars take turns, so one is
+ * always at home and charges from the sun; the kilometres stay the same. `own` is the chosen charging
+ * with storage, `car` a car always at home without any storage, its cost and replacement.
+ */
+export function leasedCar(own: Case, car: Case, input: Inputs) {
+  const npv = car.npv - own.npv;
+  const monthly = annuity(npv, input.discount, input.years);
+  const storageSaved = own.investment - car.investment;
+  return {
+    storageSaved,
+    /** Lease months the saved storage money pays at the start. */
+    months: input.leaseRate > 0 ? storageSaved / input.leaseRate : 0,
+    /** Difference in the yearly advantage, per month, first year. */
+    yearly: (car.benefit - own.benefit) / 12,
+    npv,
+    /** The whole difference over the period as an equal monthly amount at the discount rate. */
+    monthly,
+    cost: input.leaseRate + input.leaseExtra,
+    remaining: input.leaseRate + input.leaseExtra - monthly,
+  };
+}
 /** Surplus charging needs a wallbox that follows the solar power; only then is its extra cost counted. */
 export function surplusCharging(input: Inputs): boolean {
   return input.mode === 'roof' && input.cars > 0 && input.chargeTime === 'day';
@@ -886,8 +915,12 @@ const rules: [fails: (input: Inputs) => boolean, message: string][] = [
   ],
   [(input) => ![0, 1, 2].includes(input.cars), 'Es sind null, ein oder zwei Autos vorgesehen.'],
   [
-    (input) => input.basePrice > 1000 || input.wallboxCost > 10000,
-    'Grundpreis bitte bis 1.000 € im Jahr, Wallbox-Aufpreis bis 10.000 € angeben.',
+    (input) =>
+      input.basePrice > 1000 ||
+      input.wallboxCost > 10000 ||
+      input.leaseRate > 3000 ||
+      input.leaseExtra > 1000,
+    'Grundpreis bis 1.000 € im Jahr, Wallbox-Aufpreis bis 10.000 €, Leasingrate bis 3.000 € und Nebenkosten bis 1.000 € im Monat angeben.',
   ],
   [
     (input) =>

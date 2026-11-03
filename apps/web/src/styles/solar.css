@@ -549,6 +549,22 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+.lease-list {
+  margin: 14px 0;
+}
+.lease-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.lease-list dd {
+  margin: 0;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
 .comparison > p {
   color: var(--muted);
   font-size: 13px;
