@@ -1,0 +1,245 @@
+---
+import PageIntro from '@/components/PageIntro.astro';
+import QualityComparison from '@/components/QualityComparison.svelte';
+import SolarChart from '@/components/SolarChart.svelte';
+import SolarLayout from '@/layouts/SolarLayout.astro';
+import { inverterSpec, moduleSpec } from '@/lib/solar/quality';
+
+const moduleRows = [
+  ['Zelltechnik', 'Rückkontakt, Heterojunction', 'TOPCon (n-Typ)', 'PERC (p-Typ)'],
+  ['Modulwirkungsgrad', '23–25 %', '21,5–23 %', '20–21,5 %'],
+  [
+    'Temperaturkoeffizient der Leistung',
+    '−0,24 bis −0,29 %/K',
+    '−0,29 bis −0,32 %/K',
+    '−0,34 bis −0,40 %/K',
+  ],
+  ['Leistungsverlust im ersten Jahr', 'rund 1 %', 'rund 1 %', 'rund 2 %'],
+  ['Alterung danach', '0,25–0,35 % pro Jahr', '0,35–0,4 % pro Jahr', '0,45–0,55 % pro Jahr'],
+  ['Leistungsgarantie', '30 Jahre, 87–89 %', '25–30 Jahre, 84–89 %', '25 Jahre, 80–84 %'],
+  ['Produktgarantie', '25–30 Jahre', '15–25 Jahre', '10–12 Jahre'],
+  [
+    'In der Rechnung',
+    '23,5 %, −0,26 %/K, 1 % + 0,25 %/J.',
+    '22,5 %, −0,30 %/K, 1 % + 0,4 %/J.',
+    '21 %, −0,35 %/K, 2 % + 0,55 %/J.',
+  ],
+];
+const inverterRows = [
+  ['Europäischer Wirkungsgrad', 'ab 97,5 %', '96,5–97,5 %', 'unter 96,5 %'],
+  ['Spitzenwirkungsgrad', '98–98,8 %', '97,5–98 %', '96–97,5 %'],
+  ['Wirkungsgrad bei 5 % Last', 'über 96 %', 'um 94–95 %', '90 % und darunter'],
+  ['Garantie', '10 Jahre, verlängerbar', '5–10 Jahre', '2–5 Jahre'],
+  ['In der Rechnung (η EU)', '98,0 %', '97,0 %', '95,3 %'],
+];
+const storageRows = [
+  ['Wirkungsgrad hin und zurück (AC)', 'über 90 %', '85–90 %', 'unter 85 %'],
+  ['Bereitschaftsverbrauch', '2–5 W', 'um 10 W', '25 W bis über 60 W'],
+  ['Kapazitätsverlust', 'rund 1,5 % pro Jahr', 'rund 2 % pro Jahr', '3 % pro Jahr und mehr'],
+  ['Zellchemie', 'Lithium-Eisenphosphat', 'Lithium-Eisenphosphat', 'teils NMC'],
+  ['In der Rechnung', '92 %, 3 W, 1,5 %/J.', '88 %, 10 W, 2 %/J.', '82 %, 35 W, 3 %/J.'],
+];
+const lossChain = [
+  [
+    'Verschattung',
+    '0 bis über 10 %',
+    'Schornstein, Gaube, Baum; ein Schatten auf einer Zelle bremst ohne Optimierer die ganze Modulreihe',
+  ],
+  [
+    'Verschmutzung',
+    '1–2 %',
+    'auf geneigten Dächern wäscht Regen das meiste ab; Flachdach und Landwirtschaft mehr',
+  ],
+  ['Einstrahlwinkel und Reflexion', '2–4 %', 'Morgen- und Abendlicht trifft schräg auf das Glas'],
+  [
+    'Temperatur',
+    '2–5 % im Jahr',
+    'an heißen Sommertagen mittags 10–15 %; hier zählt der Temperaturkoeffizient',
+  ],
+  [
+    'Schwachlicht',
+    '1–3 %',
+    'bei Bewölkung und tiefer Sonne arbeiten Zellen schlechter als im Datenblatt',
+  ],
+  ['Fehlanpassung und Toleranz', '0,5–2 %', 'die schwächste Zelle bestimmt den Strom der Reihe'],
+  ['Gleichstromleitungen', '0,5–1,5 %', 'zu dünne oder lange Kabel'],
+  ['Wechselrichter', '2–5 %', 'stark abhängig von Teillast und Gerät'],
+  ['Speicher', '8–18 % des gespeicherten Stroms', 'plus Bereitschaftsverbrauch rund um die Uhr'],
+];
+const sources = [
+  [
+    'HTW Berlin: Stromspeicher-Inspektion 2025',
+    'https://solar.htw-berlin.de/studien/stromspeicher-inspektion-2025/',
+  ],
+  [
+    'Fraunhofer ISE: Aktuelle Fakten zur Photovoltaik in Deutschland',
+    'https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/aktuelle-fakten-zur-photovoltaik-in-deutschland.html',
+  ],
+  [
+    'Jordan und Kurtz: Photovoltaic Degradation Rates – An Analytical Review (NREL, Progress in Photovoltaics)',
+    'https://doi.org/10.1002/pip.1182',
+  ],
+  [
+    'Europäische Kommission, JRC: PVGIS',
+    'https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en',
+  ],
+  [
+    'Bundesnetzagentur: Sanktionszahlungen bei Pflichtverstößen gegen das EEG',
+    'https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/ErneuerbareEnergien/Solaranlagen/Sanktionen_table.html',
+  ],
+  [
+    'Marktstammdatenregisterverordnung § 5: Registrierungsfrist',
+    'https://www.gesetze-im-internet.de/mastrv/__5.html',
+  ],
+  [
+    'Umsatzsteuergesetz § 12 Abs. 3: Nullsteuersatz für Photovoltaik',
+    'https://www.gesetze-im-internet.de/ustg_1980/__12.html',
+  ],
+  [
+    'Einkommensteuergesetz § 3 Nr. 72: Steuerbefreiung kleiner Anlagen',
+    'https://www.gesetze-im-internet.de/estg/__3.html',
+  ],
+  [
+    'Verbraucherzentrale NRW: Checkliste Photovoltaik',
+    'https://www.verbraucherzentrale.nrw/sites/default/files/2024-07/checkliste_photovoltaik_edit_final.pdf',
+  ],
+];
+const head = ['Merkmal', 'Hochwertig', 'Durchschnitt', 'Einfach'];
+---
+<SolarLayout title="Qualität von Solaranlage und Speicher" description="Bänder für Module, Wechselrichter und Speicher, Verluste, was ein Prozent über 20 Jahre kostet und worauf man bei der Inbetriebnahme achtet.">
+  <PageIntro
+    title="Qualität und Verluste"
+    facts={[{ title: 'Ohne Herstellernamen', text: 'Bänder aus Datenblättern und Labortests' }, { title: 'Stündlich gerechnet', text: 'Berliner Profil, Annahmen veränderbar' }]}
+    link={{ href: '#inbetriebnahme', label: 'Checkliste Inbetriebnahme' }}
+  >Ein, zwei Prozent Wirkungsgrad klingen nach nichts. Über 20 Jahre summiert sich das, und bei manchen Komponenten wiegen kleine Unterschiede schwerer als bei anderen. Hier steht, in welchen Bändern sich Module, Wechselrichter und Speicher bewegen, was davon im Geldbeutel ankommt und welche Werte man nicht unterschreiten sollte.</PageIntro>
+
+  <article class="method-page wide">
+    <section id="module">
+      <h2>Solarmodule</h2>
+      <p class="lead">Der Wirkungsgrad auf dem Datenblatt sagt, wie viel Leistung auf einen Quadratmeter passt. Wie viele Kilowattstunden jedes Kilowatt Modulleistung im Jahr liefert, bestimmen andere Werte.</p>
+      <div class="table-scroll" role="region" aria-label="Bänder für Solarmodule, Tabelle" tabindex="0">
+        <table class="storage-table" aria-label="Bänder für Solarmodule">
+          <thead><tr>{head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+          <tbody>{moduleRows.map(([label, ...cells]) => <tr><th scope="row">{label}</th>{cells.map((c) => <td>{c}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <ul class="cards">
+        <li><span class="tag">Wirkungsgrad</span><p>Zählt nur, wenn das Dach knapp ist. Dann passen mit 23,5 % gut 10 % mehr Leistung aufs Dach als mit 21 %.</p></li>
+        <li><span class="tag">Temperatur</span><p>Module verlieren pro Grad über 25 °C Zelltemperatur Leistung. Auf dem Dach werden Zellen im Sommer 50–65 °C heiß.</p></li>
+        <li><span class="tag">Alterung</span><p>Der Unterschied wächst jedes Jahr. Nach 20 Jahren liegt ein einfaches Modul im Mittel rund 6 Prozentpunkte unter einem hochwertigen.</p></li>
+      </ul>
+      <SolarChart client:visible spec={moduleSpec()} id="quality-modules" />
+      <p class="field-hint">Die Garantielinie ist eine verbreitete Untergrenze. Echte Module liegen meist darüber; die Garantie hilft erst, wenn eine Messung den Mangel belegt.</p>
+    </section>
+
+    <section id="wechselrichter">
+      <h2>Wechselrichter</h2>
+      <p class="lead">Der Wechselrichter macht aus dem Gleichstrom der Module Wechselstrom. Er arbeitet die meiste Zeit in Teillast, morgens, abends und bei Wolken. Deshalb zählt der europäische Wirkungsgrad, der Teillast gewichtet, mehr als der Spitzenwert.</p>
+      <div class="table-scroll" role="region" aria-label="Bänder für Wechselrichter, Tabelle" tabindex="0">
+        <table class="storage-table" aria-label="Bänder für Wechselrichter">
+          <thead><tr>{head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+          <tbody>{inverterRows.map(([label, ...cells]) => <tr><th scope="row">{label}</th>{cells.map((c) => <td>{c}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <SolarChart client:visible spec={inverterSpec()} id="quality-inverters" />
+      <ul class="cards">
+        <li><span class="tag">Größe</span><p>Ein Wechselrichter mit 80–100 % der Modulleistung passt in Deutschland meist. Ein zu großes Gerät läuft öfter im schwachen Teillastbereich; ein zu kleines kappt mittags Spitzen.</p></li>
+        <li><span class="tag">Lebensdauer</span><p>10 bis 15 Jahre sind üblich. Über 20 Jahre wird er in der Regel einmal ersetzt; das kostet mehr als ein Prozentpunkt Wirkungsgrad.</p></li>
+        <li><span class="tag">Kopplung</span><p>Ein Hybrid-Wechselrichter lädt den Speicher direkt mit Gleichstrom. Ein nachgerüsteter Speicher am Wechselstrom wandelt einmal mehr und verliert dabei einige Prozent.</p></li>
+      </ul>
+    </section>
+
+    <section id="speicher">
+      <h2>Batteriespeicher</h2>
+      <p class="lead">Beim Speicher entscheiden zwei Werte: wie viel vom eingespeicherten Strom zurückkommt und wie viel das System selbst verbraucht, auch wenn es nichts tut.</p>
+      <div class="table-scroll" role="region" aria-label="Bänder für Batteriespeicher, Tabelle" tabindex="0">
+        <table class="storage-table" aria-label="Bänder für Batteriespeicher">
+          <thead><tr>{head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+          <tbody>{storageRows.map(([label, ...cells]) => <tr><th scope="row">{label}</th>{cells.map((c) => <td>{c}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <ul class="cards">
+        <li><span class="figure">2–64 W</span><p>Bereitschaftsverbrauch leerer Speicher im Labortest der HTW Berlin. 35 W rund um die Uhr sind gut 300 kWh im Jahr.</p></li>
+        <li><span class="figure">rund 95 %</span><p>Die besten Systeme im Systemvergleich der HTW. Die schwächsten verlieren bei kleiner Leistung ein Viertel und mehr.</p></li>
+        <li><span class="tag">Nutzbar</span><p>Angebote nennen mal die nutzbare, mal die Nennkapazität. Vergleichen nur mit der nutzbaren.</p></li>
+      </ul>
+    </section>
+
+    <section id="verluste">
+      <h2>Wo die Verluste entstehen</h2>
+      <p>Von der Sonne auf dem Modul bis zum Strom an der Steckdose gehen in Deutschland auf einem gut geplanten Dach 12 bis 20 % verloren. Fachleute sprechen von einer Performance Ratio von 80 bis 88 %. Typische Jahreswerte:</p>
+      <div class="table-scroll" role="region" aria-label="Verlustkette, Tabelle" tabindex="0">
+        <table class="storage-table" aria-label="Verlustkette">
+          <thead><tr><th scope="col">Stelle</th><th scope="col">Typischer Verlust</th><th scope="col">Woran es liegt</th></tr></thead>
+          <tbody>{lossChain.map(([stage, loss, note]) => <tr><th scope="row">{stage}</th><td>{loss}</td><td>{note}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p class="field-hint">Der Rechner nutzt PVGIS mit 14 % Systemverlust für Leitungen, Wechselrichter, Verschmutzung und Fehlanpassung; Temperatur und Einstrahlwinkel rechnet PVGIS stündlich dazu. Das entspricht hier der Stufe „Durchschnitt“.</p>
+    </section>
+
+    <section id="geld">
+      <h2>Was ein Prozent wert ist</h2>
+      <ul class="cards">
+        <li><span class="figure">≈ 100 kWh</span><p>1 % Ertrag einer 10-kWp-Anlage im Jahr, in Deutschland bei rund 1.000 kWh je kWp</p></li>
+        <li><span class="figure">7–9 ct</span><p>ist eine solche zusätzliche Kilowattstunde im Beispiel wert. Sie fällt meist mittags an, wenn das Haus versorgt ist, und wird eingespeist oder abgeregelt.</p></li>
+        <li><span class="figure">35 ct</span><p>kostet dagegen jede Kilowattstunde, die der Speicher verliert oder selbst verbraucht, wenn das Haus sie abends aus dem Netz holt.</p></li>
+      </ul>
+      <p>Darum lohnt der Blick zuerst auf den Speicher, dann auf Wechselrichter und Module. Die Rechnung unten zeigt es Stunde für Stunde.</p>
+    </section>
+  </article>
+
+  <div id="rechnung">
+    <noscript><p class="error">Für die interaktive Rechnung wird JavaScript benötigt. Die Erklärungen auf dieser Seite sind auch ohne JavaScript lesbar.</p></noscript>
+    <QualityComparison client:load />
+  </div>
+
+  <article class="method-page wide">
+    <section id="untergrenzen">
+      <h2>Was man nicht unterschreiten sollte</h2>
+      <ul class="cards">
+        <li><span class="tag">Module</span><p>Temperaturkoeffizient nicht schlechter als −0,35 %/K. Leistungsgarantie mindestens 25 Jahre auf 80 %, linear. Plustoleranz (zum Beispiel 0/+5 W) statt ±3 %. Prüfung nach IEC 61215 und IEC 61730.</p></li>
+        <li><span class="tag">Wechselrichter</span><p>Europäischer Wirkungsgrad ab 96,5 %. Einheitenzertifikat nach VDE-AR-N 4105, sonst lehnt der Netzbetreiber ab. Ein eigener MPP-Tracker je Dachfläche oder Ausrichtung.</p></li>
+        <li><span class="tag">Speicher</span><p>Bereitschaftsverbrauch höchstens 10 W, Wirkungsgrad hin und zurück ab 88 %. Garantie 10 Jahre mit zugesicherter Restkapazität. Lithium-Eisenphosphat gilt als langlebig und sicher.</p></li>
+        <li><span class="tag">Montage</span><p>Gleiche Module in einer Reihe. Stecker und Buchse vom selben Typ und Hersteller: Mischverbindungen gelten als häufige Brandursache. Kabel UV-beständig und nicht scheuernd verlegt.</p></li>
+      </ul>
+    </section>
+
+    <section id="inbetriebnahme">
+      <h2>Inbetriebnahme</h2>
+      <h3>Vorher</h3>
+      <ul class="bullets">
+        <li>Angebot mit Datenblättern aller Komponenten, Stringplan und Ertragsprognose, deren Annahmen genannt sind.</li>
+        <li>Netzanschluss meldet in der Regel der Fachbetrieb beim Netzbetreiber an; Zählerkonzept und Messstellenbetreiber klären.</li>
+        <li>Wechselrichter und Speicher mit Einheitenzertifikat nach VDE-AR-N 4105.</li>
+      </ul>
+      <h3>Bei der Abnahme</h3>
+      <ul class="bullets">
+        <li>Prüfprotokoll der Elektroinstallation und Messprotokoll der Gleichstromseite nach DIN EN 62446-1: Leerlaufspannung, Kurzschlussstrom und Isolationswiderstand je String. Strings gleicher Ausrichtung müssen nahezu gleiche Werte zeigen.</li>
+        <li>Einstellungen am Wechselrichter: Ländereinstellung Deutschland, Netz- und Anlagenschutz, Einspeisebegrenzung (60 % bei neuen Anlagen ohne Steuerbox).</li>
+        <li>Speicher: Lade- und Entladeleistung, Reserve für Notstrom, keine Netzladung, wenn sie nicht gewollt ist.</li>
+        <li>Fotos von Dachhaken, Kabelwegen, Steckern und Zählerschrank. Schlusszahlung erst mit vollständiger Dokumentation.</li>
+      </ul>
+      <h3>In den ersten Wochen</h3>
+      <ul class="bullets">
+        <li>Monitoring einrichten und den Ertrag sonniger Tage mit der Prognose vergleichen, zum Beispiel mit PVGIS. Mehr als 5 % Abweichung klären lassen.</li>
+        <li>Nachts den Bereitschaftsverbrauch des Speichers ablesen und mit dem Datenblatt vergleichen.</li>
+        <li>Garantien beim Hersteller registrieren; verlängerte Garantien setzen das oft innerhalb weniger Wochen voraus.</li>
+        <li>Gebäudeversicherung informieren, Anlage gegebenenfalls einschließen.</li>
+      </ul>
+      <h3>Fristen und Steuern</h3>
+      <ul class="bullets">
+        <li>Registrierung im Marktstammdatenregister innerhalb eines Monats nach Inbetriebnahme. Ohne sie zahlt der Netzbetreiber keine Vergütung aus; versäumt man zusätzlich die Jahresmeldung, drohen Sanktionszahlungen.</li>
+        <li>Kauf und Installation mit 0 % Umsatzsteuer; Einnahmen aus Anlagen bis 30 kWp auf Wohngebäuden sind einkommensteuerfrei.</li>
+      </ul>
+    </section>
+
+    <details class="more">
+      <summary>Was die Rechnung vereinfacht</summary>
+      <p>Die Bänder sind typische Werte aus Datenblättern, Labortests und Studien, keine Messung bestimmter Produkte. Das Berliner PVGIS-Profil steht für die Stufe „Durchschnitt“. Die anderen Stufen verändern es Stunde für Stunde: über den Temperaturkoeffizienten mit einer Zelltemperatur von Lufttemperatur plus 30 K bei voller Sonne und über die Teillastkurve des Wechselrichters. Schwachlicht, Fehlanpassung und Ausfälle sind nicht nach Güte unterschieden. Ein Ersatz von Wechselrichter oder Speicher im Zeitraum ist nicht gerechnet, weil er beide Varianten trifft; wer bei einfachen Geräten einen früheren Ersatz erwartet, rechnet das zum Aufpreis. Für die eigene Anlage mit allen Kosten rechnet der <a href="/">Solarrechner</a>.</p>
+    </details>
+    <details class="more">
+      <summary>Quellen</summary>
+      <ul class="source-list">{sources.map(([title, url]) => <li><a href={url}>{title}</a></li>)}</ul>
+    </details>
+  </article>
+</SolarLayout>
