@@ -22,6 +22,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Export:** Das PDF beginnt mit einer Zusammenfassung: Kennzahlen als Kacheln, Strom im Jahresverlauf, Jahresbilanz als Anteilsbalken, Projektsaldo über die Laufzeit und Speichervergleich als Diagramme in den Farben der Rechner-Diagramme; Tabellen und Seitenköpfe sind ruhiger gestaltet.
 - **Navigation:** Rechner, Rechenweg, Stromversorgung, Stromsystem 2045, Anbieter und Über stehen ohne Untermenü in einer Reihe; die aktuelle Seite ist gelb unterstrichen.
 - **Rechner:** Vorlagen als kompakte Leiste, mobil als wischbare Reihe; die sechs Schritte klappen auf und zu und zeigen geschlossen ihre wichtigsten Werte. Das Ergebnis nennt Ort, Anlagengröße und Zeitraum, zeigt die Kennzahlen im Raster 3 × 2 und jeden Abschnitt als eigene Karte.
 - **Werkzeuge:** Anbieter-Modelle, Stromsystem 2045 und Energie richtig zählen stellen ihre Eingaben als Karte neben das Ergebnis; Vergleichstabelle und Kostenkurve der Anbieter-Modelle laufen über die volle Breite, vier Kennzahlen stehen als 2 × 2.
