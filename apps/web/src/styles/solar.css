@@ -1056,6 +1056,13 @@ label.text-button:focus-within {
   opacity: 0;
   animation: calc-status-in 0.2s ease 0.3s forwards;
 }
+.calc-status progress {
+  width: 64px;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
 @keyframes calc-status-in {
   to {
     opacity: 1;

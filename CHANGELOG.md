@@ -30,6 +30,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Rechner:** Die Berechnungen laufen im Hintergrund, sodass Eingaben auch bei Speicher-, Größen- und Ladevergleich nicht mehr stocken; dauert es spürbar, zeigt ein kleiner Fortschrittsbalken den Stand. Die Vergleichstabellen lassen sich per Tastatur scrollen.
 - **Export:** Das PDF erklärt sich selbst: neue Seite mit Größen- und Ladevergleich und kurzen Begriffserklärungen, ausgeschriebene Spalten in der Monatsbilanz, Autarkiegrad und Eigenverbrauchsquote nebeneinander, Ersatzgeräte je Jahr und Saldo mit Kredit statt „Eigenkapital“, Klartext zum Einspeiseerlös auf der Regelseite. Nicht gewählte Autos und Wärmepumpen erscheinen nicht mehr mit Werten.
 - **Rechner:** Die Kennzahl heißt „Autarkiegrad (Eigenversorgung)“ und nennt zusätzlich die Eigenverbrauchsquote; mit Kredit zeigt das Ergebnis den Saldo nach Kreditraten.
 - **Export:** Das PDF beginnt mit einer Zusammenfassung: Kennzahlen als Kacheln, Strom im Jahresverlauf, Jahresbilanz als Anteilsbalken, Projektsaldo über die Laufzeit und Speichervergleich als Diagramme in den Farben der Rechner-Diagramme; Tabellen und Seitenköpfe sind ruhiger gestaltet.

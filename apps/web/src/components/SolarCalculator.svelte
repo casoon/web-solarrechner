@@ -1,12 +1,11 @@
 <script lang="ts">
 import { onMount, tick } from 'svelte';
+import { run, type Status, Superseded, watchProgress } from '@/lib/solar/calc-client';
+import type { JobResult, Scenario } from '@/lib/solar/calc-jobs';
 import { currency, number, percent, rate } from '@/lib/solar/format';
 import {
   calculate,
-  chargingCases,
   combineSurfaces,
-  compareStorage,
-  compareVariants,
   type Inputs,
   leasedCar,
   type PeakProfile,
@@ -29,8 +28,6 @@ import {
   presetSetup,
   presets,
   resolveCosts,
-  sizeOptions,
-  storageOptions,
   type WorkOptions,
 } from '@/lib/solar/presets';
 import reference from '@/lib/solar/reference.json';
@@ -85,12 +82,13 @@ let presetId = $state('family-house');
 const selectedPreset = $derived(presets.find((p) => p.id === presetId));
 /** Optional second roof surface, for example the west side of an east-west roof. */
 let second = $state({ on: false, kwp: 4, angle: 35, aspect: 90 });
-let secondProfile = $state<SolarProfile | null>(null);
+let secondProfile = $state.raw<SolarProfile | null>(null);
 const secondKwp = $derived(input.mode === 'roof' && second.on ? second.kwp : 0);
 /** Costs, rules and the model work with the total module power of both surfaces. */
 const systemInput = $derived(secondKwp ? { ...input, kwp: input.kwp + secondKwp } : input);
 const resolvedInput = $derived(resolveCosts(systemInput, work, priceLevel));
-let profile = $state<SolarProfile>(reference);
+// Hourly profiles are only ever replaced as a whole; raw state keeps them cheap to send to workers.
+let profile = $state.raw<SolarProfile>(reference);
 const initialPolicy = createPolicy(
   resolveCosts(initial.input, initial.work, 'orientation'),
   defaultCommission(),
@@ -112,7 +110,8 @@ let pdfError = $state('');
 let placeError = $state('');
 let commission = $state(defaultCommission());
 let policySettings = $state<PolicyInputs>({ ...policyDefaults });
-let computing = $state(false);
+let progress = $state<Status>(null);
+watchProgress((status) => (progress = status));
 let selectedBattery = $state(true);
 let controller: AbortController | undefined;
 let placesLoaded = false;
@@ -180,33 +179,69 @@ $effect(() => {
   )
     loadProfiles(true);
 });
-// Recalculate on every change; the short delay keeps sliders smooth. The status only shows
-// when a calculation takes noticeably long (see .calc-status).
+/** The latest inputs as plain data, ready to send to a calculation worker. */
+function scenario(): Scenario {
+  return {
+    profile: modelProfile,
+    ...$state.snapshot({ input: resolvedInput, commission, settings: policySettings }),
+  };
+}
+function variantsJob() {
+  return {
+    kind: 'variants' as const,
+    ...scenario(),
+    ...$state.snapshot({ system: systemInput, work }),
+    automatic: automaticCosts,
+    level: priceLevel,
+    capacity: selectedBattery ? resolvedInput.battery : 0,
+  };
+}
+function applyResult(input: Inputs, next: JobResult['result']) {
+  result = next;
+  applied = { ...input, exportLimit: next.with.firstYear.exportLimit };
+}
+function applyVariants(next: JobResult['variants']) {
+  sizeRows = next.sizes;
+  chargingRows = next.charging;
+}
+/** Applies a worker result unless newer inputs have replaced the job in the meantime. */
+function background<T>(job: Promise<T>, apply: (value: T) => void) {
+  job.then(apply, (error) => {
+    if (!(error instanceof Superseded)) throw error;
+  });
+}
+/** Runs a job again when a background run with newer inputs replaced it. */
+async function latest<T>(start: () => Promise<T>): Promise<T> {
+  for (;;) {
+    try {
+      return await start();
+    } catch (error) {
+      if (!(error instanceof Superseded)) throw error;
+    }
+  }
+}
+// Every change recalculates in background workers, so typing never waits for the model. The short
+// delay bundles keystrokes; the status only shows when a calculation takes noticeably long.
+const delay = 120;
 $effect(() => {
-  const current = $state.snapshot(resolvedInput);
-  const currentProfile = modelProfile;
-  const settings = $state.snapshot(policySettings);
-  const date = commission;
+  const job = scenario();
   if (validation) return;
-  computing = true;
-  const timer = setTimeout(() => {
-    result = calculate(currentProfile, current, createPolicy(current, date, settings));
-    applied = { ...current, exportLimit: result.with.firstYear.exportLimit };
-    computing = false;
-  }, 120);
+  const timer = setTimeout(
+    () => background(run({ kind: 'result', ...job }), (next) => applyResult(job.input, next)),
+    delay
+  );
   return () => clearTimeout(timer);
 });
-let storageRows = $state<ReturnType<typeof compareStorage>>([]);
-// Several full yearly runs: computed after the main result so sliders stay responsive.
+let storageRows = $state<JobResult['storage']>([]);
 $effect(() => {
-  const latest = $state.snapshot(resolvedInput);
-  const currentProfile = modelProfile;
-  const plan = result.policy;
-  const options = storageOptions(latest, automaticCosts, priceLevel);
+  const job = {
+    kind: 'storage' as const,
+    ...scenario(),
+    automatic: automaticCosts,
+    level: priceLevel,
+  };
   if (validation) return;
-  const timer = setTimeout(() => {
-    storageRows = compareStorage(currentProfile, latest, plan, options);
-  }, 400);
+  const timer = setTimeout(() => background(run(job), (rows) => (storageRows = rows)), delay);
   return () => clearTimeout(timer);
 });
 const bestStorage = $derived(
@@ -216,47 +251,16 @@ const bestStorage = $derived(
   )
 );
 const current = $derived(selectedBattery && applied.battery > 0 ? result.with : result.without);
-type Case = ReturnType<typeof compareVariants>[number];
-let sizeRows = $state<{ input: Inputs; result: Case }[]>([]);
-let chargingRows = $state<{ label: string; input: Inputs; without: Case; with: Case }[]>([]);
-/** Other sizes and charging habits for the latest inputs: whole yearly runs, so not on every keystroke. */
-function computeVariants() {
-  const latest = $state.snapshot(resolvedInput);
-  if (validation || latest.mode !== 'roof') {
-    sizeRows = [];
-    chargingRows = [];
+type Case = JobResult['result']['with'];
+let sizeRows = $state<JobResult['variants']['sizes']>([]);
+let chargingRows = $state<JobResult['variants']['charging']>([]);
+$effect(() => {
+  const job = variantsJob();
+  if (validation) {
+    applyVariants({ sizes: [], charging: [] });
     return;
   }
-  const date = commission;
-  const settings = $state.snapshot(policySettings);
-  const plan = createPolicy(latest, date, settings);
-  const options = sizeOptions(
-    $state.snapshot(systemInput),
-    $state.snapshot(work),
-    automaticCosts,
-    priceLevel
-  );
-  const capacity = selectedBattery ? latest.battery : 0;
-  const sized = compareVariants(
-    modelProfile,
-    options.map((o) => ({ input: o, policy: createPolicy(o, date, settings), capacity }))
-  );
-  sizeRows = options.map((o, i) => ({ input: o, result: sized[i] }));
-  const cases = latest.cars > 0 ? chargingCases(latest) : [];
-  const runs = compareVariants(
-    modelProfile,
-    cases.flatMap((c) => [
-      { input: c.input, policy: plan, capacity: 0 },
-      { input: c.input, policy: plan, capacity: c.input.battery },
-    ])
-  );
-  chargingRows = cases.map((c, i) => ({ ...c, without: runs[2 * i], with: runs[2 * i + 1] }));
-}
-$effect(() => {
-  // Dependencies of computeVariants, read here so the delayed run follows every change.
-  $state.snapshot([resolvedInput, systemInput, work, policySettings]);
-  [modelProfile, commission, automaticCosts, priceLevel, selectedBattery, validation];
-  const timer = setTimeout(computeVariants, 700);
+  const timer = setTimeout(() => background(run(job), applyVariants), delay);
   return () => clearTimeout(timer);
 });
 /** Storage of the size comparison: the result view chosen above. */
@@ -454,13 +458,32 @@ function flush() {
     createPolicy(latest, commission, $state.snapshot(policySettings))
   );
   applied = { ...latest, exportLimit: result.with.firstYear.exportLimit };
-  computing = false;
 }
 async function downloadPdf() {
-  flush();
-  computeVariants();
   pdfBusy = true;
   pdfError = '';
+  try {
+    // The report needs the latest inputs, also when a background run is still waiting.
+    if (!validation) {
+      const [[input, next], more] = await Promise.all([
+        latest(async () => {
+          const job = scenario();
+          return [job.input, await run({ kind: 'result', ...job })] as const;
+        }),
+        latest(() => run(variantsJob())),
+      ]);
+      applyResult(input, next);
+      applyVariants(more);
+    }
+    await renderPdf();
+  } catch {
+    pdfError =
+      'Das PDF konnte nicht erstellt werden. Bitte erneut versuchen oder die Annahmen als JSON speichern.';
+  } finally {
+    pdfBusy = false;
+  }
+}
+async function renderPdf() {
   const snapshot: ReportSnapshot = $state.snapshot({
     input: applied,
     base: input,
@@ -479,21 +502,14 @@ async function downloadPdf() {
     charging: chargingRows,
     created: `${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })} (Europe/Berlin)`,
   });
-  try {
-    const { renderReport } = await import('@/lib/solar/report');
-    const bytes = await renderReport(snapshot);
-    const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'solar-ergebnis.pdf';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch {
-    pdfError =
-      'Das PDF konnte nicht erstellt werden. Bitte erneut versuchen oder die Annahmen als JSON speichern.';
-  } finally {
-    pdfBusy = false;
-  }
+  const { renderReport } = await import('@/lib/solar/report');
+  const bytes = await renderReport(snapshot);
+  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'solar-ergebnis.pdf';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function currentSettings(): Settings {
@@ -1224,7 +1240,12 @@ function download() {
         <div>
           <h2 id="result-title">Was könnte sich lohnen?</h2>
           <span>
-            {#if computing}<span class="calc-status" role="status">
+            {#if progress}<span class="calc-status" role="status">
+                <progress
+                  max={progress.total}
+                  value={progress.done}
+                  aria-label="Fortschritt der Berechnung"
+                ></progress>
                 Rechnet …
               </span>{/if}{profile.location} · {number(applied.kwp, 1)} kWp · {applied.years} Jahre
           </span>
@@ -1346,7 +1367,7 @@ function download() {
       {/if}
       {#if storageRows.length}
         <h3>Andere Speichergrößen im Vergleich</h3>
-        <div class="table-scroll">
+        <div class="table-scroll" role="region" aria-label="Andere Speichergrößen, Tabelle" tabindex="0">
           <table class="storage-table" data-testid="storage-table">
             <thead>
               <tr>
@@ -1386,7 +1407,7 @@ function download() {
     {#if sizeRows.length}
       <section class="comparison" aria-labelledby="size-title">
         <h2 id="size-title">Passt die Anlagengröße?</h2>
-        <div class="table-scroll">
+        <div class="table-scroll" role="region" aria-label="Anlagengrößen, Tabelle" tabindex="0">
           <table class="storage-table" data-testid="size-table">
             <thead>
               <tr>
@@ -1440,7 +1461,7 @@ function download() {
     {#if chargingRows.length && carAtHome}
       <section class="comparison" aria-labelledby="charging-title">
         <h2 id="charging-title">Auto oder Speicher als Puffer?</h2>
-        <div class="table-scroll">
+        <div class="table-scroll" role="region" aria-label="Laden des Autos, Tabelle" tabindex="0">
           <table class="storage-table" data-testid="charging-table">
             <thead>
               <tr>
