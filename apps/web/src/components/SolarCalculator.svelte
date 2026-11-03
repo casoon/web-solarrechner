@@ -196,6 +196,9 @@ const storageLife = $derived.by(() => {
       : ''
   }`;
 });
+const loan = $derived(applied.loanPercent > 0);
+const paybackText = (year: number | null) =>
+  year ? `ab Jahr ${year}` : `nicht in ${applied.years} Jahren`;
 /** The latest inputs as plain data, ready to send to a calculation worker. */
 function scenario(): Scenario {
   return {
@@ -1099,6 +1102,11 @@ function download() {
           hint="Nur der Wert des selbst genutzten Stroms wird verändert; Erlösphasen, Technik- und Vermarktungskosten bleiben gleich."
         />
       </details>
+      <p class="field-hint" data-testid="price-change-note">
+        {input.priceChange >= 4
+          ? `Vorbelegt sind kräftig steigende Preise (${percent(input.priceChange)} pro Jahr): vorsichtig für deine Stromrechnung, aber günstig für die Anlage, denn jede Steigerung macht selbst erzeugten Strom wertvoller. Wie es bei gleichbleibenden oder fallenden Preisen aussieht, zeigt „Was, wenn sich der Strompreis ändert?“.`
+          : `Strompreisänderung ${percent(input.priceChange)} pro Jahr. Steigende Preise machen selbst erzeugten Strom wertvoller, fallende weniger.`}
+      </p>
       </div>
     </fieldset>
     <fieldset class="input-section">
@@ -1327,12 +1335,13 @@ function download() {
           <dd>{currency(current.investment)}</dd>
         </div>
         <div>
-          <dt>Positiver Saldo im Zeitraum</dt>
-          <dd>
-            {current.payback ? `ab Jahr ${current.payback}` : `nicht in ${applied.years} Jahren`}
+          <dt>Positiver Saldo{loan ? ' mit Kredit' : ' im Zeitraum'}</dt>
+          <dd data-testid="payback">
+            {paybackText(loan ? current.equityPayback : current.payback)}
+            {#if loan}<small>ohne Kredit {paybackText(current.payback)}</small>{/if}
           </dd>
         </div>
-        {#if applied.loanPercent > 0}<div>
+        {#if loan}<div>
             <dt>Davon aus eigener Tasche heute</dt>
             <dd data-testid="own-funds">{currency(current.ownFunds)}</dd>
           </div>
@@ -1349,23 +1358,32 @@ function download() {
           <dd>{number(autonomy)} %</dd>
         </div>
         <div>
-          <dt>Mehr als Geld zu {number(applied.discount, 1)} % anlegen</dt>
-          <dd>{signedCurrency(current.npv)}</dd>
+          <dt>Mehr als Geld zu {number(applied.discount, 1)} % anlegen{loan ? ', mit Kredit' : ''}</dt>
+          <dd data-testid="npv">
+            {signedCurrency(loan ? current.equityNpv : current.npv)}
+            {#if loan}<small>ohne Kredit {signedCurrency(current.npv)}</small>{/if}
+          </dd>
         </div>
         <div>
-          <dt>Verzinsung deines Geldes</dt>
-          <dd data-testid="irr">{rate(current.irr)}</dd>
+          <dt>{loan ? 'Verzinsung der Anlage' : 'Verzinsung deines Geldes'}</dt>
+          <dd data-testid="irr">
+            {rate(current.irr)}
+            {#if loan}<small data-testid="irr-vs-loan">
+                {current.irr !== null && current.irr >= applied.interest
+                  ? `über dem Kreditzins von ${rate(applied.interest)}: der Kredit lohnt sich`
+                  : `unter dem Kreditzins von ${rate(applied.interest)}: der Kredit kostet mehr, als die Anlage bringt`}
+              </small>{/if}
+          </dd>
         </div>
       </dl>
       <p>
         Ersparnis und Exporterlös abzüglich laufender Kosten. Autarkiegrad: Anteil deines Verbrauchs,
         den Anlage und Speicher decken, nach Abzug des Speicher-Standby; selbst genutzt werden {number(
           solarUse(current.energy),
-        )} % des Solarstroms (Eigenverbrauchsquote). Amortisation inklusive Alterung und Ersatzgeräten, vor Finanzierung: Die
-        Anlage hat ihre Kosten rechnerisch erwirtschaftet. Ein Kredit kann dann noch laufen. {applied.loanPercent > 0
-          ? `Die Investition ist der Kaufpreis, egal wie du zahlst; der Kredit verteilt ihn über ${number(applied.loanYears)} Jahre und kostet zusätzlich die Kreditkosten über die ganze Laufzeit. `
-          : ''}Saldo mit Kredit: was nach
-        allen Raten und der Restschuld bei dir bleibt; ein Plus heißt Gewinn. Verzinsung (Rendite, interner
+        )} % des Solarstroms (Eigenverbrauchsquote). Positiver Saldo: ab diesem Jahr hat die Anlage
+        ihre Kosten einschließlich Alterung und Ersatzgeräten rechnerisch erwirtschaftet. {loan
+          ? `Die Investition ist der Kaufpreis, egal wie du zahlst; der Kredit verteilt ihn über ${number(applied.loanYears)} Jahre und kostet zusätzlich Zinsen und Gebühren. Mit Kredit zählen Saldo und Vergleich mit der Geldanlage die Raten und die Restschuld mit; klein darunter steht der Wert ohne Kredit. Saldo mit Kredit: was nach allen Raten und der Restschuld bei dir bleibt; ein Plus heißt Gewinn. Liegt die Verzinsung der Anlage unter dem Kreditzins, frisst der Kredit einen Teil des Ertrags. `
+          : ''}Verzinsung (Rendite, interner
         Zinsfuß): wie ein Sparbuch, das jedes Jahr diesen Zins bringt. „Mehr als Geld anlegen“
         (Kapitalwert): so viel besser steht die Anlage heute da als dasselbe Geld zum Zins aus Schritt 4
         angelegt; ein Minus heißt, die Geldanlage wäre besser.

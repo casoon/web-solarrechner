@@ -157,6 +157,31 @@ test('loan payment affects equity without duplicating the project investment', (
     r.without.cashflows.slice(1).reduce((s, c) => s + c.cash, 0) - r.without.investment * 0.2
   );
 });
+test('a loan dearer than the discount rate lowers present value and delays payback', () => {
+  const own = calculate(profile, { ...defaults, battery: 0 }).without;
+  near(own.equityNpv, own.npv);
+  assert.equal(own.equityPayback, own.payback);
+  const loan = calculate(profile, {
+    ...defaults,
+    battery: 0,
+    loanPercent: 100,
+    interest: 5,
+  }).without;
+  near(loan.npv, own.npv);
+  assert.ok(loan.equityNpv < own.npv);
+  assert.ok(
+    loan.equityPayback === null || (own.payback !== null && loan.equityPayback >= own.payback)
+  );
+  // A loan at the discount rate costs almost nothing in present value; monthly payments are
+  // discounted at the end of their year, which leaves a small difference.
+  const even = calculate(profile, {
+    ...defaults,
+    battery: 0,
+    loanPercent: 100,
+    interest: 3,
+  }).without;
+  assert.ok(Math.abs(even.equityNpv - own.npv) < own.investment * 0.02);
+});
 test('storage is replaced every life and the last replacement keeps its residual value', () => {
   assert.deepEqual(
     Array.from({ length: 25 }, (_, i) => i + 1).filter((y) => replacementDue(y, 11)),

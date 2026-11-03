@@ -62,8 +62,8 @@ const startRows = [
   ],
   [
     'Strompreis',
-    `${number(input.price * 100)} ct/kWh, gleichbleibend`,
-    'Arbeitspreis ohne Grundpreis. Der BDEW nennt für 2026 im Schnitt 37 ct inklusive anteiligem Grundpreis.',
+    `${number(input.price * 100)} ct/kWh, ${input.priceChange ? `+${number(input.priceChange)} % pro Jahr` : 'gleichbleibend'}`,
+    `Arbeitspreis ohne Grundpreis. Der BDEW nennt für 2026 im Schnitt 37 ct inklusive anteiligem Grundpreis.${input.priceChange ? ' Kräftig steigende Preise sind vorsichtig für die Stromrechnung, machen die Anlage aber wertvoller; der Rechner zeigt auch gleichbleibende und fallende Preise.' : ''}`,
   ],
   [
     'Investition',
@@ -155,7 +155,7 @@ const energyRows = [
           <tr><th scope="row">Vorteil im ersten Jahr</th><td><strong>{euro(withBattery.benefit)}</strong></td></tr>
         </tbody>
       </table>
-      <p>In den Folgejahren rechnet der Rechner mit der gewählten Strompreisänderung, der Alterung von Modulen und Speicher und den Erlösphasen nach Kalender. Im Jahr {input.inverterYear} wird der Wechselrichter ersetzt ({euro(input.inverterReplacement)}), im Jahr {withBattery.batteryYear} der Speicher ({euro(input.batteryReplacement)}). Der Speicher wird spätestens im Jahr {input.batteryYear} ersetzt, früher, wenn er vorher {number(input.batteryCycles)} Vollzyklen erreicht; im Beispiel kommt er auf etwa {number(e.battery / input.battery)} Vollzyklen pro Jahr. Inflation und ein Restwert am Ende sind nicht enthalten.</p>
+      <p>In den Folgejahren rechnet der Rechner mit der gewählten Strompreisänderung, der Alterung von Modulen und Speicher und den Erlösphasen nach Kalender. Im Jahr {input.inverterYear} wird der Wechselrichter ersetzt ({euro(input.inverterReplacement)}), im Jahr {withBattery.batteryYear} der Speicher ({euro(input.batteryReplacement)}). Ein Speicher hält in der Standardqualität {number(input.batteryYear - 1)} Jahre, weniger, wenn er vorher {number(input.batteryCycles)} Vollzyklen erreicht; danach wird er wieder ersetzt. Im Beispiel kommt er auf etwa {number(e.battery / input.battery)} Vollzyklen pro Jahr. Hat der zuletzt gekaufte Ersatzspeicher am Ende noch Jahre vor sich, zählt sein Restwert als Gutschrift; einen Restwert der übrigen Anlage und Inflation rechnet der Rechner nicht.</p>
     </section>
 
     <section id="amortisation">

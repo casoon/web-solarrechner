@@ -8,6 +8,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Export:** Neue PDF-Seite „Stromkosten, Strompreis und Finanzierung“ mit der Stromrechnung mit und ohne Anlage, den Strompreis-Szenarien und, bei Kredit, Rate, Kreditkosten und dem Vergleich mit und ohne Kredit.
 - **Rechner:** Speicherqualität günstig, Standard oder hochwertig setzt Preis, Wirkungsgrad, Standby, Alterung und Lebensdauer gemeinsam; jeder Wert bleibt einzeln änderbar. Wahlweise läuft die Anlage nach dem Lebensende ohne Speicher weiter, statt ihn zu ersetzen.
 - **Rechner:** Mit Kredit zeigt das Ergebnis, was heute aus eigener Tasche kommt und was der Kredit über die ganze Laufzeit an Zinsen und Gebühren kostet; die Investition bleibt der Kaufpreis. Das PDF nennt beides auf der Seite zur Wirtschaftlichkeit.
 - **Rechner:** Gedankenspiel „Geleastes Zweitauto statt Speicher“ rechnet den Speicher ganz heraus und stellt Leasingrate und Nebenkosten (vorbelegt 200 € und 50 € im Monat) dem gegenüber, was der Verzicht auf den Speicher und das immer zu Hause ladende Auto pro Monat einbringen; auch im PDF.
@@ -32,6 +33,8 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Rechner:** Die Strompreisänderung ist mit +5 % pro Jahr vorbelegt und als kräftige Steigerung gekennzeichnet: vorsichtig für die Stromrechnung, günstig für die Anlage. Die Szenarien zeigen weiterhin gleichbleibende und fallende Preise.
+- **Rechner:** Mit Kredit rechnen positiver Saldo und der Vergleich mit einer Geldanlage die Raten, Zinsen und Restschuld ein; der Wert ohne Kredit steht klein darunter. Die Verzinsung der Anlage wird mit dem Kreditzins verglichen, damit sichtbar ist, wann der Kredit den Ertrag auffrisst. Das PDF nennt dieselben Werte.
 - **Rechner:** Der Speicher wird nach seiner Lebensdauer wiederholt ersetzt, nicht nur einmal; der zuletzt gekaufte Ersatzspeicher zählt am Ende mit seinem Restwert. Ergebnis und PDF nennen Ersatzjahre und Restwert.
 - **Rechner:** Kennzahlen in Alltagssprache: „Mehr als Geld zu 3 % anlegen“ statt Kapitalwert und „Verzinsung deines Geldes“ statt interner Zinsfuß, mit kurzer Erklärung; Saldo mit Kredit und Kapitalwert tragen ein Vorzeichen. Das PDF übernimmt Namen und Vorzeichen.
 - **Rechner:** Die Berechnungen laufen im Hintergrund, sodass Eingaben auch bei Speicher-, Größen- und Ladevergleich nicht mehr stocken; dauert es spürbar, zeigt ein kleiner Fortschrittsbalken den Stand. Die Vergleichstabellen lassen sich per Tastatur scrollen.

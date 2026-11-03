@@ -137,7 +137,8 @@ export const defaults: Inputs = {
   batteryYear: 13,
   batteryCycles: 6000,
   price: 0.35,
-  priceChange: 0,
+  /** Strong rise: cautious for the electricity bill, favourable for the value of own solar power. */
+  priceChange: 5,
   tariff: 0,
   negativeShare: 10,
   exportLimit: 60,
@@ -776,6 +777,8 @@ function evaluate(
   let equityBalance = -investment + principal - (principal ? input.fees : 0);
   let remaining = principal;
   let npv = -investment;
+  // The same comparison from your own pocket: loan in, payments out, open debt paid at the end.
+  let equityNpv = equityBalance;
   const cashflows = [
     {
       year: 0,
@@ -823,6 +826,7 @@ function evaluate(
     balance += cash;
     equityBalance += cash - payments;
     npv += cash / (1 + input.discount / 100) ** year;
+    equityNpv += (cash - payments) / (1 + input.discount / 100) ** year;
     cashflows.push({
       year,
       cash,
@@ -836,6 +840,7 @@ function evaluate(
     });
   }
   const payback = paybackYear(cashflows.map((r) => r.balance));
+  equityNpv -= remaining / (1 + input.discount / 100) ** input.years;
   return {
     energy: energy as Energy,
     investment,
@@ -849,6 +854,10 @@ function evaluate(
     /** Paid from own pocket at the start: the investment not financed, plus loan fees. */
     ownFunds: investment - principal + (principal ? input.fees : 0),
     loanCost: loanCost(principal, rate, input),
+    /** Present value with the loan: against investing your own money at the discount rate. */
+    equityNpv,
+    /** First year from which the balance after payments and open debt stays positive. */
+    equityPayback: paybackYear(cashflows.map((r) => r.equity - r.debt)),
     balance,
     equityBalance: equityBalance - remaining,
     debt: remaining,

@@ -59,3 +59,18 @@ test('annual storage changes are represented as flows instead of losses', () => 
     );
   }
 });
+
+test('price scenarios keep four renderable lines with the own assumption and an unchanged price', async () => {
+  const { priceScenarios, scenarioSpec } = await import('./result-display');
+  for (const priceChange of [-3, 0, 3, 5, 10]) {
+    const input = { ...defaults, priceChange };
+    const cashflows = calculate(profile, input).with.cashflows;
+    const scenarios = priceScenarios(cashflows, input);
+    const changes = scenarios.map((s) => s.change);
+    assert.equal(changes.length, 4, String(priceChange));
+    assert.ok(changes.includes(priceChange) && changes.includes(0), String(changes));
+    assert.ok(
+      renderChart(scenarioSpec(cashflows, scenarios), { format: 'svg' }).content.includes('<svg')
+    );
+  }
+});

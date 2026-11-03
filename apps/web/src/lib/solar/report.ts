@@ -11,7 +11,7 @@ import {
 } from './model';
 import type { PolicyPlan } from './policy';
 import { cabinetPrice, type PriceLevel, type WorkOptions, workItems, workPrice } from './presets';
-import { billBreakdown } from './result-display';
+import { billBreakdown, priceScenarios } from './result-display';
 
 export interface ReportSnapshot {
   input: Inputs;
@@ -309,7 +309,7 @@ function summary(s: ReportSnapshot, current: Result, pages: number): Element[] {
           'Amortisation',
           current.payback ? `Jahr ${current.payback}` : 'offen',
           i.loanPercent > 0
-            ? `ohne Kredit gerechnet · mit Kredit nach ${i.years} Jahren ${signedEur(current.equityBalance)}`
+            ? `ohne Kredit · mit Kredit ${current.equityPayback ? `ab Jahr ${current.equityPayback}` : 'offen'}, Saldo nach ${i.years} Jahren ${signedEur(current.equityBalance)}`
             : current.payback
               ? 'Projektsaldo danach positiv'
               : `nicht in ${i.years} Jahren`,
@@ -488,6 +488,89 @@ function systemRows(i: Inputs): string[][] {
 }
 
 /** Yearly cash flows; credit columns only when part of the investment is financed. */
+const rateText = (v: number | null) => (v === null ? 'nicht bestimmbar' : `${num(v, 1)} %`);
+const paybackText = (year: number | null, years: number) =>
+  year ? `ab Jahr ${year}` : `nicht in ${years} Jahren`;
+/** What the calculator shows below the summary: the electricity bill, price scenarios and the loan. */
+function costsPage(s: ReportSnapshot, current: Result, page: (title: string) => Element[]) {
+  const i = s.input;
+  const withBattery = current === s.result.with;
+  const bill = billBreakdown(current, i, withBattery);
+  const loan = i.loanPercent > 0;
+  return [
+    ...page('Stromkosten, Strompreis und Finanzierung'),
+    text(
+      `Ohne Anlage zahlst du im ersten Betriebsjahr ${eur(bill.without)} für Strom, mit Anlage ${eur(bill.with)}${bill.with < bill.without ? `, also ${eur(bill.without - bill.with)} weniger` : ''}. Arbeitspreis ${num(i.price * 100, 1)} ct/kWh, Grundpreis ${eur(i.basePrice)} im Jahr; er fällt in beiden Fällen an. Ohne Anschaffung, Kredit und Ersatzgeräte.`
+    ),
+    gap(),
+    table(
+      ['Stromkosten im ersten Jahr', 'EUR'],
+      [
+        ['Ohne Anlage: Strom aus dem Netz und Grundpreis', eur(bill.without)],
+        ...bill.steps.map((step) => [step.label, signedEur(step.value)]),
+        ['Mit Anlage', eur(bill.with)],
+      ]
+    ),
+    gap(12),
+    heading('Wenn sich der Strompreis ändert'),
+    text(
+      'Gleiche Anlage und Energiebilanz, nur der Wert des selbst genutzten Stroms ändert sich.',
+      9
+    ),
+    gap(5),
+    table(
+      ['Strompreis pro Jahr', 'Positiver Saldo, ohne Kredit'],
+      priceScenarios(current.cashflows, i).map((v) => [
+        `${v.label}${v.change === i.priceChange ? ' (deine Annahme)' : ''}`,
+        paybackText(v.payback, i.years),
+      ])
+    ),
+    ...(loan
+      ? [
+          gap(12),
+          heading('Deine Finanzierung'),
+          gap(5),
+          table(
+            ['Kredit', 'Wert'],
+            [
+              [
+                'Darlehen',
+                `${eur(current.principal)} über ${num(i.loanYears)} Jahre zu ${num(i.interest, 1)} %`,
+              ],
+              ['Monatliche Kreditrate', eur(current.rate)],
+              [
+                'Vorteil im ersten Jahr nach zwölf Raten',
+                signedEur(current.benefit - current.rate * 12),
+              ],
+              ['Aus eigener Tasche zu Beginn', eur(current.ownFunds)],
+              ['Kreditkosten (Zinsen und Gebühren, ganze Laufzeit)', eur(current.loanCost)],
+              [`Saldo mit Kredit nach ${i.years} Jahren`, signedEur(current.equityBalance)],
+              [
+                'Positiver Saldo mit Kredit (ohne Kredit)',
+                `${paybackText(current.equityPayback, i.years)} (${paybackText(current.payback, i.years)})`,
+              ],
+              [
+                `Mehr als ${num(i.discount, 1)} % Geldanlage mit Kredit (ohne)`,
+                `${signedEur(current.equityNpv)} (${signedEur(current.npv)})`,
+              ],
+              [
+                'Verzinsung der Anlage / Kreditzins',
+                `${rateText(current.irr)} / ${num(i.interest, 1)} %`,
+              ],
+            ]
+          ),
+          gap(5),
+          text(
+            current.irr !== null && current.irr >= i.interest
+              ? 'Die Anlage verzinst sich besser, als der Kredit kostet: Der Kredit lohnt sich unter diesen Annahmen.'
+              : 'Die Anlage verzinst sich schlechter, als der Kredit kostet: Der Kredit frisst einen Teil des Ertrags. Mit eigenem Geld stünde die Rechnung besser da.',
+            9,
+            true
+          ),
+        ]
+      : []),
+  ];
+}
 const residual = (v: Result) => v.cashflows.at(-1)?.residual ?? 0;
 function financeSection(i: Inputs, current: Result): Element[] {
   const loan = i.loanPercent > 0;
@@ -514,7 +597,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
     ),
     gap(),
     text(
-      `${loan ? `Die Investition von ${eur(current.investment)} ist der Kaufpreis, egal wie du zahlst. Aus eigener Tasche zu Beginn: ${eur(current.ownFunds)}. Kreditkosten über die ganze Laufzeit (Zinsen und Gebühren): ${eur(current.loanCost)}. Saldo mit Kredit nach Abzug der Restschuld am Ende: ${signedEur(current.equityBalance)}; ein Plus heißt Gewinn. ` : ''}Amortisation bedeutet rechnerische Kostendeckung ohne Kredit; ein Kredit kann dann noch laufen. ${i.batteryReplace ? '' : 'Der Speicher wird am Lebensende nicht ersetzt; danach läuft die Anlage ohne Speicher. '}Kein Restwert der Anlage nach ${i.years} Jahren${residual(current) > 0 ? `; nur der zuletzt gekaufte Ersatzspeicher zählt im letzten Jahr mit ${eur(residual(current))} Restwert` : ''}. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
+      `${loan ? `Kaufpreis ${eur(current.investment)}; Rate, Kreditkosten und der Vergleich mit und ohne Kredit stehen auf der Seite „Stromkosten, Strompreis und Finanzierung“. ` : 'Amortisation bedeutet rechnerische Kostendeckung. '}${i.batteryReplace ? '' : 'Der Speicher wird am Lebensende nicht ersetzt; danach läuft die Anlage ohne Speicher. '}Kein Restwert der Anlage nach ${i.years} Jahren${residual(current) > 0 ? `; nur der zuletzt gekaufte Ersatzspeicher zählt im letzten Jahr mit ${eur(residual(current))} Restwert` : ''}. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
       9
     ),
   ];
@@ -524,7 +607,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
 export function reportDocument(s: ReportSnapshot): Document {
   const i = s.input;
   const policy = s.result.policy;
-  const pages = policy ? 9 : 8;
+  const pages = policy ? 10 : 9;
   const r = s.result;
   const current = s.selectedBattery && i.battery > 0 ? r.with : r.without;
   let index = 1;
@@ -554,7 +637,10 @@ export function reportDocument(s: ReportSnapshot): Document {
       'Dauerhaft positiver Projektsaldo',
       (v) => (v.payback ? `ab Jahr ${v.payback}` : `nicht in ${i.years} Jahren`),
     ],
-    [`Mehr als ${num(i.discount, 1)} % Geldanlage (Kapitalwert)`, (v) => signedEur(v.npv)],
+    [
+      `Mehr als ${num(i.discount, 1)} % Geldanlage${i.loanPercent > 0 ? ', ohne Kredit' : ' (Kapitalwert)'}`,
+      (v) => signedEur(v.npv),
+    ],
     [
       'Verzinsung des Geldes (Rendite)',
       (v) => (v.irr === null ? 'nicht bestimmbar' : `${num(v.irr, 1)} %`),
@@ -631,6 +717,7 @@ export function reportDocument(s: ReportSnapshot): Document {
         'Grobe Schätzung für den Einstieg, eigene Pläne und das Verständnis von Angeboten; kein Angebotsrechner. Sonne, Wetter und Verbrauch schwanken. Keine Genauigkeit auf den Cent oder die Kilowattstunde und keine Ertragszusage.',
         9
       ),
+      ...costsPage(s, current, page),
       ...variantsPage(s, page),
       ...page('Energiebilanz im ersten Jahr'),
       text(

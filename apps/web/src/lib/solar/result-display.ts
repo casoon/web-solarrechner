@@ -184,7 +184,16 @@ export function balanceSpec(result: Result) {
 
 /** Fixed price paths plus the user's own assumption, each with its payback year. */
 export function priceScenarios(cashflows: Case['cashflows'], applied: Inputs) {
-  const changes = [...new Set([-2, 0, 2, 4, applied.priceChange])].sort((a, b) => a - b);
+  // Chartlet draws at most four lines: your own assumption takes the place of the nearest
+  // comparison value; an unchanged price always stays as the reference.
+  const compare = [-2, 0, 2, 4];
+  const own = applied.priceChange;
+  const nearest = compare
+    .filter((v) => v !== 0)
+    .reduce((best, v) => (Math.abs(v - own) < Math.abs(best - own) ? v : best));
+  const changes = compare.includes(own)
+    ? compare
+    : compare.map((v) => (v === nearest ? own : v)).sort((a, b) => a - b);
   return changes.map((change) => {
     const balances = priceScenario(cashflows, applied, change);
     return {
