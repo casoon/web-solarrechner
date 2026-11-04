@@ -3,7 +3,9 @@ import { test } from 'node:test';
 import flat from '../../../public/data/pvgis/berlin-15.json';
 import {
   annuity,
+  breakEven,
   calculate,
+  chargingCases,
   combineSurfaces,
   compareStorage,
   compareVariants,
@@ -11,6 +13,7 @@ import {
   demands,
   irr,
   leasedCar,
+  npvScenario,
   priceScenario,
   replacementDue,
   replacementYear,
@@ -85,7 +88,7 @@ test('PV-surplus charging needs the same energy as evening charging', () => {
 });
 test('fewer home days lower PV car charging; a car buffer wins part of it back at equal energy', () => {
   const total = (input: typeof defaults) => demands(profile, input).load.reduce((a, b) => a + b);
-  const day = { ...defaults, cars: 1, chargeTime: 'day' as const };
+  const day = { ...defaults, cars: 1, chargeTime: 'day' as const, carBuffer: 0 };
   const weekend = { ...day, carDaysHome: 2 };
   const buffered = { ...weekend, carBuffer: 30 };
   const evening = simulate(profile, { ...day, chargeTime: 'evening' }, 0).direct;
@@ -259,6 +262,7 @@ test('BKW combined PV and battery delivery cannot exceed 800 VA in a deficit hou
     load: [0, 1, 0],
     shaped: [0, 1, 0],
     unmetCar: 0,
+    car: [0, 0, 0],
     times: [
       { h: 10, month: 5, weekend: false, carHome: true },
       { h: 11, month: 5, weekend: false, carHome: true },
@@ -406,4 +410,134 @@ test('reaching the cycle life brings the storage replacement forward', () => {
     result.cashflows[6].cash,
     calculate(profile, { ...few, batteryYear: 6, batteryCycles: 20000 }).with.cashflows[6].cash
   );
+});
+
+test('the car buffer defaults to a usable value and both day-charging comparison rows share it', () => {
+  assert.equal(defaults.carBuffer, 20);
+  const [evening, weekend, always] = chargingCases({ ...defaults, cars: 1 });
+  assert.equal(evening.input.chargeTime, 'evening');
+  assert.equal(weekend.input.carBuffer, always.input.carBuffer);
+  assert.equal(weekend.input.carDaysHome, 2);
+  assert.equal(always.input.carDaysHome, 7);
+});
+test('a buffer lets a sunny home day charge several days of need that buffer 0 would leave to the grid', () => {
+  const input = { ...defaults, cars: 1, chargeTime: 'day' as const, carDaysHome: 2 };
+  const none = simulate(profile, { ...input, carBuffer: 0 }, 0);
+  const some = simulate(profile, { ...input, carBuffer: 20 }, 0);
+  assert.ok(some.car.pv > none.car.pv + 300);
+  assert.ok(some.grid < none.grid - 300);
+});
+test('car charging is split into solar, storage and grid that add up, per year and per month', () => {
+  for (const chargeTime of ['evening', 'day'] as const) {
+    for (const storageChargesCar of [false, true]) {
+      const input = { ...defaults, cars: 1, chargeTime, carDaysHome: 3, storageChargesCar };
+      const e = simulate(profile, input, 5);
+      const need = demands(profile, input).car.reduce((a, b) => a + b);
+      near(e.car.pv + e.car.battery + e.car.grid, need);
+      near(
+        e.carMonthly.reduce((sum, m) => sum + m.pv + m.battery + m.grid, 0),
+        need
+      );
+      near(e.load + e.standby, e.direct + e.battery + e.grid);
+      assert.ok(e.car.grid <= e.grid + 1e-9 && e.car.battery <= e.battery + 1e-9);
+      if (!storageChargesCar) assert.equal(e.car.battery, 0);
+    }
+  }
+});
+test('storage kept out of the car leaves the car to the grid and gives the storage back to the house', () => {
+  const input = { ...defaults, cars: 1, chargeTime: 'evening' as const };
+  const allowed = simulate(profile, { ...input, storageChargesCar: true }, 7.2);
+  const kept = simulate(profile, input, 7.2);
+  assert.ok(allowed.car.battery > 300);
+  assert.equal(kept.car.battery, 0);
+  assert.ok(kept.grid > allowed.grid);
+});
+test('one hour by hand: storage serves the house first, the car only when it is allowed', () => {
+  const tiny = {
+    ...profile,
+    hours: [
+      ['20230601:1010', 4, 20],
+      ['20230601:1110', 0, 20],
+      ['20230601:1210', 0, 20],
+    ],
+  };
+  const times = [10, 11, 12].map((h) => ({ h, month: 5, weekend: false, carHome: true }));
+  // Hour 1: house 1 kWh and car 2 kWh, no sun; the storage holds 2.5 kWh from the sunny hour 0.
+  const load = { load: [1, 3, 0], shaped: [0, 0, 0], unmetCar: 0, car: [0, 2, 0], times };
+  const base = {
+    ...defaults,
+    kwp: 1,
+    ac: 10,
+    exportLimit: 100,
+    standby: 0,
+    efficiency: 100,
+    batteryPower: 2.5,
+    peaks: 'smooth' as const,
+  };
+  const kept = simulate(tiny, base, 3, 1, load);
+  near(kept.car.grid, 2);
+  near(kept.car.battery, 0);
+  near(kept.grid, 2);
+  const allowed = simulate(tiny, { ...base, storageChargesCar: true }, 3, 1, load);
+  near(allowed.car.battery, 1.5);
+  near(allowed.car.grid, 0.5);
+  near(allowed.grid, 0.5);
+});
+test('wallbox type sets the lowest charging power that follows the surplus', () => {
+  // One day, 3 or 6 kW of sun every hour, almost no house load: the surplus equals the sun.
+  const window = (sun: number, wallbox: 'switching' | 'three' | 'single', chargePower = 7.4) => {
+    const day = {
+      ...profile,
+      hours: Array.from({ length: 24 }, (_, h) => [
+        `20230601:${String(h).padStart(2, '0')}10`,
+        sun,
+        20,
+      ]),
+    };
+    const input = {
+      ...defaults,
+      kwp: 1,
+      ac: 20,
+      household: 0.001,
+      cars: 1,
+      km: 100000,
+      chargeTime: 'day' as const,
+      carDaysHome: 7,
+      chargePower,
+      wallbox,
+    };
+    const demand = demands(day, input);
+    return demand.car.reduce((sum, c, i) => {
+      const { h } = demand.times[i];
+      return h >= 9 && h < 17 ? sum + c : sum;
+    }, 0);
+  };
+  const eight = (kw: number) => kw * 8;
+  assert.ok(Math.abs(window(3, 'switching') - eight(3)) < 0.01);
+  assert.ok(Math.abs(window(3, 'single') - eight(3)) < 0.01);
+  assert.equal(window(3, 'three'), 0);
+  assert.ok(Math.abs(window(6, 'three') - eight(6)) < 0.01);
+  assert.ok(Math.abs(window(6, 'switching') - eight(6)) < 0.01);
+  assert.ok(Math.abs(window(6, 'single') - eight(4.6)) < 0.01);
+});
+
+test('break-even price and yearly price change set the full model to zero', () => {
+  const input = { ...defaults, price: 0.3, priceChange: 2 };
+  const { cashflows, npv, balance } = calculate(profile, input).with;
+  near(npvScenario(cashflows, input, input.priceChange), npv);
+  const price = breakEven(cashflows, input, 'price') as number;
+  near(calculate(profile, { ...input, price }).with.npv, 0);
+  const change = breakEven(cashflows, input, 'change') as number;
+  near(calculate(profile, { ...input, priceChange: change }).with.npv, 0);
+  const priceBalance = breakEven(cashflows, input, 'price', false) as number;
+  near(calculate(profile, { ...input, price: priceBalance }).with.balance, 0);
+  // Without discounting less is needed than with it, and the plain balance is the lower hurdle.
+  assert.ok(priceBalance < price && price > input.price && balance < 0);
+});
+test('break-even is null when the upper limit is not enough and the lower limit when it is positive already', () => {
+  const dear = calculate(profile, { ...defaults, equipment: 1e6 }).with.cashflows;
+  assert.equal(breakEven(dear, defaults, 'price'), null);
+  assert.equal(breakEven(dear, defaults, 'change'), null);
+  const paid = { ...defaults, tariff: 5 };
+  assert.equal(breakEven(calculate(profile, paid).with.cashflows, paid, 'price'), 0);
 });

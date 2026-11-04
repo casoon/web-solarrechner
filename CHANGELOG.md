@@ -8,8 +8,14 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Added
 
+- **Rechner:** Für Haushalte mit E-Auto zeigt das Ergebnis die Heimladung nach Quelle, Monat für Monat: direkt aus Sonne, über den Speicher und aus dem Netz, dazu den Solaranteil. Das PDF hat dafür die Seite „Laden des Autos zu Hause“.
+- **Rechner:** Der Schalter „Speicher darf das Auto laden“ ist standardmäßig aus, der Speicher versorgt dann nur das Haus; das Haus hat immer Vorrang vor dem Auto, das Auto vor dem Laden des Speichers.
+- **Rechner:** Beim Laden tagsüber wählt die Wallbox-Art die kleinste Ladeleistung des Überschussladens: mit Phasenumschaltung ab 1,4 kW, dreiphasig ohne Umschaltung ab 4,1 kW, einphasig 1,4 bis 4,6 kW.
+- **Rechner:** „Ab wann rechnet es sich?“ nennt den Strompreis heute und die jährliche Preissteigerung, ab denen der Kapitalwert null ist und der Saldo nach der Laufzeit positiv; die Strompreis-Szenarien zeigen zusätzlich den Kapitalwert. Auch im PDF.
+- **Rechner:** „Was, wenn sich die Einspeisevergütung ändert?“ rechnet dieselbe Anlage unter Nullerlös, fortgeschriebenem EEG und dem 2027-Entwurf und zeigt Erlös, Vorteil, Kapitalwert und Amortisation; auch im PDF.
+- **Rechner:** Die Tabelle zur monatlichen Belastung mit Kredit nennt den Eigenanteil zu Beginn und stellt die Monatsbeträge dem Kapitalwert und der Verzinsung der ganzen Investition gegenüber; auch im PDF.
 - **Rechner:** Mit Kredit zeigt „Deine Finanzierung“ die monatliche Belastung Jahr für Jahr: Strom ohne Anlage, Strom und Betrieb mit Anlage, Kreditrate, Summe und Unterschied, mit der gewählten Strompreisänderung. Das PDF hat dafür eine eigene Seite.
-- **Export:** Neue PDF-Seite „Stromkosten, Strompreis und Finanzierung“ mit der Stromrechnung mit und ohne Anlage, den Strompreis-Szenarien und, bei Kredit, Rate, Kreditkosten und dem Vergleich mit und ohne Kredit.
+- **Export:** Neue PDF-Seite „Stromkosten und Finanzierung“ mit der Stromrechnung mit und ohne Anlage und, bei Kredit, Rate, Kreditkosten und dem Vergleich mit und ohne Kredit; die Seite „Strompreis und Vergütung“ zeigt dazu die Strompreis-Szenarien.
 - **Rechner:** Speicherqualität günstig, Standard oder hochwertig setzt Preis, Wirkungsgrad, Standby, Alterung und Lebensdauer gemeinsam; jeder Wert bleibt einzeln änderbar. Wahlweise läuft die Anlage nach dem Lebensende ohne Speicher weiter, statt ihn zu ersetzen.
 - **Rechner:** Mit Kredit zeigt das Ergebnis, was heute aus eigener Tasche kommt und was der Kredit über die ganze Laufzeit an Zinsen und Gebühren kostet; die Investition bleibt der Kaufpreis. Das PDF nennt beides auf der Seite zur Wirtschaftlichkeit.
 - **Rechner:** Gedankenspiel „Geleastes Zweitauto statt Speicher“ rechnet den Speicher ganz heraus und stellt Leasingrate und Nebenkosten (vorbelegt 200 € und 50 € im Monat) dem gegenüber, was der Verzicht auf den Speicher und das immer zu Hause ladende Auto pro Monat einbringen; auch im PDF.
@@ -34,6 +40,8 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Rechner:** Der Puffer im Autoakku ist mit 20 kWh vorbelegt statt mit 0, das beim Tagesladen nur einen Tagesbedarf je Heimtag aus der Sonne zuließ; der Vergleich „Auto oder Speicher als Puffer?“ rechnet beide Tageszeilen mit demselben Puffer.
+- **Export:** Die Strompreis-Szenarien stehen auf einer eigenen Seite „Strompreis und Vergütung“, die Annahmen nennen Wallbox-Art und ob der Speicher ins Auto lädt.
 - **Rechner:** Die Strompreisänderung ist mit +2 % pro Jahr vorbelegt, nominal etwa im Takt der Inflation, wie es die Seite Strompreis begründet; Anbieter-Modelle und Qualität nutzen denselben Wert. Die Szenarien zeigen weiterhin gleichbleibende, fallende und stärker steigende Preise.
 - **Rechner:** Das Lastprofil „morgens und abends“ verteilt mehr Verbrauch auf den Tag, und die Lastspitzen-Annahmen „typisch“ und „vorsichtig“ nehmen einen kleineren Anteil des Haushaltsstroms; ohne Speicher liegt der Autarkiegrad damit näher an den Werten des HTW-Unabhängigkeitsrechners.
 - **Rechner:** Fehlen die Sonnendaten für Ort oder Ausrichtung, steht der Hinweis mit Ladeknopf jetzt auch über dem Ergebnis, nicht nur im zugeklappten Schritt „Standort“.

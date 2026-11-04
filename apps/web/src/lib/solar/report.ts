@@ -2,16 +2,25 @@ import type { Document, Element } from '@casoon/lightweight-pdf';
 import { energyColors } from './energy-display';
 import {
   type calculate,
+  comparisonBuffer,
   type Inputs,
   leasedCar,
   peakProfiles,
   type SolarProfile,
   storageGrades,
   surplusCharging,
+  wallboxLabels,
 } from './model';
 import type { PolicyPlan } from './policy';
 import { cabinetPrice, type PriceLevel, type WorkOptions, workItems, workPrice } from './presets';
-import { billBreakdown, monthlyBurden, priceScenarios } from './result-display';
+import {
+  billBreakdown,
+  breakEvenRows,
+  carRows,
+  carSolarShare,
+  monthlyBurden,
+  priceScenarios,
+} from './result-display';
 
 export interface ReportSnapshot {
   input: Inputs;
@@ -33,6 +42,8 @@ export interface ReportSnapshot {
   sizes?: { input: Inputs; result: Result }[];
   /** Charging habits without and with storage, when the household has cars. */
   charging?: { label: string; input: Inputs; without: Result; with: Result }[];
+  /** The same system under other revenue rules in the selected view. */
+  tariffs?: { name: string; selected: boolean; result: Result }[];
 }
 const num = (n: number, digits = 0) => n.toLocaleString('de-DE', { maximumFractionDigits: digits });
 const eur = (n: number) => `${num(n)} EUR`;
@@ -466,10 +477,18 @@ function systemRows(i: Inputs): string[][] {
     ['Elektroautos', i.cars ? num(i.cars) : 'keine'],
     ...(i.cars > 0
       ? [
-          ...rows(cars),
+          ...rows(cars).map((row) =>
+            row[0] === 'Gemeinsame Ladeleistung' && i.chargeTime === 'day'
+              ? [row[0], `${row[1]} · Wallbox ${wallboxLabels[i.wallbox].toLowerCase()}`]
+              : row
+          ),
           [
             'Laden zu Hause',
-            i.chargeTime === 'day' ? 'PV-Überschuss 9-17 Uhr, Rest ab 17 Uhr' : '18-24 Uhr',
+            `${i.chargeTime === 'day' ? 'PV-Überschuss 9-17 Uhr, Rest ab 17 Uhr' : '18-24 Uhr'}${
+              i.battery > 0
+                ? `; Speicher lädt ${i.storageChargesCar ? 'auch' : 'nicht'} ins Auto`
+                : ''
+            }`,
           ],
         ]
       : []),
@@ -504,7 +523,7 @@ function costsPage(s: ReportSnapshot, current: Result, page: (title: string) => 
   const bill = billBreakdown(current, i, withBattery);
   const loan = i.loanPercent > 0;
   return [
-    ...page('Stromkosten, Strompreis und Finanzierung'),
+    ...page('Stromkosten und Finanzierung'),
     text(
       `Ohne Anlage zahlst du im ersten Betriebsjahr ${eur(bill.without)} für Strom, mit Anlage ${eur(bill.with)}${bill.with < bill.without ? `, also ${eur(bill.without - bill.with)} weniger` : ''}. Arbeitspreis ${num(i.price * 100, 1)} ct/kWh, Grundpreis ${eur(i.basePrice)} im Jahr; er fällt in beiden Fällen an. Ohne Anschaffung, Kredit und Ersatzgeräte.`
     ),
@@ -516,20 +535,6 @@ function costsPage(s: ReportSnapshot, current: Result, page: (title: string) => 
         ...bill.steps.map((step) => [step.label, signedEur(step.value)]),
         ['Mit Anlage', eur(bill.with)],
       ]
-    ),
-    gap(12),
-    heading('Wenn sich der Strompreis ändert'),
-    text(
-      'Gleiche Anlage und Energiebilanz, nur der Wert des selbst genutzten Stroms ändert sich.',
-      9
-    ),
-    gap(5),
-    table(
-      ['Strompreis pro Jahr', 'Positiver Saldo, ohne Kredit'],
-      priceScenarios(current.cashflows, i).map((v) => [
-        `${v.label}${v.change === i.priceChange ? ' (deine Annahme)' : ''}`,
-        paybackText(v.payback, i.years),
-      ])
     ),
     ...(loan
       ? [
@@ -577,6 +582,58 @@ function costsPage(s: ReportSnapshot, current: Result, page: (title: string) => 
       : []),
   ];
 }
+/** How much the result hangs on the electricity price and on the revenue for fed-in power. */
+function sensitivityPage(s: ReportSnapshot, current: Result, page: (title: string) => Element[]) {
+  const i = s.input;
+  return [
+    ...page('Strompreis und Vergütung'),
+    heading('Wenn sich der Strompreis ändert'),
+    text(
+      'Gleiche Anlage und Energiebilanz, nur der Wert des selbst genutzten Stroms ändert sich.',
+      9
+    ),
+    gap(5),
+    table(
+      ['Strompreis pro Jahr', 'Kapitalwert', 'Positiver Saldo, ohne Kredit'],
+      priceScenarios(current.cashflows, i).map((v) => [
+        `${v.label}${v.change === i.priceChange ? ' (deine Annahme)' : ''}`,
+        signedEur(v.npv),
+        paybackText(v.payback, i.years),
+      ])
+    ),
+    gap(8),
+    table(
+      ['Ab wann rechnet es sich?', 'Strompreis heute', 'Preissteigerung pro Jahr'],
+      breakEvenRows(current.cashflows, i).map((v) => [v.label, v.price, v.change])
+    ),
+    gap(4),
+    para(
+      `Strompreis heute bei ${num(i.priceChange, 1)} % Steigerung pro Jahr, oder Steigerung pro Jahr bei ${num(i.price * 100, 1)} ct/kWh, sonst gleiche Annahmen. Das sagt nichts darüber, wie wahrscheinlich ein solcher Preis ist; Studien zur künftigen Strompreisentwicklung sind uneinig.`,
+      9
+    ),
+    ...(s.tariffs && s.tariffs.length > 1
+      ? [
+          gap(12),
+          heading('Wenn sich die Einspeisevergütung ändert'),
+          text(
+            'Gleiche Anlage und Energiebilanz, nur die Regeln für eingespeisten Strom wechseln. Ob für 2027 null, die Übergangszahlung des Entwurfs oder die Fortschreibung gilt, ist offen.',
+            9
+          ),
+          gap(5),
+          table(
+            ['Regel', 'Erlös 1. Jahr', 'Vorteil 1. Jahr', 'Kapitalwert', 'Positiver Saldo'],
+            s.tariffs.map((t) => [
+              `${t.name}${t.selected ? ' (gewählt)' : ''}`,
+              eur(t.result.firstYear.exportRevenue + t.result.firstYear.bonusRevenue),
+              eur(t.result.benefit),
+              signedEur(t.result.npv),
+              paybackText(t.result.payback, i.years),
+            ])
+          ),
+        ]
+      : []),
+  ];
+}
 /** With a loan: the monthly money flow over the whole period, as in the calculator. */
 function burdenPage(s: ReportSnapshot, current: Result, page: (title: string) => Element[]) {
   const i = s.input;
@@ -584,7 +641,7 @@ function burdenPage(s: ReportSnapshot, current: Result, page: (title: string) =>
   return [
     ...page('Monatliche Belastung mit Kredit'),
     text(
-      `EUR im Monat, Jahr für Jahr mit ${num(i.priceChange, 1)} % Strompreisänderung pro Jahr und ${eur(i.basePrice)} Grundpreis im Jahr. Strom und Betrieb mit Anlage: Netzstrom, Grundpreis und laufende Kosten abzüglich Einspeiseerlös; in Jahren mit Ersatzgeräten steigt der Wert, im letzten Jahr zählt ein Restwert mit. Unterschied: Plus heißt, mit Anlage und Kredit zahlst du weniger als ohne Anlage.`
+      `EUR im Monat, Jahr für Jahr mit ${num(i.priceChange, 1)} % Strompreisänderung pro Jahr und ${eur(i.basePrice)} Grundpreis im Jahr. Strom und Betrieb mit Anlage: Netzstrom, Grundpreis und laufende Kosten abzüglich Einspeiseerlös; in Jahren mit Ersatzgeräten steigt der Wert, im letzten Jahr zählt ein Restwert mit. Unterschied: Plus heißt, mit Anlage und Kredit zahlst du weniger als ohne Anlage.${current.ownFunds > 0 ? ` Zusätzlich zahlst du zu Beginn ${eur(current.ownFunds)} aus eigener Tasche; die Tabelle zeigt nur die laufenden Beträge. Ob sich die ganze Investition lohnt, zeigen Kapitalwert (${signedEur(current.npv)}) und Verzinsung (${rateText(current.irr)}), nicht die Monatsbeträge.` : ''}`
     ),
     gap(),
     table(
@@ -633,7 +690,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
     ),
     gap(),
     text(
-      `${loan ? `Kaufpreis ${eur(current.investment)}; Rate, Kreditkosten und der Vergleich mit und ohne Kredit stehen auf der Seite „Stromkosten, Strompreis und Finanzierung“. ` : 'Amortisation bedeutet rechnerische Kostendeckung. '}${i.batteryReplace ? '' : 'Der Speicher wird am Lebensende nicht ersetzt; danach läuft die Anlage ohne Speicher. '}Kein Restwert der Anlage nach ${i.years} Jahren${residual(current) > 0 ? `; nur der zuletzt gekaufte Ersatzspeicher zählt im letzten Jahr mit ${eur(residual(current))} Restwert` : ''}. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
+      `${loan ? `Kaufpreis ${eur(current.investment)}; Rate, Kreditkosten und der Vergleich mit und ohne Kredit stehen auf der Seite „Stromkosten und Finanzierung“. ` : 'Amortisation bedeutet rechnerische Kostendeckung. '}${i.batteryReplace ? '' : 'Der Speicher wird am Lebensende nicht ersetzt; danach läuft die Anlage ohne Speicher. '}Kein Restwert der Anlage nach ${i.years} Jahren${residual(current) > 0 ? `; nur der zuletzt gekaufte Ersatzspeicher zählt im letzten Jahr mit ${eur(residual(current))} Restwert` : ''}. Erlösphasen gemäß gewähltem Regelszenario; keine automatische Förderverlängerung wegen negativer Preise.`,
       9
     ),
   ];
@@ -643,7 +700,7 @@ function financeSection(i: Inputs, current: Result): Element[] {
 export function reportDocument(s: ReportSnapshot): Document {
   const i = s.input;
   const policy = s.result.policy;
-  const pages = (policy ? 10 : 9) + (i.loanPercent > 0 ? 1 : 0);
+  const pages = (policy ? 11 : 10) + (i.loanPercent > 0 ? 1 : 0) + (i.cars > 0 ? 1 : 0);
   const r = s.result;
   const current = s.selectedBattery && i.battery > 0 ? r.with : r.without;
   let index = 1;
@@ -754,8 +811,10 @@ export function reportDocument(s: ReportSnapshot): Document {
         9
       ),
       ...costsPage(s, current, page),
+      ...sensitivityPage(s, current, page),
       ...burdenPage(s, current, page),
       ...variantsPage(s, page),
+      ...carPage(s, current, page),
       ...page('Energiebilanz im ersten Jahr'),
       para(
         'Monatswerte in kWh aus der Stundenbilanz. Solar: Ertrag vor Begrenzung. Verbrauch: inklusive Speicher-Standby, gedeckt durch direkt genutzten Solarstrom, Abgabe aus dem Speicher und Netzbezug. Eingespeist: ins Netz abgegebener Überschuss. Abgeregelt: wegen Wechselrichter- oder Einspeisegrenze verloren.'
@@ -961,6 +1020,35 @@ function leaseIdea(s: ReportSnapshot): Element[] {
   ];
 }
 /** Other sizes and charging habits, then the leasing idea and a short glossary on their own page. */
+/** The car's home charging by source and month; only with cars. */
+function carPage(s: ReportSnapshot, current: Result, page: (title: string) => Element[]) {
+  const i = s.input;
+  if (i.cars <= 0) return [];
+  const e = current.energy;
+  return [
+    ...page('Laden des Autos zu Hause'),
+    para(
+      `Wie viel der Heimladung aus Sonnenstrom, aus dem Speicher und aus dem Netz kommt, Monat für Monat in kWh. Im ersten Jahr kommen ${num(carSolarShare(e))} % aus Sonnenstrom (direkt und über den Speicher). Das Haus hat immer Vorrang, dann lädt das Auto, dann der Speicher.${i.battery > 0 && !i.storageChargesCar ? ' Der Speicher gibt nichts ins Auto ab.' : ''}`
+    ),
+    gap(),
+    table(
+      ['Monat', 'Ladung', 'Direkt aus Sonne', 'Aus Speicher', 'Aus Netz', 'Solaranteil'],
+      carRows(e).map((r) => [
+        r.Monat,
+        num(r.Ladung_kWh),
+        num(r.Direkt_aus_Sonne_kWh),
+        num(r.Aus_Speicher_kWh),
+        num(r.Aus_Netz_kWh),
+        `${num(r.Solaranteil_Prozent)} %`,
+      ])
+    ),
+    gap(),
+    para(
+      `Jahr: ${num(e.car.pv + e.car.battery + e.car.grid)} kWh Ladung, davon ${num(e.car.pv)} kWh direkt aus Sonne, ${num(e.car.battery)} kWh aus dem Speicher, ${num(e.car.grid)} kWh aus dem Netz. Ladung inklusive Ladeverlusten, wie sie am Zähler ankommt.`,
+      9
+    ),
+  ];
+}
 function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): Element[] {
   const i = s.input;
   const view =
@@ -1033,7 +1121,7 @@ function variantsPage(s: ReportSnapshot, page: (title: string) => Element[]): El
           ),
           gap(8),
           para(
-            `Dieselben Autos und Kilometer. „Immer ein Auto zu Hause“: etwa Homeoffice oder zwei Autos im Wechsel; fehlende Ladung darf bis zu 30 kWh auf den nächsten sonnigen Tag warten. Beim Laden tagsüber enthält die Investition ${eur(i.wallboxCost)} für eine Wallbox mit Solarsteuerung. Kosten eines zweiten Autos sind nicht enthalten.`,
+            `Dieselben Autos und Kilometer. „Immer ein Auto zu Hause“: etwa Homeoffice oder zwei Autos im Wechsel; fehlende Ladung darf bis zu ${comparisonBuffer} kWh auf den nächsten sonnigen Tag warten. Beim Laden tagsüber enthält die Investition ${eur(i.wallboxCost)} für eine Wallbox mit Solarsteuerung. Kosten eines zweiten Autos sind nicht enthalten.`,
             9
           ),
           gap(14),

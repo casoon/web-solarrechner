@@ -36,6 +36,7 @@ const choices: Record<string, readonly string[]> = {
   pattern: ['evening', 'day', 'flat'],
   peaks: Object.keys(peakProfiles),
   chargeTime: ['day', 'evening'],
+  wallbox: ['switching', 'three', 'single'],
   batteryGrade: ['basic', 'standard', 'premium'],
   cabinet: ['ready', 'upgrade', 'new'],
   profile: ['draft', 'current', 'zero', 'manual'],

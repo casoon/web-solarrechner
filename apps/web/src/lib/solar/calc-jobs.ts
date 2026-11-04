@@ -6,7 +6,7 @@ import {
   type Inputs,
   type SolarProfile,
 } from './model';
-import { createPolicy, type PolicySettings } from './policy';
+import { createPolicy, type PolicyProfile, type PolicySettings } from './policy';
 import { type PriceLevel, sizeOptions, storageOptions, type WorkOptions } from './presets';
 
 /** Reports finished yearly runs of a job, so the page can show how far it is. */
@@ -39,12 +39,21 @@ function storage(job: Scenario & Costs, progress: Progress) {
   progress(0, options.length + 1);
   return compareStorage(job.profile, job.input, plan(job), options);
 }
-/** Other sizes and charging habits for the same inputs; only for roof systems. */
+/** Revenue rules to compare: no revenue, the old rates carried on, the 2027 draft, and the own rate when chosen. */
+const tariffProfiles: PolicyProfile[] = ['zero', 'current', 'draft'];
+/** Other sizes, charging habits and revenue rules for the same inputs; only for roof systems. */
 function variants(job: Scenario & Sizes, progress: Progress) {
-  if (job.input.mode !== 'roof') return { sizes: [], charging: [] };
+  if (job.input.mode !== 'roof') return { sizes: [], charging: [], tariffs: [] };
   const options = sizeOptions(job.system, job.work, job.automatic, job.level);
   const cases = job.input.cars > 0 ? chargingCases(job.input) : [];
-  const total = options.length + 2 * cases.length;
+  const chosen = plan(job).name;
+  const rules = [
+    ...tariffProfiles,
+    ...(job.settings.profile === 'manual' ? (['manual'] as const) : []),
+  ]
+    .map((profile) => createPolicy(job.input, job.commission, { ...job.settings, profile }))
+    .filter((rule, k, all) => all.findIndex((other) => other.name === rule.name) === k);
+  const total = options.length + 2 * cases.length + rules.length;
   let done = 0;
   const run = (input: Inputs, policy: ReturnType<typeof plan>, capacity: number) => {
     const [result] = compareVariants(job.profile, [{ input, policy, capacity }]);
@@ -61,7 +70,12 @@ function variants(job: Scenario & Sizes, progress: Progress) {
     without: run(c.input, plan(job), 0),
     with: run(c.input, plan(job), c.input.battery),
   }));
-  return { sizes, charging };
+  const tariffs = rules.map((rule) => ({
+    name: rule.name,
+    selected: rule.name === chosen,
+    result: run(job.input, rule, job.capacity),
+  }));
+  return { sizes, charging, tariffs };
 }
 
 export type Job =

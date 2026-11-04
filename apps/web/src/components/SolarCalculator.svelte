@@ -6,6 +6,7 @@ import { currency, number, percent, rate, signedCurrency } from '@/lib/solar/for
 import {
   calculate,
   combineSurfaces,
+  comparisonBuffer,
   type Inputs,
   leasedCar,
   type PeakProfile,
@@ -15,6 +16,8 @@ import {
   type StorageGrade,
   storageGrades,
   validate,
+  wallboxLabels,
+  wallboxLimits,
   weatherYears,
 } from '@/lib/solar/model';
 import {
@@ -230,6 +233,7 @@ function applyResult(input: Inputs, next: JobResult['result']) {
 function applyVariants(next: JobResult['variants']) {
   sizeRows = next.sizes;
   chargingRows = next.charging;
+  tariffRows = next.tariffs;
 }
 /** Applies a worker result unless newer inputs have replaced the job in the meantime. */
 function background<T>(job: Promise<T>, apply: (value: T) => void) {
@@ -281,10 +285,11 @@ const current = $derived(selectedBattery && applied.battery > 0 ? result.with : 
 type Case = JobResult['result']['with'];
 let sizeRows = $state<JobResult['variants']['sizes']>([]);
 let chargingRows = $state<JobResult['variants']['charging']>([]);
+let tariffRows = $state<JobResult['variants']['tariffs']>([]);
 $effect(() => {
   const job = variantsJob();
   if (validation) {
-    applyVariants({ sizes: [], charging: [] });
+    applyVariants({ sizes: [], charging: [], tariffs: [] });
     return;
   }
   const timer = setTimeout(() => background(run(job), applyVariants), delay);
@@ -542,6 +547,7 @@ async function renderPdf() {
     second: secondKwp ? { kwp: secondKwp, angle: second.angle, aspect: second.aspect } : undefined,
     sizes: sizeRows,
     charging: chargingRows,
+    tariffs: tariffRows,
     created: `${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })} (Europe/Berlin)`,
   });
   const { renderReport } = await import('@/lib/solar/report');
@@ -940,7 +946,17 @@ function download() {
             max={7}
             slider
             hint="Das Wochenende zählt zuerst. 7 heißt: Es steht immer ein Auto da, etwa im Homeoffice oder bei zwei Autos im Wechsel."
-          /><NumberField
+          /><label for="wallbox">Wallbox für Solarladen</label>
+          <select id="wallbox" bind:value={input.wallbox}>
+            {#each Object.entries(wallboxLabels) as [value, text]}
+              <option {value}>{text}</option>
+            {/each}
+          </select>
+          <p class="field-hint">
+            Die Wallbox startet erst ab ihrer kleinsten Ladeleistung. Eine dreiphasige Wallbox ohne
+            Umschaltung lädt nicht unter 4,1 kW Überschuss: bewölkt oder im Herbst bleibt das Auto am
+            Netz. Eine einphasige ist auf 4,6 kW begrenzt.
+          </p><NumberField
             label="Aufpreis für Solar-Überschussladen"
             bind:value={input.wallboxCost}
             unit="€"
@@ -951,8 +967,10 @@ function download() {
         <details>
           <summary>Genauer: Verbrauch und Ladetechnik</summary>
           {#if input.chargeTime === 'day'}<p class="field-hint">
-              Die Wallbox lädt an diesen Tagen zwischen 9 und 17 Uhr, sobald mindestens 1,4 kW
-              Sonnenstrom übrig sind. Was fehlt, lädt sie ab 17 Uhr aus dem Netz oder dem Speicher
+              Die Wallbox lädt an diesen Tagen zwischen 9 und 17 Uhr, sobald mindestens {number(
+                wallboxLimits[input.wallbox].min,
+                1,
+              )} kW Sonnenstrom übrig sind. Was fehlt, lädt sie ab 17 Uhr aus dem Netz oder dem Speicher
               nach, bis auf den Puffer.
             </p>
             <NumberField
@@ -961,7 +979,7 @@ function download() {
               unit="kWh"
               max={200}
               step={5}
-              hint="So viel Ladung darf dem Auto abends fehlen; sie wartet auf den nächsten sonnigen Tag. 0 = jeden Abend voll. Etwa 20 bis 30 kWh sind realistisch, wenn das Auto selten weit fährt."
+              hint="So viel Ladung darf dem Auto abends fehlen; sie wartet auf den nächsten sonnigen Tag. 0 = jeden Abend voll: Dann nimmt das Auto an einem Sonnentag nur den Bedarf dieses einen Tages auf, auch wenn das Dach mehr liefern würde. Vorbelegt 20 kWh; ein Akku mit 50 bis 80 kWh nimmt an einem sonnigen Wochenende mehrere Tagesbedarfe auf."
             />{/if}
           <NumberField
             label="Fahrverbrauch je Auto (Batterie)"
@@ -990,6 +1008,18 @@ function download() {
             max={22}
             step={0.1}
           />
+          {#if input.battery > 0}
+            <label class="check">
+              <input type="checkbox" bind:checked={input.storageChargesCar} />
+               Speicher darf das Auto laden
+            </label>
+            <p class="field-hint">
+              Aus: Der Speicher versorgt nur das Haus, das Auto lädt aus Überschuss oder dem Netz. So
+              arbeitet ein Energiemanager üblicherweise. An: Der Speicher entlädt auch ins Auto, etwa
+              ohne diese Sperre. Immer hat das Haus Vorrang vor dem Auto, und das Auto vor dem Laden
+              des Speichers.
+            </p>
+          {/if}
           <p class="field-hint">
             {input.cars === 2 ? 'Beide Autos verwenden hier dasselbe Fahr- und Ladeprofil. ' : ''}Nicht
             ladbare Energie wird separat ausgewiesen.
@@ -1552,6 +1582,40 @@ function download() {
         </p>
       </section>
     {/if}
+    {#if tariffRows.length > 1}
+      <section class="comparison" aria-labelledby="tariff-title">
+        <h2 id="tariff-title">Was, wenn sich die Einspeisevergütung ändert?</h2>
+        <div class="table-scroll" role="region" aria-label="Vergütungsregeln, Tabelle" tabindex="0">
+          <table class="storage-table" data-testid="tariff-table">
+            <thead>
+              <tr>
+                <th scope="col">Regel</th>
+                <th scope="col">Erlös im 1. Jahr</th>
+                <th scope="col">Vorteil im 1. Jahr</th>
+                <th scope="col">Kapitalwert</th>
+                <th scope="col">Positiver Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each tariffRows as row}
+                <tr class:current={row.selected}>
+                  <th scope="row">{row.name}{row.selected ? ' (gewählt)' : ''}</th>
+                  <td>{currency(row.result.firstYear.exportRevenue + row.result.firstYear.bonusRevenue)}</td>
+                  <td>{currency(row.result.benefit)}</td>
+                  <td>{signedCurrency(row.result.npv)}</td>
+                  <td>{paybackText(row.result.payback)}</td>
+                </tr>{/each}
+            </tbody>
+          </table>
+        </div>
+        <p class="field-hint">
+          Dieselbe Anlage und Energiebilanz, nur die Regeln für eingespeisten Strom wechseln. Ob für
+          2027 null, die Übergangszahlung des Entwurfs oder die Fortschreibung des bisherigen Satzes
+          gilt, ist offen. Die Tabelle zeigt, wie viel vom Ergebnis an dieser einen Annahme hängt,
+          unabhängig vom Strompreis darüber.
+        </p>
+      </section>
+    {/if}
     {#if chargingRows.length && carAtHome}
       <section class="comparison" aria-labelledby="charging-title">
         <h2 id="charging-title">Auto oder Speicher als Puffer?</h2>
@@ -1593,7 +1657,7 @@ function download() {
         <p class="field-hint">
           Dieselben Autos, dieselben Kilometer, dieselbe Anlage. „Immer ein Auto zu Hause“ heißt zum
           Beispiel Homeoffice oder zwei Autos im Wechsel: Eines fährt, das andere lädt. Der Puffer
-          lässt fehlende Ladung bis zu 30 kWh auf den nächsten sonnigen Tag warten. Nicht enthalten:
+          lässt fehlende Ladung bis zu {comparisonBuffer} kWh auf den nächsten sonnigen Tag warten. Nicht enthalten:
           Leasingrate, Versicherung, Steuer und Wartung eines zweiten Autos, eingesparter Kraftstoff
           eines ersetzten Verbrenners, Rückspeisen aus dem Auto ins Haus. Beim Laden tagsüber ist der
           Aufpreis von {currency(applied.wallboxCost)} für Solar-Überschussladen in der Investition
@@ -1660,7 +1724,7 @@ function download() {
         </dl>
         <p class="field-hint">
           Verglichen wird deine Einstellung mit {number(applied.battery, 1)} kWh Speicher mit „immer
-          ein Auto zu Hause, 30 kWh Puffer, ohne Speicher“ aus der Tabelle oben. Der Monatsbetrag
+          ein Auto zu Hause, {comparisonBuffer} kWh Puffer, ohne Speicher“ aus der Tabelle oben. Der Monatsbetrag
           verteilt den Unterschied im Kapitalwert gleichmäßig über {applied.years} Jahre, mit {number(
             applied.discount,
             1,

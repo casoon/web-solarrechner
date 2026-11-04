@@ -42,6 +42,10 @@ export interface Inputs {
   carDaysHome: number;
   /** Energy the car may still lack at night, kWh: it waits for the next sunny day instead of the grid. */
   carBuffer: number;
+  /** Whether the storage may discharge into the car. Off is the usual energy-manager setting: the storage serves the house. */
+  storageChargesCar: boolean;
+  /** Wallbox for surplus charging: with phase switching (from 1.4 kW), three-phase only (from 4.1 kW) or single-phase (1.4 to 4.6 kW). */
+  wallbox: 'switching' | 'three' | 'single';
   heat: boolean;
   heatDemand: number;
   jaz: number;
@@ -109,7 +113,10 @@ export const defaults: Inputs = {
   chargeTime: 'evening',
   chargePower: 7.4,
   carDaysHome: 7,
-  carBuffer: 0,
+  /** Applies to day charging only; 0 would cap solar charging at one day's need per home day. */
+  carBuffer: 20,
+  storageChargesCar: false,
+  wallbox: 'switching',
   heat: false,
   heatDemand: 15000,
   jaz: 3.5,
@@ -243,6 +250,12 @@ export interface Month {
   export: number;
   curtailed: number;
 }
+/** Where the home charging of the car came from, kWh. */
+export interface CarEnergy {
+  pv: number;
+  battery: number;
+  grid: number;
+}
 export interface Energy {
   pv: number;
   load: number;
@@ -259,6 +272,9 @@ export interface Energy {
   endSoc: number;
   startSoc: number;
   unmetCar: number;
+  /** Home charging of the car by source; the three parts add up to the charging energy. */
+  car: CarEnergy;
+  carMonthly: CarEnergy[];
   monthly: Month[];
   /** Sums per month and local hour of day, for the typical-day views. */
   hourly: HourOfDay[][];
@@ -310,7 +326,17 @@ const localParts = new Intl.DateTimeFormat('en-GB', {
   month: 'numeric',
   weekday: 'short',
 });
-const minSurplusCharge = 1.4;
+export const wallboxLabels = {
+  switching: 'Mit Phasenumschaltung, ab 1,4 kW',
+  three: 'Dreiphasig ohne Umschaltung, ab 4,1 kW',
+  single: 'Einphasig, 1,4 bis 4,6 kW',
+};
+/** Lowest and highest charging power a wallbox type can follow from the surplus, kW. */
+export const wallboxLimits = {
+  switching: { min: 1.4, max: Number.POSITIVE_INFINITY },
+  three: { min: 4.1, max: Number.POSITIVE_INFINITY },
+  single: { min: 1.4, max: 4.6 },
+};
 /**
  * Roof surfaces with their own orientation: the hourly yields per kWp, weighted by module power,
  * form one profile. The model then works with the total kWp, one inverter and one meter.
@@ -339,13 +365,15 @@ function carCharge(
   home: boolean,
   buffer: number
 ) {
+  const { min, max } = wallboxLimits[input.wallbox];
+  const power = Math.min(input.chargePower, max);
   if (input.chargeTime === 'day' && h >= 9 && h < 17) {
-    // PV-surplus charging: only when at least 1.4 kW (one phase, 6 A) are left over.
-    return home && surplus >= minSurplusCharge ? Math.min(pending, input.chargePower, surplus) : 0;
+    // PV-surplus charging: only when the wallbox's lowest charging power (6 A) is left over.
+    return home && surplus >= min ? Math.min(pending, power, surplus) : 0;
   }
   if (h >= (input.chargeTime === 'day' ? 17 : 18) && h < 24) {
     // Evening charging, or the rest the sun did not cover so the car is ready next morning.
-    return Math.min(Math.max(0, pending - buffer), input.chargePower);
+    return Math.min(Math.max(0, pending - buffer), power);
   }
   return 0;
 }
@@ -398,6 +426,7 @@ export function demands(profile: SolarProfile, input: Inputs) {
     (times.length / 24);
   let pending = 0;
   let unmetCar = 0;
+  const car: number[] = [];
   const last = times.length - 24;
   const load = times.map(({ h, carHome }, i) => {
     if (i % 24 === 0) pending += carDaily;
@@ -411,9 +440,10 @@ export function demands(profile: SolarProfile, input: Inputs) {
       unmetCar += Math.max(0, pending - buffer);
       pending = Math.min(pending, buffer);
     }
+    car.push(charged);
     return home[i] + charged;
   });
-  return { times, load, shaped, unmetCar };
+  return { times, load, shaped, unmetCar, car };
 }
 /** Limits that stay the same for every hour of a simulated year. */
 interface HourSetup {
@@ -426,13 +456,22 @@ interface HourSetup {
   exportCap: number;
   peak: { share: number; power: number };
   balcony: boolean;
+  /** The storage may discharge into the car. */
+  batteryCar: boolean;
 }
 type HourFlows = ReturnType<typeof dispatchHour>;
 /**
  * One hour of the energy balance. PV covers the smooth load first, then the share of a load
  * peak its remaining power can follow; the rest charges the storage, is exported or curtailed.
  */
-function dispatchHour(s: HourSetup, soc: number, raw: number, load: number, spike: number) {
+function dispatchHour(
+  s: HourSetup,
+  soc: number,
+  raw: number,
+  load: number,
+  spike: number,
+  car: number
+) {
   // AC-coupled battery: clipping occurs before charging; no claim to recover DC clipping.
   const pv = Math.min(raw, s.limit);
   const smooth = load - spike;
@@ -443,16 +482,22 @@ function dispatchHour(s: HourSetup, soc: number, raw: number, load: number, spik
   const direct = directSmooth + directSpike;
   const charge = s.cap ? Math.min(pv - direct, s.power, Math.max(0, s.cap - soc) / s.eta) : 0;
   let next = soc + charge * s.eta;
+  // The house comes first: the car gets the PV left after the smooth house load.
+  const houseSmooth = smooth - car;
+  const carPv = Math.min(car, Math.max(0, pv - houseSmooth));
   const smoothDeficit = smooth - directSmooth;
+  // With the storage kept out of the car, only the house part of the deficit may be discharged.
+  const houseDeficit = smoothDeficit - (car - carPv);
+  const batteryDeficit = s.batteryCar ? smoothDeficit : houseDeficit;
   const spikeDeficit = spike - directSpike;
   const spikePower = Math.max(0, s.peak.power - pvLeft);
   const spikeBattery =
     spikeDeficit && spikePower
-      ? spikeDeficit * Math.min(1, Math.max(0, s.power - smoothDeficit) / spikePower)
+      ? spikeDeficit * Math.min(1, Math.max(0, s.power - batteryDeficit) / spikePower)
       : 0;
   const discharge = s.cap
     ? Math.min(
-        smoothDeficit + spikeBattery,
+        batteryDeficit + spikeBattery,
         s.power,
         next * s.eta,
         s.balcony ? Math.max(0, s.limit - direct) : Infinity
@@ -460,7 +505,12 @@ function dispatchHour(s: HourSetup, soc: number, raw: number, load: number, spik
     : 0;
   next -= discharge / s.eta;
   const exported = Math.min(pv - direct - charge, s.exportCap);
+  // The storage serves the house first; only what it gives beyond that went into the car.
+  const carBattery = s.batteryCar ? Math.max(0, discharge - houseDeficit - spikeBattery) : 0;
   return {
+    carPv,
+    carBattery,
+    carGrid: Math.max(0, car - carPv - carBattery),
     soc: next,
     raw,
     direct,
@@ -492,6 +542,11 @@ function record(
   out.clipped += f.clipped;
   out.standby += standby;
   const { month, h } = demand.times[i];
+  for (const part of [out.car, out.carMonthly[month]]) {
+    part.pv += f.carPv;
+    part.battery += f.carBattery;
+    part.grid += f.carGrid;
+  }
   const m = out.monthly[month];
   m.pv += f.raw;
   m.load += home;
@@ -533,6 +588,7 @@ export function simulate(
     exportCap,
     peak: peakProfiles[input.peaks],
     balcony: input.mode === 'balcony',
+    batteryCar: input.storageChargesCar,
   };
   const standby = capacity > 0 ? input.standby / 1000 : 0;
   const monthly = months.map((month) => ({
@@ -545,6 +601,7 @@ export function simulate(
     export: 0,
     curtailed: 0,
   }));
+  const carMonthly = months.map(() => ({ pv: 0, battery: 0, grid: 0 }));
   const hourly = months.map(() =>
     Array.from({ length: 24 }, () => ({ pv: 0, load: 0, direct: 0, battery: 0, grid: 0, days: 0 }))
   );
@@ -567,13 +624,22 @@ export function simulate(
       startSoc,
       endSoc: 0,
       unmetCar: demand.unmetCar,
+      car: { pv: 0, battery: 0, grid: 0 },
+      carMonthly,
       monthly,
       hourly,
     };
     for (let i = 0; i < profile.hours.length; i++) {
       const raw = Number(profile.hours[i][1]) * scale;
       const load = demand.load[i] + standby;
-      const flows = dispatchHour(setup, soc, raw, load, demand.shaped[i] * setup.peak.share);
+      const flows = dispatchHour(
+        setup,
+        soc,
+        raw,
+        load,
+        demand.shaped[i] * setup.peak.share,
+        demand.car[i]
+      );
       soc = flows.soc;
       if (pass === 1) record(out, demand, i, standby, flows);
     }
@@ -634,20 +700,22 @@ export function compareVariants(profile: SolarProfile, variants: Variant[]) {
     evaluate(profile, input, policy, demands(profile, input), capacity)
   );
 }
+/** Buffer of both day-charging cases, so the table compares only how often the car is at home. */
+export const comparisonBuffer = 30;
 /**
- * Charging habits for the same cars: in the evening, during the day only at the weekend, and with
- * a car always at home (for example two cars taking turns) that may wait for sun with a buffer.
+ * Charging habits for the same cars: in the evening, and during the day with the car only at the
+ * weekend or always at home (for example two cars taking turns); both may wait for sun with a buffer.
  */
 export function chargingCases(input: Inputs): { label: string; input: Inputs }[] {
   return [
     { label: 'Abends laden', input: { ...input, chargeTime: 'evening' } },
     {
       label: 'Tagsüber laden, Auto nur am Wochenende da',
-      input: { ...input, chargeTime: 'day', carDaysHome: 2, carBuffer: 0 },
+      input: { ...input, chargeTime: 'day', carDaysHome: 2, carBuffer: comparisonBuffer },
     },
     {
-      label: 'Immer ein Auto zu Hause, 30 kWh Puffer',
-      input: { ...input, chargeTime: 'day', carDaysHome: 7, carBuffer: 30 },
+      label: `Immer ein Auto zu Hause, ${comparisonBuffer} kWh Puffer`,
+      input: { ...input, chargeTime: 'day', carDaysHome: 7, carBuffer: comparisonBuffer },
     },
   ];
 }
@@ -920,6 +988,65 @@ export function priceScenario(
         ((1 + change / 100) ** (year - 1) - (1 + input.priceChange / 100) ** (year - 1));
     return row.balance + delta;
   });
+}
+/** Search range of the break-even values: electricity price in EUR/kWh and yearly change in percent. */
+export const breakEvenLimits = { price: 2, change: 10 };
+/**
+ * Sum of a calculated case's cash flows under another electricity price and yearly change, each
+ * discounted at `rate` percent. Energy flows stay the same, as in `priceScenario`.
+ */
+function cashSum(
+  cashflows: { cash: number; saved: number }[],
+  input: Pick<Inputs, 'price' | 'priceChange'>,
+  price: number,
+  change: number,
+  rate: number
+) {
+  return cashflows.reduce((sum, row, year) => {
+    const delta =
+      year > 0
+        ? row.saved *
+          (price * (1 + change / 100) ** (year - 1) -
+            input.price * (1 + input.priceChange / 100) ** (year - 1))
+        : 0;
+    return sum + (row.cash + delta) / (1 + rate / 100) ** year;
+  }, 0);
+}
+/** Net present value of a calculated case under another electricity price and yearly change. */
+export function npvScenario(
+  cashflows: { cash: number; saved: number }[],
+  input: Pick<Inputs, 'price' | 'priceChange' | 'discount'>,
+  change: number
+) {
+  return cashSum(cashflows, input, input.price, change, input.discount);
+}
+/**
+ * The electricity price today (EUR/kWh, at the chosen yearly change) or the yearly change (percent,
+ * at the chosen price) at which a calculated case just breaks even: net present value zero, or with
+ * `discounted` false the plain balance after the period. Null when even the upper search limit does
+ * not get there; the lower limit when it is positive already.
+ */
+export function breakEven(
+  cashflows: { cash: number; saved: number }[],
+  input: Pick<Inputs, 'price' | 'priceChange' | 'discount'>,
+  vary: 'price' | 'change',
+  discounted = true
+): number | null {
+  const rate = discounted ? input.discount : 0;
+  const value = (x: number) =>
+    vary === 'price'
+      ? cashSum(cashflows, input, x, input.priceChange, rate)
+      : cashSum(cashflows, input, input.price, x, rate);
+  let low = vary === 'price' ? 0 : -breakEvenLimits.change;
+  let high = vary === 'price' ? breakEvenLimits.price : breakEvenLimits.change;
+  if (value(high) < 0) return null;
+  if (value(low) >= 0) return low;
+  for (let i = 0; i < 60; i++) {
+    const mid = (low + high) / 2;
+    if (value(mid) < 0) low = mid;
+    else high = mid;
+  }
+  return (low + high) / 2;
 }
 const incomplete = (input: Inputs) =>
   Object.values(input).some(

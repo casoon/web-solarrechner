@@ -1,11 +1,14 @@
 <script lang="ts">
 import { energyFlow } from '@/lib/solar/energy-display';
-import { currency, number, percent, signedCurrency } from '@/lib/solar/format';
+import { currency, number, percent, rate, signedCurrency } from '@/lib/solar/format';
 import type { calculate, Inputs } from '@/lib/solar/model';
 import {
   balanceSpec,
   billBreakdown,
   billSpec,
+  breakEvenRows,
+  carRows,
+  carSolarShare,
   coverSpec,
   dayMonths,
   daySpec,
@@ -33,6 +36,7 @@ const energy = $derived(current.energy);
 const bill = $derived(billBreakdown(current, applied, withBattery));
 let dayMonth = $state<number>(5);
 const scenarios = $derived(priceScenarios(current.cashflows, applied));
+const breakEvens = $derived(breakEvenRows(current.cashflows, applied));
 const burden = $derived(applied.loanPercent > 0 ? monthlyBurden(current, applied) : []);
 </script>
 
@@ -175,10 +179,30 @@ const burden = $derived(applied.loanPercent > 0 ? monthlyBurden(current, applied
         <span>{s.label}</span>
         <strong>
           {s.payback ? `positiv ab Jahr ${s.payback}` : `nicht in ${applied.years} Jahren`}
+          · Kapitalwert {signedCurrency(s.npv)}
         </strong>
       </li>
     {/each}
   </ul>
+  <h3>Ab wann rechnet es sich?</h3>
+  <ul class="scenario-list" data-testid="break-even">
+    {#each breakEvens as row}
+      <li>
+        <span>{row.label}</span>
+        <strong>
+          {row.price} heute (bei {percent(applied.priceChange)} pro Jahr) oder {row.change} (bei {number(
+            applied.price * 100,
+            1,
+          )} ct/kWh)
+        </strong>
+      </li>
+    {/each}
+  </ul>
+  <p class="field-hint">
+    Der Strompreis, ab dem die Anlage unter deinen übrigen Annahmen die Schwelle erreicht. Das sagt
+    nichts darüber, wie wahrscheinlich dieser Preis ist; Studien zur künftigen Strompreisentwicklung
+    sind uneinig.
+  </p>
   <p class="field-hint">
     Gleiche Anlage, gleiche Energiebilanz: Nur der Wert des selbst genutzten Stroms ändert sich. Die
     gewählten Einspeisephasen, Marktpreisannahmen und Vermarktungskosten bleiben gleich. Die
@@ -232,7 +256,13 @@ const burden = $derived(applied.loanPercent > 0 ? monthlyBurden(current, applied
       dem Grundpreis von {currency(applied.basePrice)} im Jahr. Strom und Betrieb mit Anlage: Netzstrom,
       Grundpreis und laufende Kosten abzüglich Einspeiseerlös; in Jahren mit Ersatzgeräten steigt der
       Wert, im letzten Jahr zählt ein Restwert mit. Unterschied: Plus heißt, du zahlst mit Anlage und
-      Kredit weniger als ohne Anlage.
+      Kredit weniger als ohne Anlage.{#if current.ownFunds > 0}
+        <strong data-testid="burden-own-funds">
+          Zusätzlich zahlst du zu Beginn {currency(current.ownFunds)} aus eigener Tasche; die Tabelle
+          zeigt nur die laufenden Beträge.
+        </strong>
+        Ob sich die ganze Investition lohnt, zeigen Kapitalwert ({signedCurrency(current.npv)}) und
+        Verzinsung ({rate(current.irr)}), nicht die Monatsbeträge.{/if}
     </p>
   </section>
 {/if}
@@ -250,6 +280,20 @@ const burden = $derived(applied.loanPercent > 0 ? monthlyBurden(current, applied
     Wechselrichterleistung. Ladezustand am Jahresrand: {number(energy.startSoc, 2)} →
     {number(energy.endSoc, 2)} kWh.
   </p>
+  {#if applied.cars > 0 && energy.car.pv + energy.car.battery + energy.car.grid > 0}
+    <h3>Laden des Autos zu Hause</h3>
+    <SolarTable label="Laden des Autos nach Quelle, Monatswerte" rows={carRows(energy)} />
+    <p class="field-hint" data-testid="car-share">
+      Im ersten Jahr kommen <strong>{number(carSolarShare(energy))} %</strong> der Heimladung aus
+      Sonnenstrom: {number(energy.car.pv)} kWh direkt{energy.car.battery > 0
+        ? `, ${number(energy.car.battery)} kWh über den Speicher`
+        : ''}, {number(energy.car.grid)} kWh aus dem Netz. Das Haus hat immer Vorrang, dann lädt das
+      Auto, dann der Speicher. {applied.storageChargesCar
+        ? ''
+        : 'Der Speicher gibt nichts ins Auto ab. '}Im Winter deckt die Sonne nur einen Teil, im Sommer
+      alles.
+    </p>
+  {/if}
   {#if energy.unmetCar > 1}
     <p class="error">
       {number(energy.unmetCar)} kWh gewünschtes Heimladen passen nicht in das Ladefenster. Diese Energie

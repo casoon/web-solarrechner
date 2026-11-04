@@ -140,6 +140,30 @@ test('system sizes and charging habits are compared; a car at home shows its mon
   await page.locator('#charge').selectOption('day');
   await expect(days).toBeVisible();
 });
+test('car charging by source, wallbox type, storage switch, break-even and revenue rules are shown', async ({
+  page,
+}) => {
+  await pickPreset(page, 'commuter');
+  await expect(page.getByTestId('car-share')).toContainText('% der Heimladung aus Sonnenstrom');
+  await expect(page.getByTestId('break-even').locator('li')).toHaveCount(2);
+  await expect(page.getByTestId('break-even')).toContainText('ct/kWh');
+  await expect(page.getByTestId('tariff-table').locator('tbody tr')).toHaveCount(3);
+  await expect(page.getByTestId('tariff-table').locator('tr.current')).toHaveCount(1);
+  // The storage stays out of the car by default; day charging asks for the wallbox type.
+  await expect(page.getByLabel('Speicher darf das Auto laden')).not.toBeChecked();
+  await page.locator('#charge').selectOption('day');
+  const wallbox = page.locator('#wallbox');
+  await expect(wallbox).toHaveValue('switching');
+  const share = page.getByTestId('car-share');
+  const before = await share.textContent();
+  await wallbox.selectOption('three');
+  await expect(share).not.toHaveText(before ?? '');
+});
+test('the monthly burden names the own funds paid at the start', async ({ page }) => {
+  await pickPreset(page, 'old-house-renovation');
+  await expect(page.getByTestId('burden-table')).toHaveCount(1);
+  await expect(page.getByTestId('burden-own-funds')).toContainText('aus eigener Tasche');
+});
 test('storage quality sets lifetime; without replacement the system runs on alone', async ({
   page,
 }) => {

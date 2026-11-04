@@ -1,6 +1,15 @@
 import { energyColors, energyTokens } from './energy-display';
 import { number, percent } from './format';
-import { type calculate, type Energy, type Inputs, paybackYear, priceScenario } from './model';
+import {
+  breakEven,
+  breakEvenLimits,
+  type calculate,
+  type Energy,
+  type Inputs,
+  npvScenario,
+  paybackYear,
+  priceScenario,
+} from './model';
 import type { OfferResult } from './offers';
 
 type Result = ReturnType<typeof calculate>;
@@ -18,6 +27,27 @@ export function monthlyRows(energy: Energy) {
     Export_kWh: Math.round(m.export),
     Abregelung_kWh: Math.round(m.curtailed),
   }));
+}
+
+/** Home charging of the car per month by source; solar share counts sun and storage, which only holds solar. */
+export function carRows(energy: Energy) {
+  return energy.carMonthly.map((c, i) => {
+    const total = c.pv + c.battery + c.grid;
+    return {
+      Monat: energy.monthly[i].month,
+      Ladung_kWh: Math.round(total),
+      Direkt_aus_Sonne_kWh: Math.round(c.pv),
+      Aus_Speicher_kWh: Math.round(c.battery),
+      Aus_Netz_kWh: Math.round(c.grid),
+      Solaranteil_Prozent: total > 0 ? Math.round(((c.pv + c.battery) / total) * 100) : 0,
+    };
+  });
+}
+/** Share of the car's home charging that came from the sun, directly or through the storage, in percent. */
+export function carSolarShare(energy: Energy) {
+  const { pv, battery, grid } = energy.car;
+  const total = pv + battery + grid;
+  return total > 0 ? ((pv + battery) / total) * 100 : 0;
 }
 
 export function financeRows(cashflows: Case['cashflows']) {
@@ -223,8 +253,36 @@ export function priceScenarios(cashflows: Case['cashflows'], applied: Inputs) {
       label: change === 0 ? 'Preis bleibt gleich' : `Strompreis ${percent(change)} pro Jahr`,
       balances,
       payback: paybackYear(balances),
+      npv: npvScenario(cashflows, applied, change),
     };
   });
+}
+
+const priceText = (value: number | null) =>
+  value === null
+    ? `auch bei ${number(breakEvenLimits.price * 100)} ct/kWh nicht`
+    : `ab ${number(value * 100, 1)} ct/kWh`;
+const changeText = (value: number | null) =>
+  value === null
+    ? `auch bei ${percent(breakEvenLimits.change)} pro Jahr nicht`
+    : `ab ${percent(value)} pro Jahr`;
+/**
+ * At which electricity price today, or which yearly price change, the case breaks even: net present
+ * value zero (better than the discount rate) and a positive balance within the period.
+ */
+export function breakEvenRows(cashflows: Case['cashflows'], applied: Inputs) {
+  return [
+    {
+      label: `Besser als ${number(applied.discount, 1)} % Geldanlage`,
+      price: priceText(breakEven(cashflows, applied, 'price')),
+      change: changeText(breakEven(cashflows, applied, 'change')),
+    },
+    {
+      label: `Positiver Saldo nach ${applied.years} Jahren`,
+      price: priceText(breakEven(cashflows, applied, 'price', false)),
+      change: changeText(breakEven(cashflows, applied, 'change', false)),
+    },
+  ];
 }
 
 export function scenarioSpec(

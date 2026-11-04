@@ -6,7 +6,7 @@ import { presetSetup, presets, resolveCosts, sizeOptions } from './presets';
 import reference from './reference.json';
 import { reportDocument } from './report';
 
-test('all presets render nine PDF pages (ten with a loan) without clipping, including 25-year and stale-profile cases', async () => {
+test('all presets render ten PDF pages (one more with a loan, one more with cars) without clipping, including 25-year and stale-profile cases', async () => {
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
     const { input: base, work } = presetSetup(preset.id);
@@ -36,9 +36,15 @@ test('all presets render nine PDF pages (ten with a loan) without clipping, incl
       const pdf = new TextDecoder().decode(rendered.bytes);
       assert.equal(
         (pdf.match(/\/Type \/Page\b/g) ?? []).length,
-        9 + (input.loanPercent > 0 ? 1 : 0),
+        10 + (input.loanPercent > 0 ? 1 : 0) + (input.cars > 0 ? 1 : 0),
         preset.id
       );
+      assert.equal(
+        JSON.stringify(doc).includes('Laden des Autos zu Hause'),
+        input.cars > 0,
+        preset.id
+      );
+      assert.ok(JSON.stringify(doc).includes('Ab wann rechnet es sich?'), preset.id);
       assert.ok(pdf.startsWith('%PDF-'));
       assert.ok(JSON.stringify(doc).includes('noch nicht übernommen'));
       assert.ok(JSON.stringify(doc).includes(preset.title));
@@ -48,7 +54,7 @@ test('all presets render nine PDF pages (ten with a loan) without clipping, incl
   }
 });
 
-test('rule profiles, sizes, charging habits and credit render eleven-page PDFs for all templates', async () => {
+test('rule profiles, sizes, charging habits and credit render twelve-page PDFs, thirteen with cars, for all templates', async () => {
   const { createPolicy, policyDefaults } = await import('./policy');
   const renderer = await getDefaultRenderer();
   for (const preset of presets) {
@@ -105,7 +111,7 @@ test('rule profiles, sizes, charging habits and credit render eleven-page PDFs f
       assert.deepEqual(rendered.warnings, [], preset.id);
       assert.equal(
         (new TextDecoder().decode(rendered.bytes).match(/\/Type \/Page\b/g) ?? []).length,
-        11,
+        12 + (input.cars > 0 ? 1 : 0),
         preset.id
       );
       if (policy.market) assert.ok(JSON.stringify(doc).includes('2030-02-01'));
