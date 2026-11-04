@@ -22,3 +22,21 @@ head_sampling_rate = 0.1
 [observability.traces]
 enabled = true
 head_sampling_rate = 0.1
+
+# PVGIS proxy (src/pages/api/solar.ts): only cache misses count. Per client and in total per
+# Cloudflare location, so one script cannot get the egress address blocked at PVGIS.
+[[ratelimits]]
+name = "PVGIS_PER_CLIENT"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+[[ratelimits]]
+name = "PVGIS_TOTAL"
+namespace_id = "1002"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 60

@@ -34,7 +34,9 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
-- **Rechner:** Die Strompreisänderung ist mit +5 % pro Jahr vorbelegt und als kräftige Steigerung gekennzeichnet: vorsichtig für die Stromrechnung, günstig für die Anlage. Die Szenarien zeigen weiterhin gleichbleibende und fallende Preise.
+- **Rechner:** Die Strompreisänderung ist mit +2 % pro Jahr vorbelegt, nominal etwa im Takt der Inflation, wie es die Seite Strompreis begründet; Anbieter-Modelle und Qualität nutzen denselben Wert. Die Szenarien zeigen weiterhin gleichbleibende, fallende und stärker steigende Preise.
+- **Rechner:** Das Lastprofil „morgens und abends“ verteilt mehr Verbrauch auf den Tag, und die Lastspitzen-Annahmen „typisch“ und „vorsichtig“ nehmen einen kleineren Anteil des Haushaltsstroms; ohne Speicher liegt der Autarkiegrad damit näher an den Werten des HTW-Unabhängigkeitsrechners.
+- **Rechner:** Fehlen die Sonnendaten für Ort oder Ausrichtung, steht der Hinweis mit Ladeknopf jetzt auch über dem Ergebnis, nicht nur im zugeklappten Schritt „Standort“.
 - **Rechner:** Mit Kredit rechnen positiver Saldo und der Vergleich mit einer Geldanlage die Raten, Zinsen und Restschuld ein; der Wert ohne Kredit steht klein darunter. Die Verzinsung der Anlage wird mit dem Kreditzins verglichen, damit sichtbar ist, wann der Kredit den Ertrag auffrisst. Das PDF nennt dieselben Werte.
 - **Rechner:** Der Speicher wird nach seiner Lebensdauer wiederholt ersetzt, nicht nur einmal; der zuletzt gekaufte Ersatzspeicher zählt am Ende mit seinem Restwert. Ergebnis und PDF nennen Ersatzjahre und Restwert.
 - **Rechner:** Kennzahlen in Alltagssprache: „Mehr als Geld zu 3 % anlegen“ statt Kapitalwert und „Verzinsung deines Geldes“ statt interner Zinsfuß, mit kurzer Erklärung; Saldo mit Kredit und Kapitalwert tragen ein Vorzeichen. Das PDF übernimmt Namen und Vorzeichen.
@@ -62,6 +64,9 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 ### Fixed
 
 - **Export:** Der Hinweis „Beide Autos verwenden dasselbe Fahr- und Ladeprofil“ erscheint nur noch bei zwei Autos.
+- **Rechner:** Bei automatischen Kosten folgt der Preis des Ersatzspeichers der Speichergröße; bisher blieb er beim Wert der Vorlage, sodass größere Speicher im Kapitalwert zu gut abschnitten.
+- **Rechner:** Die vorbelegte Inbetriebnahme bleibt im Zeitraum der hinterlegten Regeln (bis Dezember 2030); das Prüfdatum der Regeln kommt aus einer Stelle.
+- **Inhalte:** Die häufige Frage zum Solarspitzengesetz nennt die Bedingung Smart Meter und die Verlängerung des Vergütungszeitraums und sagt, was der Rechner davon abbildet; die Qualitäts-Seite beschreibt die Folgen einer verspäteten Registrierung im Marktstammdatenregister so, wie § 52 EEG sie regelt.
 - **Stromsystem 2045:** Die schwierigste Woche zeigt keine überlappenden Zahlen mehr über den Balken; die Werte stehen im Tooltip.
 - **Stromversorgung:** Die Dunkelflaute-Woche zeigt ihre Farben auch unter der Content Security Policy, markiert die Stunden mit Wind und Sonne unter 10 % der Last und die Preisspitze vom 6. November 2024.
 - **SEO:** Titel und Beschreibungen der Hintergrund-Seiten passen in die Suchergebnisse; `security.txt` nennt eine Policy, die doppelte, nie ausgelieferte Sitemap-Route ist entfernt.
@@ -70,6 +75,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Security
 
+- **PVGIS-Abruf:** Der Endpunkt `/api/solar` begrenzt Abrufe je Client und insgesamt (Rate-Limit-Bindings), hält Profile im Cloudflare-Cache und rundet Koordinaten auf 0,01°, damit ein Skript PVGIS nicht über die Ausgangsadresse der Seite für alle sperren kann.
 - **Abhängigkeiten:** Neue Paketversionen werden erst einen Tag nach Veröffentlichung installiert (`minimumReleaseAge`); die Pakete mit Install-Skripten sind geprüft freigegeben. Die Meldung zu `deepmerge` ist begründet ausgenommen, weil es keine korrigierte Version gibt und das Paket nur die eigene Svelte-Konfiguration beim Build zusammenführt.
 - **Contributors:** Die GitHub Actions der CI sind auf Commit-SHAs festgelegt.
 

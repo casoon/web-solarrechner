@@ -137,8 +137,8 @@ export const defaults: Inputs = {
   batteryYear: 13,
   batteryCycles: 6000,
   price: 0.35,
-  /** Strong rise: cautious for the electricity bill, favourable for the value of own solar power. */
-  priceChange: 5,
+  /** Nominal rise about in step with inflation; the same assumption as on the price page. */
+  priceChange: 2,
   tariff: 0,
   negativeShare: 10,
   exportLimit: 60,
@@ -216,8 +216,8 @@ export type PeakProfile = 'smooth' | 'typical' | 'cautious';
  */
 export const peakProfiles: Record<PeakProfile, { share: number; power: number; label: string }> = {
   smooth: { share: 0, power: 0, label: 'Gleichmäßig (Obergrenze)' },
-  typical: { share: 0.35, power: 3, label: 'Typische Lastspitzen' },
-  cautious: { share: 0.5, power: 4, label: 'Viele Lastspitzen (vorsichtig)' },
+  typical: { share: 0.25, power: 3, label: 'Typische Lastspitzen' },
+  cautious: { share: 0.4, power: 4, label: 'Viele Lastspitzen (vorsichtig)' },
 };
 export const months = [
   'Jan',
@@ -372,7 +372,7 @@ export function demands(profile: SolarProfile, input: Inputs) {
         ? 1
         : input.pattern === 'day'
           ? 0.45 + 0.6 * gaussian(h, 8 + shift, 1.8) + gaussian(h, 13, 3) + 1.2 * gaussian(h, 19, 2)
-          : 0.35 + 1.2 * gaussian(h, 7.5 + shift, 1.6) + 1.8 * gaussian(h, 19, 1.9);
+          : 0.65 + 0.8 * gaussian(h, 7.5 + shift, 1.6) + 1.4 * gaussian(h, 19, 2);
     return w * (1 + 0.2 * Math.cos((2 * Math.PI * month) / 12));
   });
   const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);

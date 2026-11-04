@@ -20,7 +20,9 @@ import {
 import {
   createPolicy,
   type PolicySettings as PolicyInputs,
+  policyChecked,
   policyDefaults,
+  policyLastMonth,
   validatePolicy,
 } from '@/lib/solar/policy';
 import {
@@ -60,11 +62,15 @@ type Field = {
 };
 const initial = presetSetup('family-house');
 const initialPreset = () => presets.find((p) => p.id === 'family-house') ?? presets[0];
-/** Planning, ordering and grid registration take a few months: first of the month in ~3 months. */
+/**
+ * Planning, ordering and grid registration take a few months: first of the month in ~3 months,
+ * at the latest the last month the policy rules cover.
+ */
 function defaultCommission() {
   const date = new Date();
   date.setMonth(date.getMonth() + 3, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+  const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+  return [value, policyLastMonth].sort()[0];
 }
 /** Berlin profiles shipped with the site, so these tilts need no PVGIS request. */
 const bundledAngles = [15, 60, 90];
@@ -172,6 +178,7 @@ $effect(() => {
     input.installation = estimate.installation;
     input.electrics = estimate.electrics;
     input.batteryCost = estimate.batteryCost;
+    input.batteryReplacement = Math.round(estimate.batteryCost * 0.75);
   }
 });
 $effect(() => {
@@ -1103,9 +1110,10 @@ function download() {
         />
       </details>
       <p class="field-hint" data-testid="price-change-note">
-        {input.priceChange >= 4
-          ? `Vorbelegt sind kräftig steigende Preise (${percent(input.priceChange)} pro Jahr): vorsichtig für deine Stromrechnung, aber günstig für die Anlage, denn jede Steigerung macht selbst erzeugten Strom wertvoller. Wie es bei gleichbleibenden oder fallenden Preisen aussieht, zeigt „Was, wenn sich der Strompreis ändert?“.`
-          : `Strompreisänderung ${percent(input.priceChange)} pro Jahr. Steigende Preise machen selbst erzeugten Strom wertvoller, fallende weniger.`}
+        Strompreisänderung {percent(input.priceChange)} pro Jahr. Vorbelegt sind 2 %, nominal etwa
+        im Takt der Inflation, wie auf der Seite <a href="/de/strompreis/">Strompreis</a> begründet.
+        Steigende Preise machen selbst erzeugten Strom wertvoller, fallende weniger; „Was, wenn
+        sich der Strompreis ändert?“ zeigt weitere Pfade.
       </p>
       </div>
     </fieldset>
@@ -1291,6 +1299,16 @@ function download() {
     {#if validation}<p class="error" role="alert">
         {validation} Angezeigt bleibt die letzte gültige Rechnung.
       </p>{/if}
+    {#if needsRequest}
+      <p class="error" role="status" data-testid="stale-profile">
+        Die Ergebnisse gelten noch für {profile.location}, {profile.angle}° Neigung, Ausrichtung
+        {profile.aspect}°{secondKwp ? ', zweite Dachfläche wie die erste' : ''}. Für {selected.name}
+        und die gewählte Ausrichtung fehlen die Sonnendaten.
+        <button type="button" class="apply-button" disabled={loading} onclick={() => loadProfiles()}>
+          {loading ? 'PVGIS-Daten werden geladen …' : 'Sonnendaten laden'}
+        </button>
+      </p>
+    {/if}
     <section class="result-summary" aria-labelledby="result-title">
       <div class="summary-heading">
         <div>
@@ -1399,7 +1417,7 @@ function download() {
       <h2 id="policy-result-title">Erlöse und Regeln deiner Rechnung</h2>
       <p>
         <strong>{result.policy?.name}</strong>
-         · Prüfstand 29.10.2026
+         · Prüfstand {policyChecked}
       </p>
       <p>
         Jahr 1: {current.firstYear.phase}; Einspeiseerlös inklusive Bonus {currency(

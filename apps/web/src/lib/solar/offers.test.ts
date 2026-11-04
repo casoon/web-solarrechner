@@ -34,7 +34,7 @@ test('shifted consumption saves the spread on its share of the grid draw', () =>
   near(gridCost(input, 2000, 1, true), 2000 * input.price - 2000 * share * 0.1);
 });
 test('solar power bought at the grid price costs the same as grid electricity alone', () => {
-  const r = compareOffers(profile, { ...short, contractPrice: short.price });
+  const r = compareOffers(profile, { ...short, contractPrice: short.price, priceChange: 0 });
   near(offer(r, 'contract').total, offer(r, 'grid').total, 1e-3);
 });
 test('roof lease lowers the grid bill by the lease and nothing else', () => {

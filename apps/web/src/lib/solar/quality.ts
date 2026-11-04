@@ -116,7 +116,7 @@ export const qualityDefaults: QualityInputs = {
   roofLimited: false,
   battery: 8,
   price: 0.35,
-  priceChange: 0,
+  priceChange: 2,
   feedIn: 0.077,
   feedInYears: 20,
   exportLimit: 60,

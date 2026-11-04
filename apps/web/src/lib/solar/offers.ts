@@ -67,7 +67,7 @@ export const offerDefaults: OfferInputs = {
   kwp: 10,
   battery: 10,
   price: 0.35,
-  priceChange: 0,
+  priceChange: 2,
   feedIn: 0.077,
   unpaidExport: 10,
   localPrice: 1400,

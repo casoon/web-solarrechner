@@ -1,6 +1,8 @@
 import type { Energy, Inputs } from './model';
 
 export const policyChecked = '2026-10-29';
+/** First day of the last month a commissioning date may fall into. */
+export const policyLastMonth = '2030-12-01';
 export const policySource = 'https://dserver.bundestag.de/btd/21/078/2107867.pdf';
 export type PolicyProfile = 'draft' | 'current' | 'zero' | 'manual';
 export interface PolicySettings {

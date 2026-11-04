@@ -105,10 +105,12 @@ test('second roof surface adds module power; storage sizes are compared', async 
   await expect(
     page.getByRole('button', { name: 'Sonnendaten für Ort und Ausrichtung laden' })
   ).toBeVisible();
+  await expect(page.getByTestId('stale-profile')).toContainText('fehlen die Sonnendaten');
   await page.locator('#aspect2').selectOption('0');
   await expect(
     page.getByRole('button', { name: 'Sonnendaten für Ort und Ausrichtung laden' })
   ).toHaveCount(0);
+  await expect(page.getByTestId('stale-profile')).toHaveCount(0);
   await expect(page.getByTestId('annual-benefit')).not.toHaveText(benefit ?? '');
   const rows = page.getByTestId('storage-table').locator('tbody tr');
   await expect(rows).toHaveCount(5);
