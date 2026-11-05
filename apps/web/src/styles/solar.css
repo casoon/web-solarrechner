@@ -2,6 +2,26 @@
 @import "@fontsource/inter/latin-600.css";
 @import "@fontsource/inter/latin-700.css";
 @import "@fontsource/inter/latin-800.css";
+html {
+  overflow-x: clip;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* biome-ignore-start lint/complexity/noImportantStyles: has to win over every component rule */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  /* biome-ignore-end lint/complexity/noImportantStyles: has to win over every component rule */
+}
 .solar-site {
   color-scheme: light;
   --ink: #183b32;
@@ -9,11 +29,36 @@
   --line: #d5dcd3;
   --paper: #f7f7f0;
   --accent: #e6b734;
+  --white: #fff;
+  --mist: #e8ece4;
+  --sun-soft: #f6ecc9;
+  --on-ink-muted: #d0dfd1;
+  --line-soft: #eef0ea;
+  --focus: #a16a00;
+  --max: 1440px;
+  --gutter: 40px;
+  --r-xs: 4px;
+  --r-sm: 5px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-xl: 10px;
+  --r-2xl: 12px;
+  --r-pill: 999px;
   background: var(--paper);
   color: var(--ink);
   font-family: Inter, sans-serif;
   font-size: 15px;
   line-height: 1.6;
+}
+@media (max-width: 1000px) {
+  .solar-site {
+    --gutter: 24px;
+  }
+}
+@media (max-width: 760px) {
+  .solar-site {
+    --gutter: 18px;
+  }
 }
 .solar-site *,
 .solar-site *::before,
@@ -22,10 +67,10 @@
 }
 .solar-site ::selection {
   background: #f1d57b;
-  color: #183b32;
+  color: var(--ink);
 }
 .solar-site :focus-visible {
-  outline: 3px solid #a16a00;
+  outline: 3px solid var(--focus);
   outline-offset: 4px;
 }
 .solar-site a {
@@ -49,6 +94,16 @@
 .solar-site p {
   margin-top: 0;
 }
+.solar-site :is(h1, h2, h3) {
+  text-wrap: balance;
+}
+.solar-site :is(p, li, dd) {
+  text-wrap: pretty;
+}
+/* The header is not sticky; the offset only keeps anchor targets off the top edge. */
+.solar-site main [id] {
+  scroll-margin-top: 24px;
+}
 .solar-site h2 {
   font-size: 1.25rem;
   line-height: 1.35;
@@ -60,9 +115,9 @@
 .page-intro,
 .calc-intro,
 .calculator-layout {
-  max-width: 1440px;
+  max-width: var(--max);
   margin-inline: auto;
-  padding-inline: 40px;
+  padding-inline: var(--gutter);
 }
 .site-header {
   display: flex;
@@ -80,7 +135,7 @@
 }
 .wordmark svg {
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: var(--r-xl);
   box-shadow: 0 1px 2px rgb(24 59 50 / 0.18);
 }
 .wordmark-text {
@@ -104,6 +159,12 @@
   gap: 22px;
   font-size: 13px;
   font-weight: 600;
+  /* Scrolls sideways when it does not fit; the padding keeps room for the focus outline. */
+  min-width: 0;
+  margin: -7px;
+  padding: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .site-header nav a {
   text-decoration: none;
@@ -138,7 +199,6 @@
   margin-bottom: 0;
   font-size: 18px;
   line-height: 1.6;
-  text-wrap: pretty;
 }
 .intro-facts {
   display: grid;
@@ -183,7 +243,7 @@
 }
 .page-notice a {
   padding: 12px 18px;
-  border-radius: 8px;
+  border-radius: var(--r-lg);
   background: var(--ink);
   color: var(--paper);
   font-weight: 600;
@@ -197,8 +257,8 @@
 }
 .controls {
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
+  border-radius: var(--r-2xl);
+  background: var(--white);
   overflow: hidden;
 }
 /* Tools without collapsible steps: the same card, each step with a plain heading. */
@@ -229,7 +289,7 @@
   min-width: 0;
 }
 .input-section + .input-section {
-  border-top: 1px solid #eef0ea;
+  border-top: 1px solid var(--line-soft);
 }
 .input-section legend {
   float: left;
@@ -247,7 +307,7 @@
   width: 100%;
   padding: 16px 18px;
   border: 0;
-  background: #fff;
+  background: var(--white);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -277,14 +337,14 @@
 .solar-site .steps > .text-button {
   width: 100%;
   padding: 12px 18px;
-  border-top: 1px solid #eef0ea;
+  border-top: 1px solid var(--line-soft);
 }
 .solar-site input:not([type="range"], [type="checkbox"], [type="radio"]),
 .solar-site select {
   width: 100%;
   border: 1px solid #9caea3;
-  border-radius: 5px;
-  background: #fff;
+  border-radius: var(--r-sm);
+  background: var(--white);
   color: var(--ink);
   padding: 10px 12px;
   min-height: 44px;
@@ -377,8 +437,8 @@
 .segmented {
   display: flex;
   padding: 3px;
-  background: #e8ece4;
-  border-radius: 6px;
+  background: var(--mist);
+  border-radius: var(--r-md);
   margin-bottom: 20px;
 }
 .segmented button {
@@ -387,13 +447,13 @@
   min-height: 44px;
   border: none;
   background: none;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
 }
 .segmented button.active {
-  background: #fff;
+  background: var(--white);
   color: var(--ink);
   box-shadow: 0 2px 4px #183b3210;
 }
@@ -415,9 +475,9 @@
 .apply-button {
   width: 100%;
   background: var(--ink);
-  color: #fff;
+  color: var(--white);
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 13px 10px;
   margin-top: 10px;
   font-size: 12px;
@@ -433,7 +493,7 @@
   max-height: 230px;
   overflow-y: auto;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--white);
 }
 .place-list button {
   text-align: left;
@@ -457,7 +517,7 @@
   background: var(--ink);
   color: var(--paper);
   padding: 28px 32px;
-  border-radius: 12px;
+  border-radius: var(--r-2xl);
 }
 .summary-heading {
   display: flex;
@@ -478,7 +538,7 @@
 }
 .summary-heading > div:first-child > span {
   font-size: 14px;
-  color: #d0dfd1;
+  color: var(--on-ink-muted);
 }
 .result-toggle {
   flex: none;
@@ -509,7 +569,7 @@
 }
 .key-results dt {
   font-size: 14px;
-  color: #d0dfd1;
+  color: var(--on-ink-muted);
 }
 .key-results dd {
   margin: 6px 0 0;
@@ -525,12 +585,12 @@
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.4;
-  color: #d0dfd1;
+  color: var(--on-ink-muted);
 }
 .result-summary > p {
   font-size: 13px;
   line-height: 1.55;
-  color: #d0dfd1;
+  color: var(--on-ink-muted);
   margin-bottom: 0;
 }
 /* Every result block below the summary is a card of its own. */
@@ -542,8 +602,8 @@
   min-width: 0;
   padding: 22px 24px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
+  border-radius: var(--r-2xl);
+  background: var(--white);
 }
 .comparison-line {
   display: flex;
@@ -603,10 +663,10 @@
 }
 /* Dunkelflaute week: the CSP drops Chartlet's style block for the fifth layer's own color. */
 #energy-lull .chartlet-style-4 {
-  stroke: #183b32;
+  stroke: var(--ink);
 }
 #energy-lull .chartlet-style-4-swatch {
-  fill: #183b32;
+  fill: var(--ink);
 }
 #energy-lull .chartlet-area {
   fill-opacity: 0.75;
@@ -666,7 +726,7 @@
 .solar-table opengrid-table {
   display: block;
   min-width: 640px;
-  --og-accent: #183b32;
+  --og-accent: var(--ink);
   --og-font-family: Inter, sans-serif;
 }
 .method-note {
@@ -721,14 +781,14 @@ label.text-button:focus-within {
   padding: 8px;
   font-size: 12px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 .error {
   padding: 14px;
   background: #f9e7d9;
   color: #743c22;
   border: 1px solid #ddb393;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   font-size: 13px;
 }
 .site-footer {
@@ -751,7 +811,7 @@ label.text-button:focus-within {
   top: -100px;
   left: 20px;
   padding: 12px;
-  background: #fff;
+  background: var(--white);
   z-index: 20;
 }
 .skip-link:focus {
@@ -760,13 +820,6 @@ label.text-button:focus-within {
 @media (max-width: 1000px) {
   .calculator-layout {
     grid-template-columns: 300px minmax(0, 1fr);
-  }
-  .site-header,
-  .site-footer,
-  .page-intro,
-  .calc-intro,
-  .calculator-layout {
-    padding-inline: 24px;
   }
   .page-intro {
     grid-template-columns: 1fr;
@@ -793,20 +846,14 @@ label.text-button:focus-within {
   .wordmark-text {
     font-size: 19px;
   }
+  /* One scrollable row instead of three wrapped ones. */
   .site-header nav {
-    flex-wrap: wrap;
+    flex: 0 0 calc(100% + 14px);
     gap: 0 14px;
     font-size: 12px;
   }
   .site-header nav a {
     padding-block: 8px;
-  }
-  .site-header,
-  .site-footer,
-  .page-intro,
-  .calc-intro,
-  .calculator-layout {
-    padding-inline: 18px;
   }
   .page-intro {
     padding-block: 32px;
@@ -844,7 +891,7 @@ label.text-button:focus-within {
 }
 
 .mobile-jump {
-  max-width: 1440px;
+  max-width: var(--max);
   margin: 0 auto 20px;
   padding-inline: 40px;
   font-size: 13px;
@@ -859,14 +906,14 @@ label.text-button:focus-within {
 .solar-table opengrid-table::part(cell),
 .solar-table opengrid-table::part(header) {
   padding: 10px 8px;
-  border-bottom: 1px solid #d5dcd3;
+  border-bottom: 1px solid var(--line);
   text-align: right;
   white-space: nowrap;
 }
 .solar-table opengrid-table::part(sort-button) {
   border: 0;
   background: none;
-  color: #183b32;
+  color: var(--ink);
   font: inherit;
   font-weight: 600;
   padding: 5px 0;
@@ -875,15 +922,15 @@ label.text-button:focus-within {
 .solar-table opengrid-table::part(caption) {
   text-align: left;
   padding-bottom: 12px;
-  color: #52675f;
+  color: var(--muted);
 }
 .solar-table opengrid-table::part(sort-button):focus-visible {
-  outline: 2px solid #a16a00;
+  outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
 
 .preset-picker {
-  max-width: 1440px;
+  max-width: var(--max);
   margin: 0 auto 24px;
   padding: 20px 40px;
   border-bottom: 1px solid var(--line);
@@ -924,9 +971,9 @@ label.text-button:focus-within {
   gap: 2px;
   margin: 0;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-lg);
   font-weight: 400;
   cursor: pointer;
   transition:
@@ -945,11 +992,11 @@ label.text-button:focus-within {
   border-color: #9fb0a6;
 }
 .solar-site .preset-option:has(input:checked) {
-  background: #f6ecc9;
+  background: var(--sun-soft);
   border-color: var(--accent);
 }
 .solar-site .preset-option:has(input:focus-visible) {
-  outline: 3px solid #a16a00;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 .solar-site .preset-option input {
@@ -1090,7 +1137,7 @@ label.text-button:focus-within {
   border-bottom: 1px solid var(--line);
 }
 .scenario-list li.current {
-  background: #e8ece4;
+  background: var(--mist);
   font-weight: 600;
 }
 .day-toggle {
@@ -1138,7 +1185,7 @@ label.text-button:focus-within {
   font-weight: 600;
 }
 .storage-table tr.current {
-  background: #e8ece4;
+  background: var(--mist);
   font-weight: 600;
 }
 @media (max-width: 640px) {
@@ -1219,8 +1266,8 @@ label.text-button:focus-within {
 .energy-figures div {
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--r-xl);
+  background: var(--white);
 }
 .energy-figures dt {
   color: var(--muted);
@@ -1234,7 +1281,7 @@ label.text-button:focus-within {
 .energy-note {
   padding: 18px 20px;
   border-left: 4px solid var(--accent);
-  background: #fff;
+  background: var(--white);
 }
 .energy-note h3 {
   margin: 0 0 6px;
@@ -1258,7 +1305,7 @@ label.text-button:focus-within {
 }
 .target-bar {
   height: 12px;
-  border-radius: 6px;
+  border-radius: var(--r-md);
   background: #e6e9e1;
   overflow: hidden;
 }
@@ -1314,9 +1361,9 @@ label.text-button:focus-within {
 }
 /* FAQ below the calculator: full layout width, two columns on wide screens. */
 .faq {
-  max-width: 1440px;
+  max-width: var(--max);
   margin-inline: auto;
-  padding: 56px 40px;
+  padding: 56px var(--gutter);
 }
 .solar-site .faq h2 {
   margin-bottom: 24px;
@@ -1338,16 +1385,13 @@ label.text-button:focus-within {
   max-width: 68ch;
 }
 @media (max-width: 1000px) {
-  .faq {
-    padding-inline: 24px;
-  }
   .faq-list {
     grid-template-columns: 1fr;
   }
 }
 @media (max-width: 760px) {
   .faq {
-    padding: 40px 18px;
+    padding-block: 40px;
   }
 }
 /* Template B: section bar on the left, reading column of 720 px, figures across the content width. */
@@ -1355,9 +1399,9 @@ label.text-button:focus-within {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 48px;
-  max-width: 1440px;
+  max-width: var(--max);
   margin-inline: auto;
-  padding: 40px 40px 0;
+  padding: 40px var(--gutter) 0;
   align-items: start;
 }
 .section-nav {
@@ -1410,20 +1454,19 @@ label.text-button:focus-within {
 .marked-values strong {
   width: fit-content;
   padding: 0 4px;
-  border-radius: 4px;
-  background: #f6ecc9;
+  border-radius: var(--r-xs);
+  background: var(--sun-soft);
 }
 .about-highlight {
   padding: 20px 22px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
+  border-radius: var(--r-2xl);
+  background: var(--white);
 }
 @media (max-width: 1000px) {
   .reading-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
-    padding-inline: 24px;
   }
   .section-nav {
     position: static;
@@ -1438,14 +1481,9 @@ label.text-button:focus-within {
     margin: 0;
     padding: 6px 10px;
     border: 1px solid var(--line);
-    border-radius: 999px;
-    background: #fff;
+    border-radius: var(--r-pill);
+    background: var(--white);
     font-size: 13px;
-  }
-}
-@media (max-width: 760px) {
-  .reading-layout {
-    padding-inline: 18px;
   }
 }
 .cards {
@@ -1462,8 +1500,8 @@ label.text-button:focus-within {
 .cards > li {
   padding: 16px 18px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--r-xl);
+  background: var(--white);
 }
 .cards > li p {
   margin: 0;
@@ -1480,7 +1518,7 @@ label.text-button:focus-within {
   display: inline-block;
   margin-bottom: 6px;
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: #f4e7bd;
   font-size: 12px;
   font-weight: 600;
@@ -1504,7 +1542,7 @@ label.text-button:focus-within {
 }
 /* Intro of a calculator below an explanatory page: aligned with the calculator's left edge. */
 .method-page.calc-intro {
-  max-width: 1440px;
+  max-width: var(--max);
   margin-top: 72px;
   padding-top: 0;
 }
@@ -1521,10 +1559,6 @@ label.text-button:focus-within {
   color: var(--muted);
 }
 @media (max-width: 760px) {
-  .site-header nav {
-    flex-wrap: wrap;
-    column-gap: 14px;
-  }
   .method-page {
     padding: 36px 18px;
   }

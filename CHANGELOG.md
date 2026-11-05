@@ -40,6 +40,7 @@ und [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 kann sich der Fu
 
 ### Changed
 
+- **Oberfläche:** Auf schmalen Bildschirmen steht die Navigation in einer scrollbaren Zeile; auf Leseseiten markiert die Abschnittsnavigation den gelesenen Abschnitt, Sprünge scrollen weich.
 - **Rechner:** Der Puffer im Autoakku ist mit 20 kWh vorbelegt statt mit 0, das beim Tagesladen nur einen Tagesbedarf je Heimtag aus der Sonne zuließ; der Vergleich „Auto oder Speicher als Puffer?“ rechnet beide Tageszeilen mit demselben Puffer.
 - **Export:** Die Strompreis-Szenarien stehen auf einer eigenen Seite „Strompreis und Vergütung“, die Annahmen nennen Wallbox-Art und ob der Speicher ins Auto lädt.
 - **Rechner:** Die Strompreisänderung ist mit +2 % pro Jahr vorbelegt, nominal etwa im Takt der Inflation, wie es die Seite Strompreis begründet; Anbieter-Modelle und Qualität nutzen denselben Wert. Die Szenarien zeigen weiterhin gleichbleibende, fallende und stärker steigende Preise.

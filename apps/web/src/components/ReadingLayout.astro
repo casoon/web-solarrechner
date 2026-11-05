@@ -9,3 +9,50 @@ interface Props {
 const { sections, label = 'Auf dieser Seite', back, class: className } = Astro.props;
 ---
 <div class="reading-layout"><nav class="section-nav" aria-label={label}><p>{label}</p><ul>{sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}</ul>{back && <a class="section-back" href={back.href}>{back.label}</a>}</nav><article class:list={['reading-body', className]}><slot /></article></div>
+<script>
+  // Markiert in der Abschnittsnavigation den Abschnitt, der gerade gelesen wird.
+  document.querySelectorAll<HTMLElement>('.section-nav').forEach((nav) => {
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>('li a[href^="#"]')];
+    const pairs = links.flatMap((link) => {
+      const section = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+      return section ? [{ link, section }] : [];
+    });
+    if (pairs.length === 0) return;
+    const last = pairs[pairs.length - 1];
+    let current: HTMLAnchorElement | undefined;
+    const update = () => {
+      const line = window.innerHeight * 0.3;
+      let active = pairs[0];
+      for (const pair of pairs) if (pair.section.getBoundingClientRect().top <= line) active = pair;
+      // Ein kurzer letzter Abschnitt erreicht die Linie nie: ganz sichtbar gilt als gelesen.
+      if (last.section.getBoundingClientRect().bottom <= window.innerHeight) active = last;
+      if (active.link === current) return;
+      current?.removeAttribute('aria-current');
+      active.link.setAttribute('aria-current', 'true');
+      current = active.link;
+    };
+    const observer = new IntersectionObserver(update, {
+      rootMargin: '0px 0px -70% 0px',
+      threshold: [0, 1],
+    });
+    for (const { section } of pairs) observer.observe(section);
+    new IntersectionObserver(update, { threshold: [1] }).observe(last.section);
+    update();
+  });
+</script>
+<style is:global>
+  .section-nav li a[aria-current='true'] {
+    border-left-color: var(--ink);
+  }
+  /* Bold only in the vertical list: bold pills would widen and reflow the row on every change. */
+  @media (min-width: 1001px) {
+    .section-nav li a[aria-current='true'] {
+      font-weight: 700;
+    }
+  }
+  @media (max-width: 1000px) {
+    .section-nav li a[aria-current='true'] {
+      border-color: var(--ink);
+    }
+  }
+</style>

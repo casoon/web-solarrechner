@@ -55,6 +55,17 @@ const navItems = [
   <body class="solar-site">
     <a class="skip-link" href="#main">Zum Inhalt</a>
     <header class="site-header"><a href="/" class="wordmark"><svg viewBox="0 0 40 40" aria-hidden="true" width="40" height="40"><rect width="40" height="40" rx="9" fill="currentColor" /><circle cx="20" cy="20" r="10" fill="none" stroke="#3d5d53" stroke-width="5" /><path d="M20 10A10 10 0 1 1 10 20" fill="none" stroke="#e6b734" stroke-width="5" stroke-linecap="round" /></svg><span class="wordmark-text">Solarrechner<span>von CASOON</span></span></a><nav aria-label="Hauptnavigation">{navItems.map((item) => <a href={item.href} aria-current={item.current ? "page" : undefined}>{item.label}</a>)}</nav></header>
+    <script>
+      // On narrow screens the navigation scrolls sideways; bring the current page into view.
+      const nav = document.querySelector<HTMLElement>('.site-header nav');
+      const current = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+      if (nav && current) {
+        nav.scrollLeft +=
+          current.getBoundingClientRect().left -
+          nav.getBoundingClientRect().left -
+          (nav.clientWidth - current.offsetWidth) / 2;
+      }
+    </script>
     <main id="main"><slot /></main>
     <Schema
       item={{
